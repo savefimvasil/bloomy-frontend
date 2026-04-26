@@ -59,11 +59,12 @@ export function AboutAiDemo() {
           AI demo
         </p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[#123524]">
-          Trigger frontend to backend to Python AI planner
+          Trigger frontend to backend to separate Nest AI planner
         </h2>
         <p className="mt-3 text-sm leading-6 text-black/70">
           Click the button and watch the browser network panel. The request goes from this Next.js
-          page to NestJS, and then NestJS forwards it to the FastAPI AI planner.
+          page to the main NestJS backend, and then the backend forwards it to the separate
+          NestJS AI planner service.
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
