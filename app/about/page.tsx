@@ -1,4 +1,5 @@
 import { PageHero } from "@/components/ui/page-hero";
+import { AboutAiDemo } from "@/components/ui/about-ai-demo";
 
 export default function AboutPage() {
   return (
@@ -24,6 +25,8 @@ export default function AboutPage() {
           </p>
         </article>
       </section>
+
+      <AboutAiDemo />
     </div>
   );
 }
