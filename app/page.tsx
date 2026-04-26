@@ -4,7 +4,7 @@ import { PageHero } from "@/components/ui/page-hero";
 
 const features = [
   {
-    title: "Garden Planning",
+    title: "Garden Planning 1",
     description:
       "We shape planting concepts, zoning, and seasonal color systems for private and commercial spaces.",
   },
