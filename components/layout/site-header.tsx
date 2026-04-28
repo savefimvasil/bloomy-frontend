@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { BloomyLogo } from "@/components/ui/bloomy-logo";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -11,7 +12,6 @@ export function SiteHeader() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navigation = [
-    { href: "/", label: "Home" },
     ...(isLoggedIn ? [{ href: "/projects", label: "Projects" }] : [])
   ];
 
@@ -39,14 +39,14 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="fixed top-0 z-40 w-full bg-paper/72 backdrop-blur-md">
-      <div className="container">
-        <div className="flex items-center justify-between py-5">
-          <Link href="/" className="text-md font-medium uppercase tracking-[0.24em] text-forest">
-            Bloomy Garden
+    <header className="fixed top-0 z-40 h-[60px] w-full bg-paper/72 backdrop-blur-md">
+      <div className="container h-full">
+        <div className="flex h-full items-center justify-between">
+          <Link href="/" className="inline-flex h-full items-center text-forest">
+            <BloomyLogo className="h-auto w-[160px]" />
           </Link>
 
-          <nav className="flex items-center gap-6 text-sm uppercase tracking-[0.18em] text-muted">
+          <nav className="flex h-full items-center gap-6 text-sm uppercase tracking-[0.18em] text-muted">
             {navigation.map((item) => (
                 <Link key={item.href} href={item.href} className="transition hover:text-forest">
                   {item.label}
