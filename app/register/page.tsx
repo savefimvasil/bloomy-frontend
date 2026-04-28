@@ -41,7 +41,7 @@ const initialState: FormState = {
   confirmPassword: "",
 };
 
-export function NewProjectForm() {
+export default function RegisterPage() {
   const [form, setForm] = useState<FormState>(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,24 +103,19 @@ export function NewProjectForm() {
       imageAlt="Botanical signup visual"
       imageUrl="https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1400&q=80"
       aside={
-        <div className="container flex min-h-screen items-center py-12">
+        <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
-            <div className="flex justify-end text-2xl text-muted">‹</div>
-            <div className="mt-10 text-center">
-              <h2 className="text-4xl font-semibold tracking-tight text-forest">
-                Create a Bloomy account
-              </h2>
-              <p className="mt-3 text-sm text-muted">
-                One account for all Bloomy products
-              </p>
-            </div>
+            <h2 className="text-4xl font-semibold tracking-tight text-forest">
+              Create a Bloomy account
+            </h2>
+            <p className="mt-3 text-sm text-muted">One account for all Bloomy products</p>
 
-            <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+            <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit}>
               <Input
                 label="Full name"
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Anna"
+                placeholder="Yuliia"
                 autoComplete="given-name"
                 required
               />
@@ -137,7 +132,7 @@ export function NewProjectForm() {
                 type="email"
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                placeholder="anna@bloomy.garden"
+                placeholder="yuliia@bloomy.garden"
                 autoComplete="email"
                 required
               />
@@ -162,7 +157,7 @@ export function NewProjectForm() {
                 required
               />
 
-              <Button type="submit" disabled={isSubmitting} className="w-full">
+              <Button type="submit" disabled={isSubmitting} className="mt-4 w-full">
                 {isSubmitting ? "Creating..." : "Submit"}
               </Button>
             </form>
@@ -189,7 +184,7 @@ export function NewProjectForm() {
               </div>
             ) : null}
 
-            <p className="mt-8 text-center text-sm text-muted">
+            <p className="mt-8 text-sm text-muted">
               Already have an account?{" "}
               <Link href="/login" className="font-medium text-forest underline underline-offset-4">
                 Login here.

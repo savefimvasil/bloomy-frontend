@@ -76,7 +76,7 @@ export function ProjectsDashboard() {
     <section className="bg-canvas">
       <div className="bg-forest text-paper pt-15">
         <div className="container py-16">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-paper/68">Projects page</p>
+          <p className="text-[12px] uppercase tracking-[0.2em] text-paper/68">Projects page</p>
           <h1 className="mt-4 text-5xl font-semibold tracking-tight md:text-7xl">
             You are on the
             <br />
@@ -132,7 +132,7 @@ export function ProjectsDashboard() {
                     <p className="text-xs uppercase tracking-[0.18em] text-muted">Project hash</p>
                     <p className="mt-3 break-all text-2xl font-semibold text-forest">{project.hash}</p>
                   </div>
-                  <div className="bg-mist px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-forest">
+                  <div className="bg-mist px-3 py-2 text-[12px] uppercase tracking-[0.16em] text-forest">
                     Active
                   </div>
                 </div>

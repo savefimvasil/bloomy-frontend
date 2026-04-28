@@ -8,7 +8,7 @@ export default function HomePage() {
           className="relative overflow-hidden shadow-soft"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(16, 63, 27, 0.12), rgba(16, 63, 27, 0.12)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=1800&q=80')",
+              "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=1800&q=80')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -26,7 +26,7 @@ export default function HomePage() {
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Button href="/projects/new">Create new project</Button>
+                  <Button href="/register">Create new project</Button>
                   <Button href="/login" variant="secondary">
                     Login
                   </Button>

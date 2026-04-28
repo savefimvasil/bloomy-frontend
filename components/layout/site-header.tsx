@@ -5,15 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-const navigation = [
-  { href: "/", label: "Home" },
-  { href: "/projects", label: "Projects" },
-];
-
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const navigation = [
+    { href: "/", label: "Home" },
+    ...(isLoggedIn ? [{ href: "/projects", label: "Projects" }] : [])
+  ];
 
   useEffect(() => {
     function syncAuthState() {
@@ -40,30 +40,32 @@ export function SiteHeader() {
 
   return (
     <header className="fixed top-0 z-40 w-full bg-paper/72 backdrop-blur-md">
-      <div className="container flex items-center justify-between py-5">
-        <Link href="/" className="text-sm font-medium uppercase tracking-[0.24em] text-forest">
-          Bloomy Garden
-        </Link>
+      <div className="container">
+        <div className="flex items-center justify-between py-5">
+          <Link href="/" className="text-md font-medium uppercase tracking-[0.24em] text-forest">
+            Bloomy Garden
+          </Link>
 
-        <nav className="flex items-center gap-6 text-[11px] uppercase tracking-[0.18em] text-muted">
-          {navigation.map((item) => (
-            <Link key={item.href} href={item.href} className="transition hover:text-forest">
-              {item.label}
-            </Link>
-          ))}
+          <nav className="flex items-center gap-6 text-sm uppercase tracking-[0.18em] text-muted">
+            {navigation.map((item) => (
+                <Link key={item.href} href={item.href} className="transition hover:text-forest">
+                  {item.label}
+                </Link>
+            ))}
 
-          {!isLoggedIn ? (
-            <Link href="/login" className="transition hover:text-forest">
-              Login
-            </Link>
-          ) : null}
+            {!isLoggedIn ? (
+                <Link href="/login" className="transition hover:text-forest">
+                  Login
+                </Link>
+            ) : null}
 
-          {isLoggedIn && pathname === "/projects" ? (
-            <Button type="button" variant="ghost" className="px-0 py-0 text-[11px] uppercase tracking-[0.18em]" onClick={handleLogout}>
-              Logout
-            </Button>
-          ) : null}
-        </nav>
+            {isLoggedIn && pathname === "/projects" ? (
+                <Button type="button" variant="ghost" className="px-0 py-0 text-[12px] uppercase tracking-[0.18em]" onClick={handleLogout}>
+                  Logout
+                </Button>
+            ) : null}
+          </nav>
+        </div>
       </div>
     </header>
   );
