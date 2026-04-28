@@ -1,19 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f4ec;
-  --foreground: #171717;
+  --background: #f2efdf;
+  --foreground: #23271f;
+  --surface: #f7f3e6;
+  --surface-muted: #ece4d0;
+  --surface-strong: #d8ccb4;
+  --border: rgba(35, 39, 31, 0.14);
+  --brand: #2e4126;
+  --brand-strong: #1f2d1a;
+  --brand-soft: #6d755f;
+  --accent: #b98d53;
+  --accent-soft: #ddd0ba;
+  --ink-muted: rgba(35, 39, 31, 0.68);
+  --danger: #983f36;
+  --danger-soft: #f7e8e4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", "Segoe UI", sans-serif;
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-strong: var(--surface-strong);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", "Consolas", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Inter", "Segoe UI", sans-serif;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
+  font-family: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+::selection {
+  background: rgba(200, 142, 68, 0.28);
+  color: var(--brand-strong);
 }
