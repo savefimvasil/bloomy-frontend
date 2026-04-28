@@ -15,10 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full bg-[#f7f4ec] text-[#171717]">
-        <div className="flex min-h-full flex-col">
+      <body className="min-h-screen bg-canvas text-ink">
+        <div className="flex min-h-screen flex-col">
           <SiteHeader />
-          <main className="mx-auto flex w-full max-w-6xl flex-1 px-6 py-10">{children}</main>
+          <main className="flex-1">{children}</main>
           <SiteFooter />
         </div>
       </body>

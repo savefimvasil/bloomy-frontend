@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 type ProjectsResponse = {
   user: {
@@ -60,104 +61,92 @@ export function ProjectsDashboard() {
   }, []);
 
   return (
-    <section className="space-y-8">
-      <div className="grid overflow-hidden border border-border bg-surface lg:grid-cols-[1.04fr_0.96fr]">
-        <div
-          className="relative min-h-[320px] border-b border-border bg-brand-strong lg:min-h-full lg:border-b-0 lg:border-r"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(24,31,20,0.16), rgba(24,31,20,0.46)), url('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1400&q=80')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className="absolute inset-0 flex flex-col justify-end p-8 text-white md:p-10">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/64">Projects</p>
-            <h1 className="mt-3 text-5xl font-semibold leading-[0.95] tracking-tight md:text-6xl">
-              Your project studio.
-            </h1>
-            <p className="mt-4 max-w-md text-sm leading-6 text-white/76">
-              A flatter workspace for project ownership, with cleaner hierarchy and less decorative UI noise.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between bg-surface px-8 py-8 md:px-10 md:py-10">
-          <div className="flex items-start justify-between gap-6">
+    <section className="bg-canvas">
+      <div className="grid min-h-screen lg:grid-cols-[1fr_1fr] pt-15">
+        <div className="bg-forest text-paper">
+          <div className="container flex min-h-screen flex-col justify-end py-10">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-brand-soft">Account summary</p>
-              <p className="mt-3 text-5xl font-semibold tracking-tight text-brand">
-                {data?.projects.length ?? 0}
-              </p>
-              <p className="mt-1 max-w-xs text-sm leading-6 text-ink-muted">
-                Projects currently linked to the authenticated user.
+              <p className="text-[11px] uppercase tracking-[0.2em] text-paper/68">Projects</p>
+              <h1 className="mt-4 text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl">
+                Fresh project
+                <br />
+                workspace.
+              </h1>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-paper/80 md:text-base">
+                A greener, brighter overview of every project owned by the current client account.
               </p>
             </div>
           </div>
+        </div>
 
-          {data?.user ? (
-            <div className="mt-10 border-t border-border pt-6">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-brand-soft">Logged in as</p>
-              <h2 className="mt-3 text-4xl font-semibold tracking-tight text-brand">
-                {data.user.name} {data.user.surname}
-              </h2>
-              <p className="mt-2 text-sm text-ink-muted">{data.user.email}</p>
+        <div className="bg-paper">
+          <div className="container py-10">
+          {isLoading ? <div className="text-sm text-muted">Loading projects...</div> : null}
+
+          {!isLoading && error ? (
+            <div className="bg-danger/10 px-5 py-5 text-sm text-danger">
+              <p>{error}</p>
+              <div className="mt-4">
+                <Button href="/login">Go to login</Button>
+              </div>
             </div>
           ) : null}
+
+          {!isLoading && data?.user ? (
+            <div className="bg-mist px-6 py-6">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted">Logged in as</p>
+              <h2 className="mt-3 text-4xl font-semibold tracking-tight text-forest">
+                {data.user.name} {data.user.surname}
+              </h2>
+              <p className="mt-2 text-sm text-muted">{data.user.email}</p>
+            </div>
+          ) : null}
+
+          {!isLoading && data && data.projects.length > 0 ? (
+            <div className="mt-8 grid gap-4">
+              {data.projects.map((project) => (
+                <article key={project.id} className="bg-white px-6 py-6 shadow-soft">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted">Project hash</p>
+                      <p className="mt-3 break-all text-2xl font-semibold text-forest">{project.hash}</p>
+                    </div>
+                    <div className="bg-mist px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-forest">
+                      Active
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-3 md:grid-cols-2">
+                    <div className="bg-canvas px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted">Project ID</p>
+                      <p className="mt-2 break-all text-sm text-forest">{project.id}</p>
+                    </div>
+                    <div className="bg-canvas px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted">Created</p>
+                      <p className="mt-2 text-sm text-forest">{new Date(project.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+
+          {!isLoading && data && data.projects.length === 0 ? (
+            <div className="mt-8 bg-mist px-5 py-5 text-sm text-muted">
+              No projects found for this user yet.
+            </div>
+          ) : null}
+
+          {!isLoading && !error ? (
+            <div className="mt-8">
+              <Link href="/projects/new" className="text-sm font-medium text-forest underline underline-offset-4">
+                Create another project owner
+              </Link>
+            </div>
+          ) : null}
+          </div>
         </div>
       </div>
-
-      {isLoading ? (
-        <div className="border border-border bg-surface p-6 text-sm text-ink-muted">
-          Loading projects...
-        </div>
-      ) : null}
-
-      {!isLoading && error ? (
-        <div className="border border-danger/16 bg-danger-soft p-6 text-sm text-danger">
-          <p>{error}</p>
-          <p className="mt-3">
-            <Link href="/login" className="font-medium text-danger underline underline-offset-4">
-              Go to login
-            </Link>
-          </p>
-        </div>
-      ) : null}
-
-      {!isLoading && data ? (
-        <div className="grid gap-px border border-border bg-border md:grid-cols-2">
-          {data.projects.map((project) => (
-            <article key={project.id} className="bg-surface p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-black/45">Project hash</p>
-                  <p className="mt-3 break-all text-xl font-semibold text-brand">{project.hash}</p>
-                </div>
-                <div className="border border-border px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-soft">
-                  Active
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-px border border-border bg-border text-sm sm:grid-cols-2">
-                <div className="bg-background px-4 py-4 text-ink-muted">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-black/45">Project ID</p>
-                  <p className="mt-2 break-all text-sm text-brand">{project.id}</p>
-                </div>
-                <div className="bg-background px-4 py-4 text-ink-muted">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-black/45">Created</p>
-                  <p className="mt-2 text-sm text-brand">{new Date(project.createdAt).toLocaleString()}</p>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
-      {!isLoading && data && data.projects.length === 0 ? (
-        <div className="border border-border bg-surface p-6 text-sm text-ink-muted">
-          No projects found for this user yet.
-        </div>
-      ) : null}
     </section>
   );
 }

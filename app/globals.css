@@ -1,37 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f2efdf;
-  --foreground: #23271f;
-  --surface: #f7f3e6;
-  --surface-muted: #ece4d0;
-  --surface-strong: #d8ccb4;
-  --border: rgba(35, 39, 31, 0.14);
-  --brand: #2e4126;
-  --brand-strong: #1f2d1a;
-  --brand-soft: #6d755f;
-  --accent: #b98d53;
-  --accent-soft: #ddd0ba;
-  --ink-muted: rgba(35, 39, 31, 0.68);
-  --danger: #983f36;
-  --danger-soft: #f7e8e4;
+  --color-canvas: #f3f6ec;
+  --color-paper: #fbfdf7;
+  --color-mist: #e5edd9;
+  --color-forest: #1f4d2c;
+  --color-moss: #2f6b3d;
+  --color-leaf: #4da162;
+  --color-lime: #b7e36f;
+  --color-sage: #7f947c;
+  --color-ink: #1f281d;
+  --color-muted: #60715c;
+  --color-line: rgba(31, 40, 29, 0.1);
+  --color-danger: #a14537;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
-  --color-surface-strong: var(--surface-strong);
-  --color-border: var(--border);
-  --color-brand: var(--brand);
-  --color-brand-strong: var(--brand-strong);
-  --color-brand-soft: var(--brand-soft);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-ink-muted: var(--ink-muted);
-  --color-danger: var(--danger);
-  --color-danger-soft: var(--danger-soft);
+  --color-canvas: var(--color-canvas);
+  --color-paper: var(--color-paper);
+  --color-mist: var(--color-mist);
+  --color-forest: var(--color-forest);
+  --color-moss: var(--color-moss);
+  --color-leaf: var(--color-leaf);
+  --color-lime: var(--color-lime);
+  --color-sage: var(--color-sage);
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-line: var(--color-line);
+  --color-danger: var(--color-danger);
   --font-sans: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", "Consolas", monospace;
 }
@@ -45,13 +41,43 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(183, 227, 111, 0.18), transparent 22%),
+    linear-gradient(180deg, #f9fcf4 0%, var(--color-canvas) 42%, #eef4e5 100%);
+  color: var(--color-ink);
   font-family: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.container {
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1280px) {
+  .container {
+    padding: 0 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
 ::selection {
-  background: rgba(200, 142, 68, 0.28);
-  color: var(--brand-strong);
+  background: rgba(183, 227, 111, 0.45);
+  color: var(--color-forest);
 }

@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SplitHighlight } from "@/components/ui/split-highlight";
 
 type LoginResponse = {
   accessToken: string;
@@ -56,80 +59,61 @@ export function LoginForm() {
   }
 
   return (
-    <section className="grid overflow-hidden border border-border bg-surface lg:grid-cols-[1.04fr_0.96fr]">
-      <div
-        className="relative min-h-[320px] border-b border-border bg-brand-strong lg:min-h-full lg:border-b-0 lg:border-r"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(24,31,20,0.2), rgba(24,31,20,0.48)), url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1400&q=80')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 flex flex-col justify-end p-8 text-white md:p-10">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-white/64">Secure access</p>
-          <h1 className="mt-4 max-w-md text-5xl font-semibold leading-[0.95] tracking-tight md:text-6xl">
-            Login to your projects.
-          </h1>
-          <p className="mt-4 max-w-md text-sm leading-6 text-white/76">
-            A flatter, cleaner client access page that leads directly into the protected project workspace.
-          </p>
-        </div>
-      </div>
+    <SplitHighlight
+      eyebrow="Login"
+      title="Login to your Bloomy account"
+      description="One account for all Bloomy project spaces, with a clearer, greener interface and less visual noise."
+      imageAlt="Botanical login visual"
+      imageUrl="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1400&q=80"
+      aside={
+        <div className="container flex min-h-screen items-center py-12">
+          <div className="mx-auto w-full max-w-md">
+            <div className="flex justify-end text-2xl text-muted">‹</div>
+            <div className="mt-10 text-center">
+              <h2 className="text-4xl font-semibold tracking-tight text-forest">
+                Login to your Bloomy account
+              </h2>
+              <p className="mt-3 text-sm text-muted">
+                One account for all Bloomy products
+              </p>
+            </div>
 
-      <div className="bg-surface p-8 md:p-10">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-brand-soft">Client access</p>
-        <h2 className="mt-3 text-4xl font-semibold tracking-tight text-brand">Access your projects</h2>
+            <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+              <Input
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@bloomy.garden"
+                autoComplete="email"
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Your password"
+                autoComplete="current-password"
+                required
+              />
 
-        <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
-          <label className="space-y-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-brand-soft">Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-brand focus:bg-white"
-              placeholder="anna@bloomy.garden"
-              autoComplete="email"
-              required
-            />
-          </label>
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Signing in..." : "Submit"}
+              </Button>
+            </form>
 
-          <label className="space-y-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-brand-soft">Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-brand focus:bg-white"
-              placeholder="Your password"
-              autoComplete="current-password"
-              required
-            />
-          </label>
+            {error ? <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-brand-soft"
-          >
-            {isSubmitting ? "Signing in..." : "Login"}
-          </button>
-        </form>
-
-        {error ? (
-          <div className="mt-5 border border-danger/16 bg-danger-soft p-4 text-sm text-danger">
-            {error}
+            <p className="mt-8 text-center text-sm text-muted">
+              Need an account?{" "}
+              <Link href="/projects/new" className="font-medium text-forest underline underline-offset-4">
+                Create one here.
+              </Link>
+            </p>
           </div>
-        ) : null}
-
-        <p className="mt-8 text-sm text-ink-muted">
-          Need an account first?{" "}
-          <Link href="/projects/new" className="font-medium text-brand underline decoration-brand/30 underline-offset-4">
-            Create one here
-          </Link>
-        </p>
-      </div>
-    </section>
+        </div>
+      }
+    />
   );
 }
