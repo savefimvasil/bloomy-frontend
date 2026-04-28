@@ -79,7 +79,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@bloomy.garden"
+                placeholder="Your email"
                 autoComplete="email"
                 required
               />

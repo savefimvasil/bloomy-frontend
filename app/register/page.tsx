@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,16 @@ type RegisterResponse = {
   };
 };
 
+type LoginResponse = {
+  accessToken: string;
+  user: {
+    id: string;
+    name: string;
+    surname: string;
+    email: string;
+  };
+};
+
 type FormState = {
   name: string;
   surname: string;
@@ -42,10 +53,10 @@ const initialState: FormState = {
 };
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RegisterResponse | null>(null);
 
   function updateField(field: keyof FormState, value: string) {
     setForm((current) => ({
@@ -57,7 +68,6 @@ export default function RegisterPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setResult(null);
 
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
@@ -87,8 +97,34 @@ export default function RegisterPage() {
         throw new Error(message);
       }
 
-      setResult(payload as RegisterResponse);
+      const loginResponse = await fetch(`${apiBaseUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const loginPayload = (await loginResponse.json()) as LoginResponse | { message?: string };
+
+      if (!loginResponse.ok) {
+        const message =
+          "message" in loginPayload && loginPayload.message
+            ? loginPayload.message
+            : "Registration worked, but automatic login failed.";
+        throw new Error(message);
+      }
+
+      const loginData = loginPayload as LoginResponse;
+      localStorage.setItem("bloomy_access_token", loginData.accessToken);
+      localStorage.setItem("bloomy_user_email", loginData.user.email);
+      window.dispatchEvent(new Event("bloomy-auth-changed"));
       setForm(initialState);
+      router.push("/projects");
+      router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unknown error.");
     } finally {
@@ -112,10 +148,10 @@ export default function RegisterPage() {
 
             <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit}>
               <Input
-                label="Full name"
+                label="Name"
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Yuliia"
+                placeholder="Your name"
                 autoComplete="given-name"
                 required
               />
@@ -123,7 +159,7 @@ export default function RegisterPage() {
                 label="Surname"
                 value={form.surname}
                 onChange={(event) => updateField("surname", event.target.value)}
-                placeholder="Hughes"
+                placeholder="Your surname"
                 autoComplete="family-name"
                 required
               />
@@ -132,7 +168,7 @@ export default function RegisterPage() {
                 type="email"
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                placeholder="yuliia@bloomy.garden"
+                placeholder="Your email"
                 autoComplete="email"
                 required
               />
@@ -163,26 +199,6 @@ export default function RegisterPage() {
             </form>
 
             {error ? <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
-
-            {result ? (
-              <div className="mt-5 bg-paper px-5 py-5 shadow-soft">
-                <p className="text-xs uppercase tracking-[0.18em] text-forest/70">Created successfully</p>
-                <p className="mt-3 text-2xl font-semibold text-forest">
-                  {result.user.name} {result.user.surname}
-                </p>
-                <p className="mt-2 text-sm text-muted">{result.user.email}</p>
-                <div className="mt-5 bg-mist px-4 py-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted">First project hash</p>
-                  <p className="mt-2 break-all text-base font-medium text-forest">{result.project.hash}</p>
-                </div>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Button href="/login">Continue to login</Button>
-                  <Button href="/projects" variant="secondary">
-                    Open projects page
-                  </Button>
-                </div>
-              </div>
-            ) : null}
 
             <p className="mt-8 text-sm text-muted">
               Already have an account?{" "}
