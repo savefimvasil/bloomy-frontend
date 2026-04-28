@@ -49,6 +49,7 @@ export function LoginForm() {
       const data = payload as LoginResponse;
       localStorage.setItem("bloomy_access_token", data.accessToken);
       localStorage.setItem("bloomy_user_email", data.user.email);
+      window.dispatchEvent(new Event("bloomy-auth-changed"));
       router.push("/projects");
       router.refresh();
     } catch (submitError) {
@@ -60,7 +61,6 @@ export function LoginForm() {
 
   return (
     <SplitHighlight
-      eyebrow="Login"
       title="Login to your Bloomy account"
       description="One account for all Bloomy project spaces, with a clearer, greener interface and less visual noise."
       imageAlt="Botanical login visual"
@@ -68,8 +68,7 @@ export function LoginForm() {
       aside={
         <div className="container flex min-h-screen items-center py-12">
           <div className="mx-auto w-full max-w-md">
-            <div className="flex justify-end text-2xl text-muted">‹</div>
-            <div className="mt-10 text-center">
+            <div className="mt-10">
               <h2 className="text-4xl font-semibold tracking-tight text-forest">
                 Login to your Bloomy account
               </h2>
@@ -105,7 +104,7 @@ export function LoginForm() {
 
             {error ? <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
-            <p className="mt-8 text-center text-sm text-muted">
+            <p className="mt-8 text-sm text-muted">
               Need an account?{" "}
               <Link href="/projects/new" className="font-medium text-forest underline underline-offset-4">
                 Create one here.

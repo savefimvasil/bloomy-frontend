@@ -98,7 +98,6 @@ export function NewProjectForm() {
 
   return (
     <SplitHighlight
-      eyebrow="New Signup"
       title="Create a fresh Bloomy account"
       description="One account to own garden projects, move into the dashboard, and grow the planning workflow step by step."
       imageAlt="Botanical signup visual"

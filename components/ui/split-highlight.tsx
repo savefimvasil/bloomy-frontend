@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 type SplitHighlightProps = {
   title: string;
   description: string;
-  eyebrow: string;
   imageUrl: string;
   imageAlt: string;
   aside: ReactNode;
@@ -12,13 +11,12 @@ type SplitHighlightProps = {
 export function SplitHighlight({
   title,
   description,
-  eyebrow,
   imageUrl,
   imageAlt,
   aside,
 }: SplitHighlightProps) {
   return (
-    <section className="grid bg-paper lg:grid-cols-[1.05fr_0.95fr]">
+    <section className="grid bg-paper lg:grid-cols-[1fr_1fr]">
       <div className="bg-forest">
         <div
           className="relative overflow-hidden bg-moss"
@@ -30,7 +28,7 @@ export function SplitHighlight({
           }}
         >
           <div className="container flex min-h-screen flex-col justify-end py-6 text-paper md:py-8">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl p-4 md:p-8 lg:p-10">
                 <h1 className="text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl">
                   {title}
                 </h1>

@@ -2,9 +2,8 @@ import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   return (
-    <div className="bg-canvas">
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-x-0 bottom-0 bg-forest" />
+    <section className="relative overflow-hidden">
+        <div className="absolute inset-x-0 bottom-0 bg-forest pt-15" />
         <div
           className="relative overflow-hidden shadow-soft"
           style={{
@@ -36,6 +35,5 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </div>
   );
 }

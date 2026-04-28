@@ -20,14 +20,14 @@ type ButtonLinkProps = SharedProps & {
 
 function getVariantClasses(variant: ButtonVariant) {
   if (variant === "secondary") {
-    return "bg-mist text-forest hover:bg-lime";
+    return "border border-paper/70 bg-paper/92 !text-forest shadow-soft hover:border-paper hover:bg-paper hover:!text-forest";
   }
 
   if (variant === "ghost") {
-    return "bg-transparent text-forest hover:bg-paper/60";
+    return "bg-transparent !text-forest hover:bg-paper/60 hover:!text-forest";
   }
 
-  return "bg-gradient-to-r from-leaf to-moss text-paper hover:from-moss hover:to-forest";
+  return "bg-gradient-to-r from-leaf to-moss !text-paper hover:from-moss hover:to-forest hover:!text-paper";
 }
 
 function getBaseClasses(variant: ButtonVariant, className?: string) {

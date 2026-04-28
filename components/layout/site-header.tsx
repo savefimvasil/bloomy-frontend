@@ -1,12 +1,43 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { href: "/", label: "Home" },
-  { href: "/login", label: "Login" },
   { href: "/projects", label: "Projects" },
 ];
 
 export function SiteHeader() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    function syncAuthState() {
+      setIsLoggedIn(Boolean(localStorage.getItem("bloomy_access_token")));
+    }
+
+    syncAuthState();
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener("bloomy-auth-changed", syncAuthState);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("bloomy-auth-changed", syncAuthState);
+    };
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("bloomy_access_token");
+    localStorage.removeItem("bloomy_user_email");
+    window.dispatchEvent(new Event("bloomy-auth-changed"));
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <header className="fixed top-0 z-40 w-full bg-paper/72 backdrop-blur-md">
       <div className="container flex items-center justify-between py-5">
@@ -20,6 +51,18 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+
+          {!isLoggedIn ? (
+            <Link href="/login" className="transition hover:text-forest">
+              Login
+            </Link>
+          ) : null}
+
+          {isLoggedIn && pathname === "/projects" ? (
+            <Button type="button" variant="ghost" className="px-0 py-0 text-[11px] uppercase tracking-[0.18em]" onClick={handleLogout}>
+              Logout
+            </Button>
+          ) : null}
         </nav>
       </div>
     </header>
