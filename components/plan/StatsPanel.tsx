@@ -8,6 +8,7 @@ interface Props {
   chessMode: boolean;
   onExport: () => void;
   onExportPdf: () => void;
+  onExportJson: () => void;
 }
 
 function Swatch({ color }: { color: string }) {
@@ -29,7 +30,7 @@ function Row({ label, value, swatch, accent, sub, green }: {
   );
 }
 
-export function StatsPanel({ stats, tooManyTiles, chessMode, onExport, onExportPdf }: Props) {
+export function StatsPanel({ stats, tooManyTiles, chessMode, onExport, onExportPdf, onExportJson }: Props) {
   return (
     <div className="space-y-2">
       <p className="text-xs font-medium uppercase tracking-wider text-muted">Calculations</p>
@@ -63,10 +64,13 @@ export function StatsPanel({ stats, tooManyTiles, chessMode, onExport, onExportP
 
       <div className="mt-2 flex gap-2">
         <button onClick={onExport} className="flex-1 rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20">
-          Export PNG
+          PNG
         </button>
         <button onClick={onExportPdf} className="flex-1 rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20">
-          Export PDF
+          PDF
+        </button>
+        <button onClick={onExportJson} className="flex-1 rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20">
+          JSON
         </button>
       </div>
     </div>

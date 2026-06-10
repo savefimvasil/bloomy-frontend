@@ -13,13 +13,14 @@ interface Props {
   onToggleEditShape: () => void;
   onExport: () => void;
   onExportPdf: () => void;
+  onExportJson: () => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
 }
 
 export function PlannerSidebar({
   state, tooManyTiles, dispatch, editingShape,
-  onToggleEditShape, onExport, onExportPdf,
+  onToggleEditShape, onExport, onExportPdf, onExportJson,
   collapsed, onToggleCollapse,
 }: Props) {
   return (
@@ -40,15 +41,6 @@ export function PlannerSidebar({
         {editingShape ? "Done editing shape" : "Edit shape"}
       </button>
 
-      {editingShape && (
-        <button
-          onClick={() => dispatch({ type: "SNAP_SHAPE_TO_GRID" })}
-          className="w-full rounded border border-line bg-paper px-3 py-2 text-sm font-medium text-ink transition hover:bg-mist"
-          title="Rotate the shape so its closest edge aligns with horizontal or vertical"
-        >
-          ↕ Snap to grid
-        </button>
-      )}
 
       <div className="h-px bg-line" />
 
@@ -69,6 +61,7 @@ export function PlannerSidebar({
         chessMode={state.chessMode}
         onExport={onExport}
         onExportPdf={onExportPdf}
+        onExportJson={onExportJson}
       />
     </CollapsibleSidebar>
   );

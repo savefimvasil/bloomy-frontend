@@ -1,7 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import React from "react";
+import type { PlanType } from "@/lib/plan/types";
 
 class PlannerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -43,10 +46,28 @@ const PlannerPage = dynamic(
   }
 );
 
-export function PlannerEntry() {
+function PlannerEntryInner() {
+  const searchParams = useSearchParams();
+  const planType: PlanType =
+    searchParams.get("type") === "indoor" ? "indoor" : "garden";
+
   return (
     <PlannerErrorBoundary>
-      <PlannerPage />
+      <PlannerPage planType={planType} />
     </PlannerErrorBoundary>
+  );
+}
+
+export function PlannerEntry() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center bg-canvas text-muted">
+          Loading planner…
+        </div>
+      }
+    >
+      <PlannerEntryInner />
+    </Suspense>
   );
 }

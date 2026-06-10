@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef, useEffect, useState } from "react";
+import { useReducer, useRef, useEffect, useState, useMemo } from "react";
 import { plannerReducer, createInitialState } from "@/lib/plan/plannerReducer";
 import { exportPdf } from "@/lib/plan/exportPdf";
 import { TileGrid } from "./TileGrid";
@@ -12,7 +12,8 @@ import { PlannerSidebar } from "./PlannerSidebar";
 import { Toast } from "@/components/ui/Toast";
 import { resolveTileSize, pixelToWorld } from "@/lib/plan/geometry";
 import { TILE_PRESETS } from "@/lib/plan/constants";
-import type { Vertex } from "@/lib/plan/types";
+import type { Vertex, PlanType } from "@/lib/plan/types";
+import { PlanExportSchema, type PlanExport } from "@/lib/plan/schema";
 
 const MIN_SCALE = 20;
 const MAX_SCALE = 600;
@@ -45,8 +46,8 @@ const DRAG_IDLE: DragState = {
   vertexDragOffset: [0, 0],
 };
 
-export function PlannerPage() {
-  const [state, dispatch] = useReducer(plannerReducer, undefined, createInitialState);
+export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
+  const [state, dispatch] = useReducer(plannerReducer, planType, createInitialState);
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const viewTransformRef = useRef(state.viewTransform);
@@ -74,6 +75,19 @@ export function PlannerPage() {
     ro.observe(el);
     setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
     return () => ro.disconnect();
+  }, []);
+
+  // Load an imported plan from localStorage (set by /plan/import)
+  useEffect(() => {
+    const raw = localStorage.getItem("bloomy_plan_import");
+    if (!raw) return;
+    localStorage.removeItem("bloomy_plan_import");
+    try {
+      const plan = PlanExportSchema.parse(JSON.parse(raw));
+      dispatch({ type: "LOAD_PLAN", plan });
+    } catch {
+      // silently ignore malformed imports
+    }
   }, []);
 
   // Escape exits shape editing
@@ -331,6 +345,30 @@ export function PlannerPage() {
 
   function handleExportPdf() { exportPdf(state); }
 
+  function handleExportJson() {
+    const plan: PlanExport = {
+      version: 1,
+      planType: state.planType,
+      exportedAt: new Date().toISOString(),
+      shape: { vertices: state.vertices, offset: state.patioOffset },
+      tiles: {
+        size: state.tileSize,
+        rotation: state.rotation,
+        chessMode: state.chessMode,
+        groutMm: state.groutMm,
+        brickOffset: state.brickOffset,
+      },
+      view: state.viewTransform,
+    };
+    const blob = new Blob([JSON.stringify(plan, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bloomy-plan-${plan.planType}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function handleExport() {
     const svg = svgRef.current;
     if (!svg) return;
@@ -357,6 +395,29 @@ export function PlannerPage() {
 
   const { width: tileW, height: tileH } = resolveTileSize(state.tileSize, TILE_PRESETS);
   const groutM = state.groutMm / 1000;
+
+  // True when the longest edge is already horizontal and at the visual bottom
+  const isSnapped = useMemo(() => {
+    const verts = state.vertices;
+    const n = verts.length;
+    if (n < 2) return true;
+    let longestSq = -1, longestI = 0;
+    for (let i = 0; i < n; i++) {
+      const [ax, ay] = verts[i];
+      const [bx, by] = verts[(i + 1) % n];
+      const sq = (bx - ax) ** 2 + (by - ay) ** 2;
+      if (sq > longestSq) { longestSq = sq; longestI = i; }
+    }
+    const [ax, ay] = verts[longestI];
+    const [bx, by] = verts[(longestI + 1) % n];
+    const len = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
+    if (len < 1e-9) return true;
+    if (Math.abs(by - ay) / len > 0.01) return false; // not horizontal
+    const edgeMidY = (ay + by) / 2;
+    let cy = 0;
+    for (const [, vy] of verts) cy += vy;
+    return edgeMidY > cy / n; // edge is at the bottom
+  }, [state.vertices]);
 
   const cursor = editingShape
     ? drag.mode === "pan" ? "grabbing" : drag.mode === "vertex" ? "move" : "default"
@@ -424,10 +485,20 @@ export function PlannerPage() {
           />
         </svg>
 
-        {/* Shape edit banner — top-center so it doesn't collide with toast */}
+        {/* Shape edit overlay — banner + snap button, top-center */}
         {editingShape && (
-          <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded border border-amber-400/60 bg-amber-50/90 px-3 py-1.5 text-xs font-medium text-amber-800 shadow-sm">
-            Shape edit mode — drag vertices · click + to add · × to remove · Esc to finish
+          <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 flex flex-col items-center gap-2">
+            <div className="rounded border border-amber-400/60 bg-amber-50/90 px-3 py-1.5 text-xs font-medium text-amber-800 shadow-sm whitespace-nowrap">
+              Shape edit mode — drag vertices · click + to add · × to remove · Esc to finish
+            </div>
+            {!isSnapped && (
+              <button
+                onClick={() => dispatch({ type: "SNAP_SHAPE_TO_GRID" })}
+                className="pointer-events-auto rounded border border-forest bg-canvas/95 px-4 py-1.5 text-xs font-semibold text-forest shadow-sm backdrop-blur-sm transition hover:bg-leaf/10 active:scale-95"
+              >
+                ↕ Snap to grid
+              </button>
+            )}
           </div>
         )}
 
@@ -461,6 +532,7 @@ export function PlannerPage() {
         onToggleEditShape={() => { setEditingShape(v => !v); setSelectedTileId(null); }}
         onExport={handleExport}
         onExportPdf={handleExportPdf}
+        onExportJson={handleExportJson}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />

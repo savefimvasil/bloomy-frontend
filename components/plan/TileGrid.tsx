@@ -54,7 +54,7 @@ export function TileGrid({ tiles, viewTransform, chessMode, selectedId }: Props)
       // id used by PlannerCanvas elementsFromPoint hit-test
       const shapeId = `t_${tile.id}`;
 
-      if (!tile.isCut && pts.length === 4) {
+      if (!tile.isCut && pts.length === 4 && tile.id.startsWith("s_")) {
         const x0 = pts[0][0] * scale + x;
         const y0 = pts[0][1] * scale + y;
         const x1 = pts[2][0] * scale + x;

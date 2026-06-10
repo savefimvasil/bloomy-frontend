@@ -1,4 +1,4 @@
-import type { PlannerState, PlannerAction, Vertex } from "./types";
+import type { PlannerState, PlannerAction, PlanType, Vertex } from "./types";
 import { computeTiles, computeStats, resolveTileSize } from "./geometry";
 import { INITIAL_POLYGON, INITIAL_TILE_SIZE, INITIAL_SCALE, TILE_PRESETS } from "./constants";
 
@@ -19,7 +19,7 @@ function recompute(state: PlannerState): PlannerState {
   return { ...state, tiles, stats, tooManyTiles: tooMany };
 }
 
-export function createInitialState(): PlannerState {
+export function createInitialState(planType: PlanType = "garden"): PlannerState {
   const base: PlannerState = {
     vertices: INITIAL_POLYGON,
     tileSize: INITIAL_TILE_SIZE,
@@ -36,6 +36,7 @@ export function createInitialState(): PlannerState {
     chessMode: false,
     groutMm: 2,
     brickOffset: false,
+    planType,
   };
   return recompute(base);
 }
@@ -122,6 +123,24 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
         Math.round(y * 100) / 100,
       ]);
       return recompute({ ...state, vertices: newVertices });
+    }
+    case "SET_PLAN_TYPE":
+      return { ...state, planType: action.planType };
+    case "LOAD_PLAN": {
+      const { plan } = action;
+      const base: PlannerState = {
+        ...createInitialState(plan.planType),
+        planType: plan.planType,
+        vertices: plan.shape.vertices as Vertex[],
+        patioOffset: plan.shape.offset as Vertex,
+        tileSize: plan.tiles.size,
+        rotation: plan.tiles.rotation,
+        chessMode: plan.tiles.chessMode,
+        groutMm: plan.tiles.groutMm,
+        brickOffset: plan.tiles.brickOffset,
+        ...(plan.view ? { viewTransform: plan.view } : {}),
+      };
+      return recompute(base);
     }
     default:
       return state;
