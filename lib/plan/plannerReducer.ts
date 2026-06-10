@@ -84,30 +84,43 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       return recompute({ ...state, brickOffset: action.enabled, rotation: action.enabled ? 0 : state.rotation });
     case "SNAP_SHAPE_TO_GRID": {
       const n = state.vertices.length;
-      // Find the edge whose angle is farthest from a 90° multiple, then compute rotation to align it
-      let minDiff = Infinity;
-      let rotationNeeded = 0;
+
+      // Find the longest edge
+      let longestSq = -1, longestI = 0;
       for (let i = 0; i < n; i++) {
         const [ax, ay] = state.vertices[i];
         const [bx, by] = state.vertices[(i + 1) % n];
-        const edgeDeg = Math.atan2(by - ay, bx - ax) * (180 / Math.PI);
-        const nearest90 = Math.round(edgeDeg / 90) * 90;
-        const diff = Math.abs(edgeDeg - nearest90);
-        if (diff < minDiff) { minDiff = diff; rotationNeeded = nearest90 - edgeDeg; }
+        const sq = (bx - ax) ** 2 + (by - ay) ** 2;
+        if (sq > longestSq) { longestSq = sq; longestI = i; }
       }
-      if (Math.abs(rotationNeeded) < 0.01) return state;
+
+      // Rotation angle that makes the longest edge horizontal
+      const [ax, ay] = state.vertices[longestI];
+      const [bx, by] = state.vertices[(longestI + 1) % n];
+      const rotRad = -Math.atan2(by - ay, bx - ax);
+
+      // Centroid — rotate around it so the shape stays centred
       let cx = 0, cy = 0;
       for (const [x, y] of state.vertices) { cx += x; cy += y; }
       cx /= n; cy /= n;
-      const rad = rotationNeeded * Math.PI / 180;
-      const cosA = Math.cos(rad), sinA = Math.sin(rad);
-      const newVertices: Vertex[] = state.vertices.map(([x, y]) => {
+
+      const cosR = Math.cos(rotRad), sinR = Math.sin(rotRad);
+      let verts: Vertex[] = state.vertices.map(([x, y]) => {
         const dx = x - cx, dy = y - cy;
-        return [
-          Math.round((cx + dx * cosA - dy * sinA) * 100) / 100,
-          Math.round((cy + dx * sinA + dy * cosA) * 100) / 100,
-        ];
+        return [cx + dx * cosR - dy * sinR, cy + dx * sinR + dy * cosR];
       });
+
+      // Ensure longest edge is at the visual bottom (higher Y in SVG = lower on screen)
+      const edgeMidY = (verts[longestI][1] + verts[(longestI + 1) % n][1]) / 2;
+      if (edgeMidY < cy) {
+        // Edge ended up above the centroid — flip 180° around centroid
+        verts = verts.map(([x, y]) => [2 * cx - x, 2 * cy - y]);
+      }
+
+      const newVertices: Vertex[] = verts.map(([x, y]) => [
+        Math.round(x * 100) / 100,
+        Math.round(y * 100) / 100,
+      ]);
       return recompute({ ...state, vertices: newVertices });
     }
     default:
