@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef, useEffect, useState, useCallback } from "react";
+import { useReducer, useRef, useEffect, useState } from "react";
 import { plannerReducer, createInitialState } from "@/lib/plan/plannerReducer";
 import { exportPdf } from "@/lib/plan/exportPdf";
 import { TileGrid } from "./TileGrid";
@@ -56,31 +56,21 @@ export function PlannerPage() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // ---- Zoom (wheel) ----
-  const handleWheel = useCallback(
-    (e: React.WheelEvent<SVGSVGElement>) => {
-      e.preventDefault();
-      const svg = svgRef.current;
-      if (!svg) return;
-
-      const rect = svg.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-
-      const { scale, x, y } = state.viewTransform;
-      const scaleBy = 1.08;
-      const direction = e.deltaY < 0 ? 1 : -1;
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * (direction > 0 ? scaleBy : 1 / scaleBy)));
-
-      const newTransform: ViewTransform = {
+  // ---- Zoom (buttons only) ----
+  function zoomBy(factor: number) {
+    const { scale, x, y } = state.viewTransform;
+    const cx = canvasSize.width / 2;
+    const cy = canvasSize.height / 2;
+    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
+    dispatch({
+      type: "SET_VIEW_TRANSFORM",
+      transform: {
         scale: newScale,
-        x: px - ((px - x) / scale) * newScale,
-        y: py - ((py - y) / scale) * newScale,
-      };
-      dispatch({ type: "SET_VIEW_TRANSFORM", transform: newTransform });
-    },
-    [state.viewTransform]
-  );
+        x: cx - ((cx - x) / scale) * newScale,
+        y: cy - ((cy - y) / scale) * newScale,
+      },
+    });
+  }
 
   // ---- Pan / patio drag / tile click ----
   function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
@@ -252,13 +242,12 @@ export function PlannerPage() {
   return (
     <div className="flex" style={{ height: `${canvasSize.height}px` }}>
       {/* SVG canvas */}
-      <div className="flex-1 overflow-hidden bg-paper">
+      <div className="relative flex-1 overflow-hidden bg-paper">
         <svg
           ref={svgRef}
           width={canvasSize.width}
           height={canvasSize.height}
           style={{ display: "block", cursor }}
-          onWheel={handleWheel}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -272,6 +261,7 @@ export function PlannerPage() {
             height={canvasSize.height}
             tileW={tileW}
             tileH={tileH}
+            rotation={state.rotation}
           />
           {/* Patio tile fills (clipped to polygon) */}
           <TileGrid
@@ -297,6 +287,24 @@ export function PlannerPage() {
             tileH={tileH}
           />
         </svg>
+
+        {/* Zoom controls */}
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1">
+          <button
+            onClick={() => zoomBy(1.3)}
+            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper"
+            title="Zoom in"
+          >
+            +
+          </button>
+          <button
+            onClick={() => zoomBy(1 / 1.3)}
+            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper"
+            title="Zoom out"
+          >
+            −
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}

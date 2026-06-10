@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { TileSize, TileRotation, PlannerAction } from "@/lib/plan/types";
+import { resolveTileSize } from "@/lib/plan/geometry";
+import { TILE_PRESETS } from "@/lib/plan/constants";
 
 interface Props {
   tileSize: TileSize;
@@ -27,11 +29,14 @@ export function TileControls({ tileSize, rotation, chessMode, dispatch }: Props)
   }
 
   const activeKind = tileSize.kind;
+  const { width: tileW, height: tileH } = resolveTileSize(tileSize, TILE_PRESETS);
+  const isSquare = Math.abs(tileW - tileH) < 1e-6;
 
   const btnBase =
     "flex-1 rounded border px-3 py-1.5 text-xs font-medium transition";
   const activeBtn = `${btnBase} border-leaf bg-leaf/15 text-forest`;
   const inactiveBtn = `${btnBase} border-line bg-paper text-muted hover:border-leaf/50`;
+  const disabledBtn = `${btnBase} border-line bg-paper text-muted/40 cursor-not-allowed opacity-40`;
 
   return (
     <div className="space-y-4">
@@ -98,8 +103,10 @@ export function TileControls({ tileSize, rotation, chessMode, dispatch }: Props)
             Straight 0°
           </button>
           <button
-            className={rotation === 45 ? activeBtn : inactiveBtn}
-            onClick={() => dispatch({ type: "SET_ROTATION", rotation: 45 })}
+            className={!isSquare ? disabledBtn : rotation === 45 ? activeBtn : inactiveBtn}
+            disabled={!isSquare}
+            title={!isSquare ? "Diagonal mode requires a square tile" : undefined}
+            onClick={() => isSquare && dispatch({ type: "SET_ROTATION", rotation: 45 })}
           >
             Diagonal 45°
           </button>

@@ -31,6 +31,7 @@ export type Stats = {
   fullWhite: number;
   physCutBlack: number;
   physCutWhite: number;
+  hasSmallPieces: boolean; // any cut edge < 30 mm
 };
 
 export type ViewTransform = {

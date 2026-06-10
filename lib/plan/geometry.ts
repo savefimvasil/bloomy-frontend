@@ -320,6 +320,19 @@ export function computeStats(
 
   const savedTiles = cutPieces - physicalCutTiles;
   const totalTiles = fullTiles + physicalCutTiles;
+
+  let hasSmallPieces = false;
+  outer: for (const tile of tiles) {
+    if (!tile.isCut) continue;
+    for (let i = 0; i < tile.points.length; i++) {
+      const a = tile.points[i];
+      const b = tile.points[(i + 1) % tile.points.length];
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      if (Math.sqrt(dx * dx + dy * dy) < 0.03) { hasSmallPieces = true; break outer; }
+    }
+  }
+
   return {
     areaSqM,
     fullTiles,
@@ -333,6 +346,7 @@ export function computeStats(
     fullWhite,
     physCutBlack,
     physCutWhite,
+    hasSmallPieces,
   };
 }
 

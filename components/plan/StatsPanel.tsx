@@ -94,6 +94,12 @@ export function StatsPanel({ stats, tooManyTiles, chessMode, onExport, onExportP
         </div>
       )}
 
+      {stats.hasSmallPieces && (
+        <p className="rounded border border-red-400/40 bg-red-50 px-3 py-2 text-xs text-red-700">
+          Some cut pieces have edges &lt; 30 mm — difficult to cut accurately.
+        </p>
+      )}
+
       <div className="mt-2 flex gap-2">
         <button
           onClick={onExport}
