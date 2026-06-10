@@ -12,7 +12,8 @@ export function SiteHeader() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navigation = [
-    ...(isLoggedIn ? [{ href: "/projects", label: "Projects" }] : [])
+    { href: "/plan", label: "Tile Planner" },
+    ...(isLoggedIn ? [{ href: "/projects", label: "Projects" }] : []),
   ];
 
   useEffect(() => {
