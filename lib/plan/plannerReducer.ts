@@ -41,6 +41,21 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       );
       return recompute({ ...state, vertices: updated });
     }
+    case "MOVE_VERTEX": {
+      return recompute({
+        ...state,
+        vertices: state.vertices.map((v, i) => (i === action.index ? action.vertex : v)),
+      });
+    }
+    case "INSERT_VERTEX": {
+      const verts = [...state.vertices];
+      verts.splice(action.afterIndex + 1, 0, action.vertex);
+      return recompute({ ...state, vertices: verts });
+    }
+    case "REMOVE_VERTEX": {
+      if (state.vertices.length <= 3) return state;
+      return recompute({ ...state, vertices: state.vertices.filter((_, i) => i !== action.index) });
+    }
     case "SET_TILE_SIZE": {
       const { width, height } = resolveTileSize(action.size, TILE_PRESETS);
       const isSquare = Math.abs(width - height) < 1e-6;

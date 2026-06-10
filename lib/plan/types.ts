@@ -55,6 +55,9 @@ export type PlannerState = {
 
 export type PlannerAction =
   | { type: "SET_VERTEX"; index: number; axis: "x" | "y"; value: number }
+  | { type: "MOVE_VERTEX"; index: number; vertex: Vertex }
+  | { type: "INSERT_VERTEX"; afterIndex: number; vertex: Vertex }
+  | { type: "REMOVE_VERTEX"; index: number }
   | { type: "SET_TILE_SIZE"; size: TileSize }
   | { type: "SET_ROTATION"; rotation: TileRotation }
   | { type: "SET_PATIO_OFFSET"; offset: Vertex }
