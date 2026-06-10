@@ -12,9 +12,10 @@ export type TileResult = {
   points: Vertex[];      // clipped polygon vertices in world-metres
   isCut: boolean;
   cutArea: number;       // m² of the clipped piece
-  physicalTileIdx: number; // which physical tile this piece came from (−1 = full tile)
-  gridCol: number;       // column index in tile grid (used for chess pattern)
-  gridRow: number;       // row index in tile grid
+  physicalTileIdx: number; // which physical tile this piece came from (−1 = uncut)
+  pieceIdx: number;       // position within the physical tile's piece list (−1 = uncut)
+  gridCol: number;
+  gridRow: number;
 };
 
 export type Stats = {

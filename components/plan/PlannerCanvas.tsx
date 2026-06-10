@@ -10,7 +10,7 @@ import { TileTooltip } from "./TileTooltip";
 import { PlannerSidebar } from "./PlannerSidebar";
 import { resolveTileSize } from "@/lib/plan/geometry";
 import { TILE_PRESETS } from "@/lib/plan/constants";
-import type { ViewTransform, Vertex } from "@/lib/plan/types";
+import type { Vertex } from "@/lib/plan/types";
 
 const HEADER_HEIGHT = 60;
 const SIDEBAR_WIDTH = 320;
@@ -56,7 +56,6 @@ export function PlannerPage() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // ---- Zoom (buttons only) ----
   function zoomBy(factor: number) {
     const { scale, x, y } = state.viewTransform;
     const cx = canvasSize.width / 2;
@@ -72,7 +71,6 @@ export function PlannerPage() {
     });
   }
 
-  // ---- Pan / patio drag / tile click ----
   function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
     if (e.button !== 0 && e.button !== 1) return;
     const svg = svgRef.current;
@@ -199,12 +197,10 @@ export function PlannerPage() {
     setDrag(DRAG_IDLE);
   }
 
-  // ---- Export PDF ----
   function handleExportPdf() {
     exportPdf(state);
   }
 
-  // ---- Export PNG ----
   function handleExport() {
     const svg = svgRef.current;
     if (!svg) return;
@@ -254,8 +250,7 @@ export function PlannerPage() {
           onPointerLeave={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          {/* Full tile grid covering the whole canvas */}
-          <TileGridBackground
+            <TileGridBackground
             viewTransform={state.viewTransform}
             width={canvasSize.width}
             height={canvasSize.height}
@@ -263,14 +258,12 @@ export function PlannerPage() {
             tileH={tileH}
             rotation={state.rotation}
           />
-          {/* Patio tile fills (clipped to polygon) */}
           <TileGrid
             tiles={state.tiles}
             viewTransform={state.viewTransform}
             chessMode={state.chessMode}
             selectedId={selectedTileId}
           />
-          {/* Patio polygon + labels */}
           <g data-patio="true">
             <PatioPolygon
               vertices={state.vertices}
@@ -278,7 +271,6 @@ export function PlannerPage() {
               viewTransform={state.viewTransform}
             />
           </g>
-          {/* Tooltip — rendered last so it's always above all other SVG elements */}
           <TileTooltip
             tiles={state.tiles}
             selectedId={selectedTileId}

@@ -1,5 +1,5 @@
 import polygonClipping from "polygon-clipping";
-import type { Vertex, TileResult, TileRotation } from "./types";
+import type { Vertex, TileResult, TileRotation, TileSize, Stats } from "./types";
 import { MAX_TILE_CANDIDATES } from "./constants";
 
 // ---------------------------------------------------------------------------
@@ -40,7 +40,7 @@ export function rotatePlus45(v: Vertex): Vertex {
 // ---------------------------------------------------------------------------
 
 export function resolveTileSize(
-  size: import("./types").TileSize,
+  size: TileSize,
   presets: Record<"600x600" | "900x600", { width: number; height: number }>
 ): { width: number; height: number } {
   if (size.kind === "custom") return { width: size.width, height: size.height };
@@ -48,10 +48,16 @@ export function resolveTileSize(
 }
 
 // ---------------------------------------------------------------------------
-// AABB
+// AABB / snap / centroid helpers (exported for canvas components)
 // ---------------------------------------------------------------------------
 
-function boundingBox(pts: Vertex[]): { minX: number; minY: number; maxX: number; maxY: number } {
+/** Snap a world coordinate down to the nearest tile-grid boundary. */
+export function snapDown(val: number, step: number): number {
+  return Math.floor(val / step) * step;
+}
+
+/** Axis-aligned bounding box of a point set. */
+export function boundingBox(pts: Vertex[]): { minX: number; minY: number; maxX: number; maxY: number } {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const [x, y] of pts) {
     if (x < minX) minX = x;
@@ -62,9 +68,11 @@ function boundingBox(pts: Vertex[]): { minX: number; minY: number; maxX: number;
   return { minX, minY, maxX, maxY };
 }
 
-// Snap a world coordinate down to the nearest tile-grid boundary
-function snapDown(val: number, step: number): number {
-  return Math.floor(val / step) * step;
+/** Centroid (mean position) of a polygon's vertices. */
+export function centroid(pts: [number, number][]): [number, number] {
+  let cx = 0, cy = 0;
+  for (const [px, py] of pts) { cx += px; cy += py; }
+  return [cx / pts.length, cy / pts.length];
 }
 
 // ---------------------------------------------------------------------------
@@ -75,7 +83,6 @@ type Ring = [number, number][];
 
 function vertexesToRing(pts: Vertex[]): Ring {
   const ring: Ring = pts.map(([x, y]) => [x, y]);
-  // Ensure the ring is closed
   const last = ring[ring.length - 1];
   const first = ring[0];
   if (last[0] !== first[0] || last[1] !== first[1]) ring.push([first[0], first[1]]);
@@ -178,6 +185,7 @@ function computeTilesStraight(
         isCut,
         cutArea: clippedArea,
         physicalTileIdx: -1,
+        pieceIdx: -1,
         gridCol: ci,
         gridRow: ri,
       });
@@ -229,14 +237,13 @@ function computeTilesDiagonal(
 
       const isCut = Math.abs(clippedArea - tileArea) > 1e-4;
 
-      // Rotate full tile corners OR clipped polygon back to world space (+45°)
       const worldPoints: Vertex[] = isCut
         ? clipped.map(rotatePlus45)
         : [[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(([px, py]) =>
             rotatePlus45([px, py])
           );
 
-      tiles.push({ id: `d_${ci}_${ri}`, points: worldPoints, isCut, cutArea: clippedArea, physicalTileIdx: -1, gridCol: ci, gridRow: ri });
+      tiles.push({ id: `d_${ci}_${ri}`, points: worldPoints, isCut, cutArea: clippedArea, physicalTileIdx: -1, pieceIdx: -1, gridCol: ci, gridRow: ri });
     }
   }
 
@@ -250,11 +257,13 @@ function computeTilesDiagonal(
 function runFFD(pieces: TileResult[], tileArea: number): void {
   const sorted = [...pieces].sort((a, b) => b.cutArea - a.cutArea);
   const remaining: number[] = [];
+  const counts: number[] = [];
   for (const piece of sorted) {
     let placed = false;
     for (let i = 0; i < remaining.length; i++) {
       if (remaining[i] >= piece.cutArea - 1e-6) {
         piece.physicalTileIdx = i;
+        piece.pieceIdx = counts[i]++;
         remaining[i] -= piece.cutArea;
         placed = true;
         break;
@@ -262,6 +271,8 @@ function runFFD(pieces: TileResult[], tileArea: number): void {
     }
     if (!placed) {
       piece.physicalTileIdx = remaining.length;
+      piece.pieceIdx = 0;
+      counts.push(1);
       remaining.push(tileArea - piece.cutArea);
     }
   }
@@ -272,9 +283,13 @@ function assignPhysicalTiles(tiles: TileResult[], tileW: number, tileH: number, 
   const cutTiles = tiles.filter((t) => t.isCut);
 
   if (chessMode) {
-    // In chess mode, offcuts from a dark-position tile can only reuse with another dark tile
-    runFFD(cutTiles.filter(t => (t.gridCol + t.gridRow) % 2 === 0), tileArea);
-    runFFD(cutTiles.filter(t => (t.gridCol + t.gridRow) % 2 === 1), tileArea);
+    const even = cutTiles.filter(t => (t.gridCol + t.gridRow) % 2 === 0);
+    const odd  = cutTiles.filter(t => (t.gridCol + t.gridRow) % 2 === 1);
+    runFFD(even, tileArea);
+    runFFD(odd, tileArea);
+    // Offset odd indices so physicalTileIdx is globally unique across both parity groups
+    const offset = even.reduce((max, t) => Math.max(max, t.physicalTileIdx), -1) + 1;
+    for (const t of odd) t.physicalTileIdx += offset;
   } else {
     runFFD(cutTiles, tileArea);
   }
@@ -289,7 +304,7 @@ export function computeStats(
   patioVerts: Vertex[],
   offset: Vertex,
   chessMode: boolean = false
-): import("./types").Stats {
+): Stats {
   const offsetVerts: Vertex[] = patioVerts.map(([x, y]) => [x + offset[0], y + offset[1]]);
   const areaSqM = polygonArea(offsetVerts);
   const fullTiles = tiles.filter((t) => !t.isCut).length;
@@ -369,7 +384,7 @@ export function pixelToWorld(px: number, py: number, vt: { x: number; y: number;
 export type EdgeLabel = {
   midPx: [number, number];
   length: number;    // metres
-  angleDeg: number;  // for Konva Text rotation
+  angleDeg: number;  // SVG transform rotate angle
   offsetPx: [number, number]; // perpendicular offset outward from edge midpoint
 };
 

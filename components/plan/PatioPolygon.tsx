@@ -32,14 +32,12 @@ export function PatioPolygon({ vertices, patioOffset, viewTransform }: Props) {
 
   return (
     <g>
-      {/* Patio polygon */}
       <polygon
         points={pointsStr}
         fill={`${COLORS.moss}22`}
         stroke={COLORS.forest}
         strokeWidth={2}
       />
-      {/* Dimension labels */}
       {labels.map((lbl, i) => {
         const [mx, my] = lbl.midPx;
         const [ox, oy] = lbl.offsetPx;

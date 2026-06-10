@@ -2,12 +2,8 @@
 
 import { useMemo } from "react";
 import type { TileResult, ViewTransform } from "@/lib/plan/types";
-
-function centroid(pts: [number, number][]): [number, number] {
-  let cx = 0, cy = 0;
-  for (const [px, py] of pts) { cx += px; cy += py; }
-  return [cx / pts.length, cy / pts.length];
-}
+import { centroid } from "@/lib/plan/geometry";
+import { tileLetter, edgeLengthsMm } from "@/lib/plan/labels";
 
 interface Props {
   tiles: TileResult[];
@@ -28,21 +24,12 @@ export function TileTooltip({ tiles, selectedId, viewTransform, tileW, tileH }: 
     const pxPts: [number, number][] = selTile.points.map(([wx, wy]) => [wx * scale + x, wy * scale + y]);
     const [cx, cy] = centroid(pxPts);
 
-    function edgeLengthsMm(pts: [number, number][]): number[] {
-      return pts.map((p, i) => {
-        const q = pts[(i + 1) % pts.length];
-        const dx = (q[0] - p[0]) * 1000;
-        const dy = (q[1] - p[1]) * 1000;
-        return Math.round(Math.sqrt(dx * dx + dy * dy));
-      });
-    }
-
     let lines: { text: string; bold: boolean }[];
     if (selTile.isCut) {
       const sides = edgeLengthsMm(selTile.points);
       const areaCm2 = (selTile.cutArea * 10000).toFixed(1);
       lines = [
-        { text: `Physical tile #${selTile.physicalTileIdx + 1}`, bold: true },
+        { text: `Tile ${tileLetter(selTile.physicalTileIdx)}, piece ${selTile.pieceIdx + 1}`, bold: true },
         { text: `Sides: ${sides.join(", ")} mm`, bold: false },
         { text: `Area: ${areaCm2} cm²`, bold: false },
       ];

@@ -15,7 +15,7 @@ interface Props {
 
 export function PlannerSidebar({ state, tooManyTiles, dispatch, onExport, onExportPdf }: Props) {
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line bg-canvas px-4 py-5">
+    <aside className="flex h-full w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line bg-canvas px-4 pb-5 pt-20">
       <div>
         <h2 className="text-base font-semibold text-ink">Patio Tile Planner</h2>
         <p className="mt-0.5 text-xs text-muted">Drag the patio on the canvas to reposition it.</p>

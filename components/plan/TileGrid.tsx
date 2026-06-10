@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import type { TileResult, ViewTransform } from "@/lib/plan/types";
+import { centroid } from "@/lib/plan/geometry";
+import { pieceLabel } from "@/lib/plan/labels";
 import { COLORS } from "@/lib/plan/constants";
 
 const PALETTE = [
@@ -12,12 +14,6 @@ const PALETTE = [
 
 function physicalTileColor(idx: number): string {
   return PALETTE[idx % PALETTE.length];
-}
-
-function centroid(pts: [number, number][]): [number, number] {
-  let cx = 0, cy = 0;
-  for (const [px, py] of pts) { cx += px; cy += py; }
-  return [cx / pts.length, cy / pts.length];
 }
 
 interface Props {
@@ -33,9 +29,7 @@ export function TileGrid({ tiles, viewTransform, chessMode, selectedId }: Props)
   const rendered = useMemo(() => {
     function groupKey(tile: TileResult): string | null {
       if (!tile.isCut) return null;
-      return chessMode
-        ? `${tile.physicalTileIdx}_${(tile.gridCol + tile.gridRow) % 2}`
-        : String(tile.physicalTileIdx);
+      return String(tile.physicalTileIdx); // globally unique after assignPhysicalTiles
     }
 
     const selTile = selectedId ? (tiles.find(t => t.id === selectedId) ?? null) : null;
@@ -56,11 +50,10 @@ export function TileGrid({ tiles, viewTransform, chessMode, selectedId }: Props)
       const fill = tile.isCut ? physicalTileColor(tile.physicalTileIdx) : COLORS.leaf;
       const baseOpacity = tile.isCut ? 0.82 : 0.55;
       const opacity = isDimmed ? baseOpacity * 0.28 : baseOpacity;
-      const label = tile.isCut ? String(tile.physicalTileIdx + 1) : null;
+      const label = tile.isCut ? pieceLabel(tile.physicalTileIdx, tile.pieceIdx) : null;
       // id used by PlannerCanvas elementsFromPoint hit-test
       const shapeId = `t_${tile.id}`;
 
-      // Full straight tiles: fast rect
       if (!tile.isCut && pts.length === 4) {
         const x0 = pts[0][0] * scale + x;
         const y0 = pts[0][1] * scale + y;
@@ -106,7 +99,6 @@ export function TileGrid({ tiles, viewTransform, chessMode, selectedId }: Props)
         }
       }
 
-      // Cut tiles and diagonal tiles: polygon
       const pxPts: [number, number][] = pts.map(([wx, wy]) => [wx * scale + x, wy * scale + y]);
       const pointsStr = pxPts.map(([px, py]) => `${px},${py}`).join(" ");
 

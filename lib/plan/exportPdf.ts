@@ -4,6 +4,7 @@ import autoTable from "jspdf-autotable";
 import type { PlannerState, TileResult } from "./types";
 import { resolveTileSize } from "./geometry";
 import { TILE_PRESETS } from "./constants";
+import { tileLetter, pieceLabel, formatSides } from "./labels";
 
 export function exportPdf(state: PlannerState): void {
   const { tileSize, tiles, stats, rotation, chessMode } = state;
@@ -29,10 +30,19 @@ export function exportPdf(state: PlannerState): void {
     return current;
   }
 
-  // ── Title ──────────────────────────────────────────────────────
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("Patio Tile Layout Plan", margin, 18);
+  function heading(text: string, y: number, size: 16 | 12 | 10 = 12): void {
+    doc.setFontSize(size);
+    doc.setFont("helvetica", "bold");
+    doc.text(text, margin, y);
+  }
+
+  function body(text: string, y: number, size: 9 | 10 = 9): void {
+    doc.setFontSize(size);
+    doc.setFont("helvetica", "normal");
+    doc.text(text, margin, y);
+  }
+
+  heading("Patio Tile Layout Plan", 18, 16);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -40,10 +50,7 @@ export function exportPdf(state: PlannerState): void {
   doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, 25);
   doc.setTextColor(0, 0, 0);
 
-  // ── Summary ────────────────────────────────────────────────────
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Summary", margin, 34);
+  heading("Summary", 34);
 
   const tileSizeLabel =
     tileSize.kind === "custom"
@@ -80,130 +87,61 @@ export function exportPdf(state: PlannerState): void {
 
   let y = getY() + 12;
 
-  // ── Full tiles note ────────────────────────────────────────────
   y = checkPageBreak(20, y);
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Full Tiles", margin, y);
+  heading("Full Tiles", y);
   y += 5;
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(
+  body(
     `${stats.fullTiles} tile${stats.fullTiles !== 1 ? "s" : ""} require no cutting — standard ${tileWmm} × ${tileHmm} mm.`,
-    margin,
     y
   );
   y += 12;
 
-  // ── Cut tiles ─────────────────────────────────────────────────
   const cutTiles = tiles.filter((t) => t.isCut);
 
   y = checkPageBreak(20, y);
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Cut Tiles", margin, y);
+  heading("Cut Tiles", y);
   y += 4;
 
   if (cutTiles.length === 0) {
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text("No cut tiles.", margin, y + 4);
+    body("No cut tiles.", y + 4);
   } else {
-    // Group pieces by physical tile.
-    // In chess mode, physicalTileIdx restarts per parity, so key = parity_idx.
-    const groups = new Map<string, TileResult[]>();
+    // physicalTileIdx is globally unique (chess-mode parity-1 indices are offset in geometry)
+    const groups = new Map<number, TileResult[]>();
     for (const tile of cutTiles) {
-      const parity = (tile.gridCol + tile.gridRow) % 2;
-      const key = chessMode
-        ? `${parity}_${tile.physicalTileIdx}`
-        : String(tile.physicalTileIdx);
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(tile);
+      if (!groups.has(tile.physicalTileIdx)) groups.set(tile.physicalTileIdx, []);
+      groups.get(tile.physicalTileIdx)!.push(tile);
     }
+    const sortedKeys = [...groups.keys()].sort((a, b) => a - b);
 
-    const sortedKeys = [...groups.keys()].sort((a, b) => {
-      if (chessMode) {
-        const [pa, ia] = a.split("_").map(Number);
-        const [pb, ib] = b.split("_").map(Number);
-        return pa !== pb ? pa - pb : ia - ib;
-      }
-      return Number(a) - Number(b);
-    });
-
-    let tileNumber = 1;
     for (const key of sortedKeys) {
-      const pieces = groups.get(key)!;
-      const parity = chessMode ? Number(key.split("_")[0]) : -1;
+      const pieces = [...groups.get(key)!].sort((a, b) => a.pieceIdx - b.pieceIdx);
+      const letter = tileLetter(key);
       const chessLabel = chessMode
-        ? `  [${parity === 1 ? "dark position" : "light position"}]`
+        ? `  [${(pieces[0].gridCol + pieces[0].gridRow) % 2 === 1 ? "dark" : "light"}]`
         : "";
 
       y = checkPageBreak(22, y);
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text(
-        `Physical Tile #${tileNumber}${chessLabel}  —  ${pieces.length} piece${pieces.length !== 1 ? "s" : ""}`,
-        margin,
-        y
-      );
-      tileNumber++;
+      heading(`Tile ${letter}${chessLabel}  —  ${pieces.length} piece${pieces.length !== 1 ? "s" : ""}`, y, 10);
       y += 3;
 
-      const rows = pieces.map((piece, i) => {
-        const xs = piece.points.map((p) => p[0]);
-        const ys = piece.points.map((p) => p[1]);
-        const minX = Math.min(...xs);
-        const maxX = Math.max(...xs);
-        const minY = Math.min(...ys);
-        const maxY = Math.max(...ys);
-        // Bounding box of cut piece
-        const bboxW = Math.round((maxX - minX) * 1000);
-        const bboxH = Math.round((maxY - minY) * 1000);
-        // Area
-        const areaCm2 = (piece.cutArea * 10000).toFixed(1);
-        // Centroid: patio position
-        const cx = (xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(2);
-        const cy = (ys.reduce((a, b) => a + b, 0) / ys.length).toFixed(2);
-        // Tile-relative cut vertices: snap tile origin from bounding box
-        const tileOriginX = Math.round(minX / tileW) * tileW;
-        const tileOriginY = Math.round(minY / tileH) * tileH;
-        const relVertices = piece.points
-          .map(([px, py]) => {
-            const rx = Math.round((px - tileOriginX) * 1000);
-            const ry = Math.round((py - tileOriginY) * 1000);
-            return `(${rx},${ry})`;
-          })
-          .join(" → ");
-
-        return [
-          String.fromCharCode(65 + i),
-          `${bboxW} × ${bboxH}`,
-          `${areaCm2} cm²`,
-          `(${cx}, ${cy}) m`,
-          relVertices,
-        ];
-      });
+      const rows = pieces.map(piece => [
+        pieceLabel(piece.physicalTileIdx, piece.pieceIdx),
+        formatSides(piece.points),
+        `${(piece.cutArea * 10000).toFixed(1)} cm²`,
+      ]);
 
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [["Piece", "Bbox (mm)", "Area", "Patio centre", "Cut vertices (mm, tile-relative)"]],
+        head: [["Piece", "Sides", "Area"]],
         body: rows,
         theme: "grid",
-        headStyles: {
-          fillColor: [70, 120, 70],
-          textColor: [255, 255, 255],
-          fontSize: 7.5,
-          fontStyle: "bold",
-        },
-        styles: { fontSize: 7.5, cellPadding: { top: 1.5, right: 2, bottom: 1.5, left: 2 } },
+        headStyles: { fillColor: [70, 120, 70], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+        styles: { fontSize: 8, cellPadding: { top: 2, right: 3, bottom: 2, left: 3 } },
         columnStyles: {
-          0: { cellWidth: 8,  halign: "center" },
-          1: { cellWidth: 22 },
-          2: { cellWidth: 16 },
-          3: { cellWidth: 26 },
-          4: { cellWidth: "auto", overflow: "linebreak" },
+          0: { cellWidth: 14, halign: "center" },
+          1: { cellWidth: "auto" },
+          2: { cellWidth: 22, halign: "right" },
         },
       });
 
