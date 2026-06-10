@@ -29,6 +29,7 @@ interface DragState {
   wasOnPatio: boolean;
   vertexIndex: number;
   pendingEdgeIdx: number;
+  vertexDragOffset: Vertex; // world-space offset from grab point to vertex centre
 }
 
 const DRAG_IDLE: DragState = {
@@ -41,6 +42,7 @@ const DRAG_IDLE: DragState = {
   wasOnPatio: false,
   vertexIndex: -1,
   pendingEdgeIdx: -1,
+  vertexDragOffset: [0, 0],
 };
 
 export function PlannerPage() {
@@ -48,6 +50,8 @@ export function PlannerPage() {
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const viewTransformRef = useRef(state.viewTransform);
+  const activePointers = useRef<Map<number, [number, number]>>(new Map());
+  const pinchRef = useRef<{ dist: number; cx: number; cy: number; origScale: number; origX: number; origY: number } | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [drag, setDrag] = useState<DragState>(DRAG_IDLE);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
@@ -70,31 +74,6 @@ export function PlannerPage() {
     ro.observe(el);
     setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
     return () => ro.disconnect();
-  }, []);
-
-  // Scroll-to-zoom — non-passive so we can preventDefault
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    function onWheel(e: WheelEvent) {
-      e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-      const rect = svg!.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-      const { scale, x, y } = viewTransformRef.current;
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
-      dispatch({
-        type: "SET_VIEW_TRANSFORM",
-        transform: {
-          scale: newScale,
-          x: px - ((px - x) / scale) * newScale,
-          y: py - ((py - y) / scale) * newScale,
-        },
-      });
-    }
-    svg.addEventListener("wheel", onWheel, { passive: false });
-    return () => svg.removeEventListener("wheel", onWheel);
   }, []);
 
   // Escape exits shape editing
@@ -122,6 +101,25 @@ export function PlannerPage() {
   }
 
   function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    activePointers.current.set(e.pointerId, [e.clientX, e.clientY]);
+
+    // Second finger → start pinch zoom, cancel any active drag
+    if (activePointers.current.size === 2) {
+      const pts = Array.from(activePointers.current.values());
+      const dx = pts[1][0] - pts[0][0];
+      const dy = pts[1][1] - pts[0][1];
+      pinchRef.current = {
+        dist: Math.sqrt(dx * dx + dy * dy),
+        cx: (pts[0][0] + pts[1][0]) / 2,
+        cy: (pts[0][1] + pts[1][1]) / 2,
+        origScale: viewTransformRef.current.scale,
+        origX: viewTransformRef.current.x,
+        origY: viewTransformRef.current.y,
+      };
+      setDrag(DRAG_IDLE);
+      return;
+    }
+
     if (e.button !== 0 && e.button !== 1) return;
     const svg = svgRef.current;
     if (!svg) return;
@@ -135,23 +133,54 @@ export function PlannerPage() {
     const onPatio = target.closest("[data-patio]") !== null;
 
     if (editingShape && e.button === 0) {
-      const deleteEl = allEls.find(el => el.id?.startsWith("vd_"));
-      if (deleteEl) {
+      const vt = state.viewTransform;
+      const [ox, oy] = state.patioOffset;
+      const n = state.vertices.length;
+      const w2p = (wx: number, wy: number): [number, number] => [wx * vt.scale + vt.x, wy * vt.scale + vt.y];
+      const dist = (ax: number, ay: number, bx: number, by: number) => Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
+
+      // Delete buttons — smaller threshold, checked first
+      if (n > 3) {
+        for (let i = 0; i < n; i++) {
+          const [vx, vy] = state.vertices[i];
+          const [vpx, vpy] = w2p(vx + ox, vy + oy);
+          if (dist(px, py, vpx + 12, vpy - 12) < 14) {
+            svg.setPointerCapture(e.pointerId);
+            setDrag({ ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "vdelete", vertexIndex: i });
+            return;
+          }
+        }
+      }
+
+      // Vertex handles — find nearest within 24 px
+      let nearestVi = -1, nearestVDist = 24;
+      for (let i = 0; i < n; i++) {
+        const [vx, vy] = state.vertices[i];
+        const [vpx, vpy] = w2p(vx + ox, vy + oy);
+        const d = dist(px, py, vpx, vpy);
+        if (d < nearestVDist) { nearestVDist = d; nearestVi = i; }
+      }
+      if (nearestVi >= 0) {
         svg.setPointerCapture(e.pointerId);
-        setDrag({ ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "vdelete", vertexIndex: parseInt(deleteEl.id.slice(3)) });
+        const [vx, vy] = state.vertices[nearestVi];
+        const grabWorld = pixelToWorld(px, py, vt);
+        setDrag({
+          ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "vertex", vertexIndex: nearestVi,
+          vertexDragOffset: [vx + ox - grabWorld[0], vy + oy - grabWorld[1]],
+        });
         return;
       }
-      const handleEl = allEls.find(el => el.id?.startsWith("vh_"));
-      if (handleEl) {
-        svg.setPointerCapture(e.pointerId);
-        setDrag({ ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "vertex", vertexIndex: parseInt(handleEl.id.slice(3)) });
-        return;
-      }
-      const edgeEl = allEls.find(el => el.id?.startsWith("em_"));
-      if (edgeEl) {
-        svg.setPointerCapture(e.pointerId);
-        setDrag({ ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "edge", pendingEdgeIdx: parseInt(edgeEl.id.slice(3)) });
-        return;
+
+      // Edge midpoints — 20 px threshold
+      for (let i = 0; i < n; i++) {
+        const [ax, ay] = state.vertices[i];
+        const [bx, by] = state.vertices[(i + 1) % n];
+        const [mpx, mpy] = w2p((ax + bx) / 2 + ox, (ay + by) / 2 + oy);
+        if (dist(px, py, mpx, mpy) < 20) {
+          svg.setPointerCapture(e.pointerId);
+          setDrag({ ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "edge", pendingEdgeIdx: i });
+          return;
+        }
       }
     }
 
@@ -181,6 +210,33 @@ export function PlannerPage() {
   }
 
   function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    activePointers.current.set(e.pointerId, [e.clientX, e.clientY]);
+
+    // Pinch zoom
+    if (pinchRef.current && activePointers.current.size >= 2) {
+      const pts = Array.from(activePointers.current.values());
+      const dx = pts[1][0] - pts[0][0];
+      const dy = pts[1][1] - pts[0][1];
+      const newDist = Math.sqrt(dx * dx + dy * dy);
+      const factor = newDist / pinchRef.current.dist;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const cx = pinchRef.current.cx - rect.left;
+      const cy = pinchRef.current.cy - rect.top;
+      const { origScale, origX, origY } = pinchRef.current;
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, origScale * factor));
+      dispatch({
+        type: "SET_VIEW_TRANSFORM",
+        transform: {
+          scale: newScale,
+          x: cx - ((cx - origX) / origScale) * newScale,
+          y: cy - ((cy - origY) / origScale) * newScale,
+        },
+      });
+      return;
+    }
+
     if (!drag.isDragging) return;
     const svg = svgRef.current;
     if (!svg) return;
@@ -191,8 +247,8 @@ export function PlannerPage() {
     if (drag.mode === "vertex") {
       const worldPt = pixelToWorld(px, py, state.viewTransform);
       const SNAP = 0.01; // 1 cm grid snap
-      const snappedX = Math.round((worldPt[0] - state.patioOffset[0]) / SNAP) * SNAP;
-      const snappedY = Math.round((worldPt[1] - state.patioOffset[1]) / SNAP) * SNAP;
+      const snappedX = Math.round((worldPt[0] + drag.vertexDragOffset[0] - state.patioOffset[0]) / SNAP) * SNAP;
+      const snappedY = Math.round((worldPt[1] + drag.vertexDragOffset[1] - state.patioOffset[1]) / SNAP) * SNAP;
       dispatch({ type: "MOVE_VERTEX", index: drag.vertexIndex, vertex: [snappedX, snappedY] });
       return;
     }
@@ -201,7 +257,15 @@ export function PlannerPage() {
       const ddx = px - drag.startPx[0];
       const ddy = py - drag.startPx[1];
       if (ddx * ddx + ddy * ddy > 25) {
-        setDrag({ ...drag, mode: "pan", panStart: { x: e.clientX, y: e.clientY, tx: state.viewTransform.x, ty: state.viewTransform.y }, pendingEdgeIdx: -1, vertexIndex: -1 });
+        if (drag.mode === "vdelete" && drag.vertexIndex >= 0) {
+          // Dragging from a delete badge → promote to vertex drag
+          const grabWorld = pixelToWorld(px, py, state.viewTransform);
+          const [vx, vy] = state.vertices[drag.vertexIndex];
+          const [ox, oy] = state.patioOffset;
+          setDrag({ ...drag, mode: "vertex", vertexDragOffset: [vx + ox - grabWorld[0], vy + oy - grabWorld[1]] });
+        } else {
+          setDrag({ ...drag, mode: "pan", panStart: { x: e.clientX, y: e.clientY, tx: state.viewTransform.x, ty: state.viewTransform.y }, pendingEdgeIdx: -1, vertexIndex: -1 });
+        }
       }
       return;
     }
@@ -229,6 +293,9 @@ export function PlannerPage() {
   }
 
   function handlePointerUp(e: React.PointerEvent<SVGSVGElement>) {
+    activePointers.current.delete(e.pointerId);
+    if (activePointers.current.size < 2) pinchRef.current = null;
+
     if (drag.mode === "tile" && drag.pendingTileId) {
       const tid = drag.pendingTileId;
       setSelectedTileId(prev => (prev === tid ? null : tid));
@@ -256,7 +323,11 @@ export function PlannerPage() {
     setDrag(DRAG_IDLE);
   }
 
-  function handleDragCancel() { setDrag(DRAG_IDLE); }
+  function handleDragCancel() {
+    activePointers.current.clear();
+    pinchRef.current = null;
+    setDrag(DRAG_IDLE);
+  }
 
   function handleExportPdf() { exportPdf(state); }
 
@@ -301,7 +372,7 @@ export function PlannerPage() {
     : null;
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col md:flex-row">
       <div ref={canvasContainerRef} className="relative flex-1 overflow-hidden bg-paper">
         <svg
           ref={svgRef}

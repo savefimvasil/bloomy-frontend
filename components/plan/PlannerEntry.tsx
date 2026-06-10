@@ -19,7 +19,7 @@ class PlannerErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <div className="flex items-start justify-center bg-canvas p-8" style={{ height: "calc(100vh - 60px)" }}>
+        <div className="flex h-full items-start justify-center bg-canvas p-8">
           <div className="max-w-2xl rounded border border-danger/30 bg-paper p-6 text-sm">
             <p className="mb-2 font-semibold text-danger">Planner failed to load</p>
             <pre className="whitespace-pre-wrap text-xs text-muted">{this.state.error}</pre>
@@ -36,10 +36,7 @@ const PlannerPage = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div
-        className="flex items-center justify-center bg-canvas text-muted"
-        style={{ height: "calc(100vh - 60px)" }}
-      >
+      <div className="flex h-full items-center justify-center bg-canvas text-muted">
         Loading planner…
       </div>
     ),

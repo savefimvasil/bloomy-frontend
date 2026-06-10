@@ -40,8 +40,9 @@ export function ShapeEditor({ vertices, patioOffset, viewTransform }: Props) {
   }, [offsetVerts, viewTransform]);
 
   return (
+    // Purely visual — all hit testing is done by PlannerCanvas via distance math
     <g style={{ pointerEvents: "none" }}>
-      {/* Edge midpoint insertion handles — id="em_{i}" */}
+      {/* Edge midpoint insertion handles */}
       {vertices.map((v, i) => {
         const next = vertices[(i + 1) % n];
         const [px, py] = toPx(
@@ -50,19 +51,17 @@ export function ShapeEditor({ vertices, patioOffset, viewTransform }: Props) {
           viewTransform
         );
         return (
-          <g key={`em_${i}`} style={{ pointerEvents: "all" }}>
+          <g key={`em_${i}`}>
             <circle
-              id={`em_${i}`}
-              cx={px} cy={py} r={6}
-              fill="white" fillOpacity={0.85}
+              cx={px} cy={py} r={7}
+              fill="white" fillOpacity={0.9}
               stroke={COLORS.forest} strokeWidth={1.5} strokeDasharray="3,2"
-              style={{ cursor: "crosshair" }}
             />
             <text
               x={px} y={py + 0.5}
               textAnchor="middle" dominantBaseline="middle"
               fontSize={10} fontWeight="700" fill={COLORS.forest}
-              style={{ pointerEvents: "none", userSelect: "none" }}
+              style={{ userSelect: "none" }}
             >+</text>
           </g>
         );
@@ -75,15 +74,14 @@ export function ShapeEditor({ vertices, patioOffset, viewTransform }: Props) {
         const prev = vertices[(i - 1 + n) % n];
         const next = vertices[(i + 1) % n];
         const angle = vertexAngleDeg(prev, v, next);
-        const angleRounded = Math.round(angle * 10) / 10; // one decimal place
+        const angleRounded = Math.round(angle * 10) / 10;
 
-        const isRight    = Math.abs(angle - 90) < 0.15; // exact 90.0
+        const isRight    = Math.abs(angle - 90) < 0.15;
         const isNearRight = !isRight && Math.abs(angle - 90) < 8;
         const labelColor = isRight ? COLORS.leaf : isNearRight ? "#d97706" : COLORS.ink;
 
         // Offset label toward polygon centroid
-        const dx = cpx - px;
-        const dy = cpy - py;
+        const dx = cpx - px, dy = cpy - py;
         const d  = Math.sqrt(dx * dx + dy * dy);
         const dist = 26;
         const lx = d > 1 ? px + (dx / d) * dist : px;
@@ -91,42 +89,35 @@ export function ShapeEditor({ vertices, patioOffset, viewTransform }: Props) {
 
         return (
           <g key={`vh_${i}`}>
-            {/* Angle label — behind the handle */}
+            {/* Angle label */}
             <text
               x={lx} y={ly}
               textAnchor="middle" dominantBaseline="middle"
               fontSize={11} fontWeight="700"
               fill={labelColor}
               stroke="white" strokeWidth={3} paintOrder="stroke"
-              style={{ pointerEvents: "none", userSelect: "none" }}
+              style={{ userSelect: "none" }}
             >
               {angleRounded.toFixed(1)}°
             </text>
 
             {/* Drag handle */}
             <circle
-              id={`vh_${i}`}
-              cx={px} cy={py} r={8}
+              cx={px} cy={py} r={9}
               fill="white"
               stroke={isRight ? COLORS.leaf : COLORS.forest}
               strokeWidth={2.5}
-              style={{ cursor: "move", pointerEvents: "all" }}
             />
 
-            {/* Delete button */}
+            {/* Delete button — offset matches PlannerCanvas hit-test at (+12, -12) */}
             {n > 3 && (
               <>
-                <circle
-                  id={`vd_${i}`}
-                  cx={px + 9} cy={py - 9} r={6}
-                  fill="#dc2626"
-                  style={{ cursor: "pointer", pointerEvents: "all" }}
-                />
+                <circle cx={px + 12} cy={py - 12} r={7} fill="#dc2626" />
                 <text
-                  x={px + 9} y={py - 9}
+                  x={px + 12} y={py - 12}
                   textAnchor="middle" dominantBaseline="middle"
                   fontSize={9} fontWeight="700" fill="white"
-                  style={{ pointerEvents: "none", userSelect: "none" }}
+                  style={{ userSelect: "none" }}
                 >×</text>
               </>
             )}
