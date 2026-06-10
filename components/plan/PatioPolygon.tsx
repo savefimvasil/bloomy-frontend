@@ -26,7 +26,7 @@ export function PatioPolygon({ vertices, patioOffset, viewTransform }: Props) {
   );
 
   const labels = useMemo(
-    () => computeEdgeLabels(offsetVerts, viewTransform, 0.28),
+    () => computeEdgeLabels(offsetVerts, viewTransform, 0.20),
     [offsetVerts, viewTransform]
   );
 
@@ -41,16 +41,22 @@ export function PatioPolygon({ vertices, patioOffset, viewTransform }: Props) {
       {labels.map((lbl, i) => {
         const [mx, my] = lbl.midPx;
         const [ox, oy] = lbl.offsetPx;
+        const tx = mx + ox;
+        const ty = my + oy;
         return (
           <text
             key={i}
-            x={mx + ox}
-            y={my + oy}
-            transform={`rotate(${lbl.angleDeg}, ${mx + ox}, ${my + oy})`}
+            x={tx}
+            y={ty}
+            transform={`rotate(${lbl.angleDeg}, ${tx}, ${ty})`}
             textAnchor="middle"
             dominantBaseline="middle"
-            fontSize={11}
+            fontSize={14}
+            fontWeight="600"
             fill={COLORS.ink}
+            stroke="white"
+            strokeWidth={3}
+            paintOrder="stroke"
             fontFamily="Instrument Sans, sans-serif"
             style={{ userSelect: "none", pointerEvents: "none" }}
           >

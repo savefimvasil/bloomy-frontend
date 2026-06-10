@@ -51,6 +51,8 @@ export type PlannerState = {
   stats: Stats;
   tooManyTiles: boolean;
   chessMode: boolean;
+  groutMm: number;      // 0–6 mm grout gap between tiles
+  brickOffset: boolean; // staggered row offset (running bond)
 };
 
 export type PlannerAction =
@@ -62,4 +64,7 @@ export type PlannerAction =
   | { type: "SET_ROTATION"; rotation: TileRotation }
   | { type: "SET_PATIO_OFFSET"; offset: Vertex }
   | { type: "SET_VIEW_TRANSFORM"; transform: ViewTransform }
-  | { type: "SET_CHESS_MODE"; chessMode: boolean };
+  | { type: "SET_CHESS_MODE"; chessMode: boolean }
+  | { type: "SET_GROUT"; groutMm: number }
+  | { type: "SET_BRICK_OFFSET"; enabled: boolean }
+  | { type: "SNAP_SHAPE_TO_GRID" };

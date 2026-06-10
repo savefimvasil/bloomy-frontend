@@ -9,12 +9,11 @@ import { PatioPolygon } from "./PatioPolygon";
 import { TileTooltip } from "./TileTooltip";
 import { ShapeEditor } from "./ShapeEditor";
 import { PlannerSidebar } from "./PlannerSidebar";
+import { Toast } from "@/components/ui/Toast";
 import { resolveTileSize, pixelToWorld } from "@/lib/plan/geometry";
 import { TILE_PRESETS } from "@/lib/plan/constants";
 import type { Vertex } from "@/lib/plan/types";
 
-const HEADER_HEIGHT = 60;
-const SIDEBAR_WIDTH = 320;
 const MIN_SCALE = 20;
 const MAX_SCALE = 600;
 
@@ -28,8 +27,8 @@ interface DragState {
   panStart: { x: number; y: number; tx: number; ty: number } | null;
   pendingTileId: string | null;
   wasOnPatio: boolean;
-  vertexIndex: number;    // "vertex" or "vdelete" mode
-  pendingEdgeIdx: number; // "edge" mode
+  vertexIndex: number;
+  pendingEdgeIdx: number;
 }
 
 const DRAG_IDLE: DragState = {
@@ -47,22 +46,65 @@ const DRAG_IDLE: DragState = {
 export function PlannerPage() {
   const [state, dispatch] = useReducer(plannerReducer, undefined, createInitialState);
   const svgRef = useRef<SVGSVGElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const viewTransformRef = useRef(state.viewTransform);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [drag, setDrag] = useState<DragState>(DRAG_IDLE);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [editingShape, setEditingShape] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Keep viewTransform in ref for non-React wheel handler
   useEffect(() => {
-    function updateSize() {
-      setCanvasSize({
-        width:  window.innerWidth  - SIDEBAR_WIDTH,
-        height: window.innerHeight - HEADER_HEIGHT,
+    viewTransformRef.current = state.viewTransform;
+  }, [state.viewTransform]);
+
+  // Canvas size via ResizeObserver — automatically responds to sidebar collapse
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setCanvasSize({ width, height });
+    });
+    ro.observe(el);
+    setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
+    return () => ro.disconnect();
+  }, []);
+
+  // Scroll-to-zoom — non-passive so we can preventDefault
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const rect = svg!.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const { scale, x, y } = viewTransformRef.current;
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
+      dispatch({
+        type: "SET_VIEW_TRANSFORM",
+        transform: {
+          scale: newScale,
+          x: px - ((px - x) / scale) * newScale,
+          y: py - ((py - y) / scale) * newScale,
+        },
       });
     }
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    svg.addEventListener("wheel", onWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", onWheel);
   }, []);
+
+  // Escape exits shape editing
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && editingShape) setEditingShape(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [editingShape]);
 
   function zoomBy(factor: number) {
     const { scale, x, y } = state.viewTransform;
@@ -111,7 +153,6 @@ export function PlannerPage() {
         setDrag({ ...DRAG_IDLE, isDragging: true, startPx: [px, py], mode: "edge", pendingEdgeIdx: parseInt(edgeEl.id.slice(3)) });
         return;
       }
-      // Fall through to patio/pan in edit mode
     }
 
     if (!editingShape) {
@@ -149,11 +190,10 @@ export function PlannerPage() {
 
     if (drag.mode === "vertex") {
       const worldPt = pixelToWorld(px, py, state.viewTransform);
-      dispatch({
-        type: "MOVE_VERTEX",
-        index: drag.vertexIndex,
-        vertex: [worldPt[0] - state.patioOffset[0], worldPt[1] - state.patioOffset[1]],
-      });
+      const SNAP = 0.01; // 1 cm grid snap
+      const snappedX = Math.round((worldPt[0] - state.patioOffset[0]) / SNAP) * SNAP;
+      const snappedY = Math.round((worldPt[1] - state.patioOffset[1]) / SNAP) * SNAP;
+      dispatch({ type: "MOVE_VERTEX", index: drag.vertexIndex, vertex: [snappedX, snappedY] });
       return;
     }
 
@@ -161,7 +201,6 @@ export function PlannerPage() {
       const ddx = px - drag.startPx[0];
       const ddy = py - drag.startPx[1];
       if (ddx * ddx + ddy * ddy > 25) {
-        // Moved too far — cancel the pending action, fall into pan
         setDrag({ ...drag, mode: "pan", panStart: { x: e.clientX, y: e.clientY, tx: state.viewTransform.x, ty: state.viewTransform.y }, pendingEdgeIdx: -1, vertexIndex: -1 });
       }
       return;
@@ -181,10 +220,7 @@ export function PlannerPage() {
     }
 
     if (drag.mode === "pan" && drag.panStart) {
-      dispatch({
-        type: "SET_VIEW_TRANSFORM",
-        transform: { ...state.viewTransform, x: drag.panStart.tx + e.clientX - drag.panStart.x, y: drag.panStart.ty + e.clientY - drag.panStart.y },
-      });
+      dispatch({ type: "SET_VIEW_TRANSFORM", transform: { ...state.viewTransform, x: drag.panStart.tx + e.clientX - drag.panStart.x, y: drag.panStart.ty + e.clientY - drag.panStart.y } });
     } else if (drag.mode === "patio") {
       const dx = (px - drag.startPx[0]) / state.viewTransform.scale;
       const dy = (py - drag.startPx[1]) / state.viewTransform.scale;
@@ -220,9 +256,7 @@ export function PlannerPage() {
     setDrag(DRAG_IDLE);
   }
 
-  function handleDragCancel() {
-    setDrag(DRAG_IDLE);
-  }
+  function handleDragCancel() { setDrag(DRAG_IDLE); }
 
   function handleExportPdf() { exportPdf(state); }
 
@@ -251,6 +285,7 @@ export function PlannerPage() {
   }
 
   const { width: tileW, height: tileH } = resolveTileSize(state.tileSize, TILE_PRESETS);
+  const groutM = state.groutMm / 1000;
 
   const cursor = editingShape
     ? drag.mode === "pan" ? "grabbing" : drag.mode === "vertex" ? "move" : "default"
@@ -258,9 +293,16 @@ export function PlannerPage() {
       ? drag.mode === "pan" ? "grabbing" : drag.mode === "tile" ? "pointer" : "move"
       : "grab";
 
+  // Single toast — suppress small-pieces warning in shape edit mode (shape is still changing)
+  const toast = state.tooManyTiles
+    ? { type: "error" as const, message: "Too many tiles — zoom in or use a larger tile size." }
+    : !editingShape && state.stats.hasSmallPieces
+    ? { type: "warning" as const, message: "Some cut pieces are under 30 mm — difficult to cut accurately." }
+    : null;
+
   return (
-    <div className="flex" style={{ height: `${canvasSize.height}px` }}>
-      <div className="relative flex-1 overflow-hidden bg-paper">
+    <div className="flex h-full">
+      <div ref={canvasContainerRef} className="relative flex-1 overflow-hidden bg-paper">
         <svg
           ref={svgRef}
           width={canvasSize.width}
@@ -272,20 +314,22 @@ export function PlannerPage() {
           onPointerLeave={handleDragCancel}
           onPointerCancel={handleDragCancel}
         >
-          <TileGridBackground
-            viewTransform={state.viewTransform}
-            width={canvasSize.width}
-            height={canvasSize.height}
-            tileW={tileW}
-            tileH={tileH}
-            rotation={state.rotation}
-          />
-          <TileGrid
-            tiles={state.tiles}
-            viewTransform={state.viewTransform}
-            chessMode={state.chessMode}
-            selectedId={selectedTileId}
-          />
+          <g style={{ opacity: editingShape ? 0.1 : 1, transition: "opacity 0.15s ease" }}>
+            <TileGridBackground
+              viewTransform={state.viewTransform}
+              width={canvasSize.width}
+              height={canvasSize.height}
+              tileW={tileW + groutM}
+              tileH={tileH + groutM}
+              rotation={state.rotation}
+            />
+            <TileGrid
+              tiles={state.tiles}
+              viewTransform={state.viewTransform}
+              chessMode={state.chessMode}
+              selectedId={selectedTileId}
+            />
+          </g>
           <g data-patio="true">
             <PatioPolygon
               vertices={state.vertices}
@@ -309,15 +353,32 @@ export function PlannerPage() {
           />
         </svg>
 
+        {/* Shape edit banner — top-center so it doesn't collide with toast */}
         {editingShape && (
-          <div className="absolute left-3 top-3 rounded border border-amber-400/60 bg-amber-50/90 px-3 py-1.5 text-xs font-medium text-amber-800 shadow-sm">
-            Shape edit mode — drag vertices, click + to add, × to remove
+          <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded border border-amber-400/60 bg-amber-50/90 px-3 py-1.5 text-xs font-medium text-amber-800 shadow-sm">
+            Shape edit mode — drag vertices · click + to add · × to remove · Esc to finish
           </div>
         )}
 
+        {/* Toast — top-left, single message, highest priority first */}
+        {toast && (
+          <div className="pointer-events-none absolute left-3 top-3">
+            <Toast type={toast.type} message={toast.message} />
+          </div>
+        )}
+
+        {/* Zoom buttons */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-          <button onClick={() => zoomBy(1.3)} className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper" title="Zoom in">+</button>
-          <button onClick={() => zoomBy(1 / 1.3)} className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper" title="Zoom out">−</button>
+          <button
+            onClick={() => zoomBy(1.3)}
+            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper"
+            title="Zoom in"
+          >+</button>
+          <button
+            onClick={() => zoomBy(1 / 1.3)}
+            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper"
+            title="Zoom out"
+          >−</button>
         </div>
       </div>
 
@@ -326,12 +387,11 @@ export function PlannerPage() {
         tooManyTiles={state.tooManyTiles}
         dispatch={dispatch}
         editingShape={editingShape}
-        onToggleEditShape={() => {
-          setEditingShape(v => !v);
-          setSelectedTileId(null);
-        }}
+        onToggleEditShape={() => { setEditingShape(v => !v); setSelectedTileId(null); }}
         onExport={handleExport}
         onExportPdf={handleExportPdf}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />
     </div>
   );
