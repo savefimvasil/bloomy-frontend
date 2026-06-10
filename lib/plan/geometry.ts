@@ -1,5 +1,5 @@
 import polygonClipping from "polygon-clipping";
-import type { Vertex, TileResult, TileRotation, TileSize, Stats } from "./types";
+import type { Vertex, TileResult, TileRotation, TileSize, Stats, TileSizePreset } from "./types";
 import { MAX_TILE_CANDIDATES } from "./constants";
 
 // ---------------------------------------------------------------------------
@@ -41,7 +41,7 @@ export function rotatePlus45(v: Vertex): Vertex {
 
 export function resolveTileSize(
   size: TileSize,
-  presets: Record<"600x600" | "900x600", { width: number; height: number }>
+  presets: Record<TileSizePreset, { width: number; height: number }>
 ): { width: number; height: number } {
   if (size.kind === "custom") return { width: size.width, height: size.height };
   return presets[size.kind];
@@ -132,7 +132,8 @@ export function computeTiles(
   rotation: TileRotation,
   chessMode: boolean,
   grout: number,
-  brickOffset: boolean
+  brickOffset: boolean,
+  herringbone: boolean
 ): { tiles: TileResult[]; tooMany: boolean } {
   if (vertices.length < 3 || tileW <= 0 || tileH <= 0) {
     return { tiles: [], tooMany: false };
@@ -141,7 +142,9 @@ export function computeTiles(
   const offsetVerts: Vertex[] = vertices.map(([x, y]) => [x + offset[0], y + offset[1]]);
 
   let result: { tiles: TileResult[]; tooMany: boolean };
-  if (rotation === 45) {
+  if (herringbone) {
+    result = computeTilesHerringbone(offsetVerts, tileW, tileH, grout);
+  } else if (rotation === 45) {
     result = computeTilesDiagonal(offsetVerts, tileW, tileH, grout);
   } else {
     result = computeTilesStraight(offsetVerts, tileW, tileH, grout, brickOffset);
@@ -240,6 +243,105 @@ function computeTilesDiagonal(
         : ([[x0,y0],[x1,y0],[x1,y1],[x0,y1]] as Vertex[]).map(rotatePlus45);
 
       tiles.push({ id: `d_${ci}_${ri}`, points: worldPoints, isCut, cutArea: clippedArea, physicalTileIdx: -1, pieceIdx: -1, gridCol: ci, gridRow: ri });
+    }
+  }
+
+  return { tiles, tooMany: false };
+}
+
+// ---------------------------------------------------------------------------
+// Herringbone / parquet zigzag
+//
+// Each repeating "arrow" unit contains two planks:
+//   Plank A (horizontal, W×H): (baseX, baseY) → (baseX+W, baseY+H)
+//   Plank B (vertical,   H×W): (baseX+cellW, baseY) → (baseX+cellW+H, baseY+W)
+//
+// Column period = cellW + cellH  (one full arrow width)
+// Row step x    = cellH          (each row shifts right by short side + grout)
+// Row step y    = cellW          (each row shifts down  by long  side + grout)
+//
+// This ensures exactly one grout gap between every adjacent plank face.
+// ---------------------------------------------------------------------------
+
+function computeTilesHerringbone(
+  patioVerts: Vertex[],
+  tileW: number,
+  tileH: number,
+  grout: number
+): { tiles: TileResult[]; tooMany: boolean } {
+  // W = long dimension, H = short dimension
+  const W = Math.max(tileW, tileH);
+  const H = Math.min(tileW, tileH);
+  const g = grout;
+  const cellW = W + g;
+  const cellH = H + g;
+  const colPeriod = cellW + cellH; // width of one H+V arrow unit (with grout between)
+  const rowStepX  = cellH;         // x-shift between rows
+  const rowStepY  = cellW;         // y-shift between rows
+  const tileArea  = W * H;
+
+  const bbox      = boundingBox(patioVerts);
+  const patioRing = vertexesToRing(patioVerts);
+
+  const rowMin = Math.floor(bbox.minY / rowStepY) - 1;
+  const rowMax = Math.ceil((bbox.maxY + rowStepY) / rowStepY) + 1;
+
+  const tiles: TileResult[] = [];
+  let candidateCount = 0;
+
+  for (let row = rowMin; row <= rowMax; row++) {
+    const baseY  = row * rowStepY;
+    const xShift = row * rowStepX;
+
+    const colMin = Math.floor((bbox.minX - xShift) / colPeriod) - 1;
+    const colMax = Math.ceil((bbox.maxX - xShift) / colPeriod) + 1;
+
+    for (let col = colMin; col <= colMax; col++) {
+      if (++candidateCount > MAX_TILE_CANDIDATES) return { tiles: [], tooMany: true };
+
+      const baseX = col * colPeriod + xShift;
+
+      // Plank A — horizontal (W×H)
+      {
+        const ax0 = baseX, ay0 = baseY;
+        const ax1 = baseX + W, ay1 = baseY + H;
+        const ring: Ring = [[ax0,ay0],[ax1,ay0],[ax1,ay1],[ax0,ay1],[ax0,ay0]];
+        const clipped = clipTileAgainstPatio(ring, patioRing);
+        if (clipped) {
+          const area = ringArea(clipped);
+          if (area >= tileArea * MIN_CUT_FRACTION) {
+            const isCut = Math.abs(area - tileArea) > 1e-4;
+            tiles.push({
+              id: `h_${col}_${row}_a`,
+              points: isCut ? clipped : [[ax0,ay0],[ax1,ay0],[ax1,ay1],[ax0,ay1]],
+              isCut, cutArea: area,
+              physicalTileIdx: -1, pieceIdx: -1,
+              gridCol: col * 2, gridRow: row,
+            });
+          }
+        }
+      }
+
+      // Plank B — vertical (H×W, rotated 90°)
+      {
+        const bx0 = baseX + cellW, by0 = baseY;
+        const bx1 = baseX + cellW + H, by1 = baseY + W;
+        const ring: Ring = [[bx0,by0],[bx1,by0],[bx1,by1],[bx0,by1],[bx0,by0]];
+        const clipped = clipTileAgainstPatio(ring, patioRing);
+        if (clipped) {
+          const area = ringArea(clipped);
+          if (area >= tileArea * MIN_CUT_FRACTION) {
+            const isCut = Math.abs(area - tileArea) > 1e-4;
+            tiles.push({
+              id: `h_${col}_${row}_b`,
+              points: isCut ? clipped : [[bx0,by0],[bx1,by0],[bx1,by1],[bx0,by1]],
+              isCut, cutArea: area,
+              physicalTileIdx: -1, pieceIdx: -1,
+              gridCol: col * 2 + 1, gridRow: row,
+            });
+          }
+        }
+      }
     }
   }
 
@@ -403,14 +505,12 @@ export function computeEdgeLabels(
     const midWorld: Vertex = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
     const [midPxX, midPxY] = worldToPixel(midWorld, vt);
 
-    // Use centroid→midpoint direction to ensure labels are always outside the shape
     const outX = midWorld[0] - cent[0];
     const outY = midWorld[1] - cent[1];
     const outLen = Math.sqrt(outX * outX + outY * outY);
     const normX = outLen > 1e-9 ? outX / outLen : 0;
     const normY = outLen > 1e-9 ? outY / outLen : 0;
 
-    // Normalize angle to [-90, 90] so SVG text is never upside-down
     let angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
     if (angleDeg > 90) angleDeg -= 180;
     if (angleDeg < -90) angleDeg += 180;

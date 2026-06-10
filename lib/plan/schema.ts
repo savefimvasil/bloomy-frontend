@@ -7,8 +7,15 @@ import { z } from "zod";
 export const VertexSchema = z.tuple([z.number(), z.number()]);
 
 export const TileSizeSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("300x300") }),
+  z.object({ kind: z.literal("600x300") }),
   z.object({ kind: z.literal("600x600") }),
   z.object({ kind: z.literal("900x600") }),
+  z.object({ kind: z.literal("1200x600") }),
+  z.object({ kind: z.literal("1285x192") }),
+  z.object({ kind: z.literal("1380x193") }),
+  z.object({ kind: z.literal("900x150") }),
+  z.object({ kind: z.literal("2050x205") }),
   z.object({
     kind: z.literal("custom"),
     width: z.number().positive(),
@@ -52,6 +59,10 @@ export const PlanExportSchema = z.object({
     groutMm: z.number().min(0).max(6),
     /** Running-bond (brick) offset — alternating rows shift by half a tile width. */
     brickOffset: z.boolean(),
+    /** Herringbone / parquet zigzag installation pattern. */
+    herringbone: z.boolean().optional().default(false),
+    /** Flooring material type. */
+    flooringMaterial: z.enum(["tile", "laminate"]).optional().default("tile"),
   }),
 
   /** Saved viewport — lets the app restore the same zoom/pan on import. Optional. */

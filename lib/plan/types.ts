@@ -4,10 +4,24 @@ export type Vertex = [number, number]; // [x, y] in metres, world space
 
 export type PlanType = "garden" | "indoor";
 
+export type FlooringMaterial = "tile" | "laminate";
+
+export type InstallationPattern = "straight" | "brick" | "diagonal" | "herringbone";
+
+export type TileSizePreset =
+  | "300x300"
+  | "600x300"
+  | "600x600"
+  | "900x600"
+  | "1200x600"
+  | "1285x192"
+  | "1380x193"
+  | "900x150"
+  | "2050x205";
+
 export type TileSize =
-  | { kind: "600x600" }
-  | { kind: "900x600" }
-  | { kind: "custom"; width: number; height: number }; // metres
+  | { kind: TileSizePreset }
+  | { kind: "custom"; width: number; height: number };
 
 export type TileRotation = 0 | 45;
 
@@ -57,7 +71,9 @@ export type PlannerState = {
   chessMode: boolean;
   groutMm: number;      // 0–6 mm grout gap between tiles
   brickOffset: boolean; // staggered row offset (running bond)
+  herringbone: boolean; // herringbone / parquet zigzag pattern
   planType: PlanType;
+  flooringMaterial: FlooringMaterial;
 };
 
 export type PlannerAction =
@@ -72,6 +88,9 @@ export type PlannerAction =
   | { type: "SET_CHESS_MODE"; chessMode: boolean }
   | { type: "SET_GROUT"; groutMm: number }
   | { type: "SET_BRICK_OFFSET"; enabled: boolean }
+  | { type: "SET_HERRINGBONE"; enabled: boolean }
+  | { type: "SET_INSTALLATION_PATTERN"; pattern: InstallationPattern }
+  | { type: "SET_FLOORING_MATERIAL"; material: FlooringMaterial }
   | { type: "SNAP_SHAPE_TO_GRID" }
   | { type: "SET_PLAN_TYPE"; planType: PlanType }
   | { type: "LOAD_PLAN"; plan: PlanExport };

@@ -357,6 +357,8 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
         chessMode: state.chessMode,
         groutMm: state.groutMm,
         brickOffset: state.brickOffset,
+        herringbone: state.herringbone,
+        flooringMaterial: state.flooringMaterial,
       },
       view: state.viewTransform,
     };
@@ -447,14 +449,16 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
           onPointerCancel={handleDragCancel}
         >
           <g style={{ opacity: editingShape ? 0.1 : 1, transition: "opacity 0.15s ease" }}>
-            <TileGridBackground
-              viewTransform={state.viewTransform}
-              width={canvasSize.width}
-              height={canvasSize.height}
-              tileW={tileW + groutM}
-              tileH={tileH + groutM}
-              rotation={state.rotation}
-            />
+            {!state.herringbone && (
+              <TileGridBackground
+                viewTransform={state.viewTransform}
+                width={canvasSize.width}
+                height={canvasSize.height}
+                tileW={tileW + groutM}
+                tileH={tileH + groutM}
+                rotation={state.rotation}
+              />
+            )}
             <TileGrid
               tiles={state.tiles}
               viewTransform={state.viewTransform}
@@ -526,7 +530,6 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
 
       <PlannerSidebar
         state={state}
-        tooManyTiles={state.tooManyTiles}
         dispatch={dispatch}
         editingShape={editingShape}
         onToggleEditShape={() => { setEditingShape(v => !v); setSelectedTileId(null); }}

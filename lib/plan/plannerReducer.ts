@@ -13,7 +13,8 @@ function recompute(state: PlannerState): PlannerState {
     state.rotation,
     state.chessMode,
     grout,
-    state.brickOffset
+    state.brickOffset,
+    state.herringbone
   );
   const stats = computeStats(tiles, state.vertices, state.patioOffset, state.chessMode);
   return { ...state, tiles, stats, tooManyTiles: tooMany };
@@ -36,7 +37,9 @@ export function createInitialState(planType: PlanType = "garden"): PlannerState 
     chessMode: false,
     groutMm: 2,
     brickOffset: false,
+    herringbone: false,
     planType,
+    flooringMaterial: "tile",
   };
   return recompute(base);
 }
@@ -67,7 +70,9 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
     case "SET_TILE_SIZE": {
       const { width, height } = resolveTileSize(action.size, TILE_PRESETS);
       const isSquare = Math.abs(width - height) < 1e-6;
-      const rotation = isSquare ? state.rotation : 0;
+      // For tiles, diagonal requires square — auto-reset rotation if going non-square
+      const needsReset = state.flooringMaterial === "tile" && !isSquare;
+      const rotation = needsReset ? 0 : state.rotation;
       const brickOffset = rotation === 45 ? false : state.brickOffset;
       return recompute({ ...state, tileSize: action.size, rotation, brickOffset });
     }
@@ -82,11 +87,37 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
     case "SET_GROUT":
       return recompute({ ...state, groutMm: Math.max(0, Math.min(6, action.groutMm)) });
     case "SET_BRICK_OFFSET":
-      return recompute({ ...state, brickOffset: action.enabled, rotation: action.enabled ? 0 : state.rotation });
+      return recompute({ ...state, brickOffset: action.enabled, rotation: action.enabled ? 0 : state.rotation, herringbone: false });
+    case "SET_HERRINGBONE":
+      return recompute({ ...state, herringbone: action.enabled, brickOffset: false, rotation: 0 });
+    case "SET_INSTALLATION_PATTERN": {
+      const { pattern } = action;
+      if (pattern === "diagonal" && state.flooringMaterial === "tile") {
+        const { width, height } = resolveTileSize(state.tileSize, TILE_PRESETS);
+        if (Math.abs(width - height) >= 1e-6) return state; // diagonal requires square for tiles
+      }
+      return recompute({
+        ...state,
+        herringbone: pattern === "herringbone",
+        brickOffset: pattern === "brick",
+        rotation: pattern === "diagonal" ? 45 : 0,
+      });
+    }
+    case "SET_FLOORING_MATERIAL": {
+      const { material } = action;
+      if (material === state.flooringMaterial) return state;
+      // Switch to sensible defaults for the new material
+      const tileSize = material === "laminate"
+        ? { kind: "1285x192" as const }
+        : { kind: "600x600" as const };
+      const chessMode = material === "laminate" ? false : state.chessMode;
+      const herringbone = material === "laminate" ? false : state.herringbone;
+      const brickOffset = material === "laminate" ? true : state.brickOffset; // running bond is standard for laminate
+      return recompute({ ...state, flooringMaterial: material, tileSize, chessMode, herringbone, brickOffset, rotation: 0 });
+    }
     case "SNAP_SHAPE_TO_GRID": {
       const n = state.vertices.length;
 
-      // Find the longest edge
       let longestSq = -1, longestI = 0;
       for (let i = 0; i < n; i++) {
         const [ax, ay] = state.vertices[i];
@@ -95,12 +126,10 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
         if (sq > longestSq) { longestSq = sq; longestI = i; }
       }
 
-      // Rotation angle that makes the longest edge horizontal
       const [ax, ay] = state.vertices[longestI];
       const [bx, by] = state.vertices[(longestI + 1) % n];
       const rotRad = -Math.atan2(by - ay, bx - ax);
 
-      // Centroid — rotate around it so the shape stays centred
       let cx = 0, cy = 0;
       for (const [x, y] of state.vertices) { cx += x; cy += y; }
       cx /= n; cy /= n;
@@ -111,10 +140,8 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
         return [cx + dx * cosR - dy * sinR, cy + dx * sinR + dy * cosR];
       });
 
-      // Ensure longest edge is at the visual bottom (higher Y in SVG = lower on screen)
       const edgeMidY = (verts[longestI][1] + verts[(longestI + 1) % n][1]) / 2;
       if (edgeMidY < cy) {
-        // Edge ended up above the centroid — flip 180° around centroid
         verts = verts.map(([x, y]) => [2 * cx - x, 2 * cy - y]);
       }
 
@@ -138,6 +165,8 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
         chessMode: plan.tiles.chessMode,
         groutMm: plan.tiles.groutMm,
         brickOffset: plan.tiles.brickOffset,
+        herringbone: plan.tiles.herringbone ?? false,
+        flooringMaterial: plan.tiles.flooringMaterial ?? "tile",
         ...(plan.view ? { viewTransform: plan.view } : {}),
       };
       return recompute(base);
