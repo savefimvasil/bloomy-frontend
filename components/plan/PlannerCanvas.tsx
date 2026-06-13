@@ -9,11 +9,14 @@ import { PatioPolygon } from "./PatioPolygon";
 import { TileTooltip } from "./TileTooltip";
 import { ShapeEditor } from "./ShapeEditor";
 import { PlannerSidebar } from "./PlannerSidebar";
+import { ExportModal, type ExportKind } from "./ExportModal";
 import { Toast } from "@/components/ui/Toast";
 import { resolveTileSize, pixelToWorld } from "@/lib/plan/geometry";
 import { TILE_PRESETS } from "@/lib/plan/constants";
 import type { Vertex, PlanType } from "@/lib/plan/types";
 import { PlanExportSchema, type PlanExport } from "@/lib/plan/schema";
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 const MIN_SCALE = 20;
 const MAX_SCALE = 600;
@@ -46,7 +49,15 @@ const DRAG_IDLE: DragState = {
   vertexDragOffset: [0, 0],
 };
 
-export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
+export function PlannerPage({
+  planType = "garden",
+  projectId,
+  initialPlan,
+}: {
+  planType?: PlanType;
+  projectId?: string;
+  initialPlan?: PlanExport;
+}) {
   const [state, dispatch] = useReducer(plannerReducer, planType, createInitialState);
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +69,11 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [editingShape, setEditingShape] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [exportModal, setExportModal] = useState<ExportKind | null>(null);
+  const pendingExport = useRef<(() => void) | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
 
   // Keep viewTransform in ref for non-React wheel handler
   useEffect(() => {
@@ -89,6 +105,57 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
       // silently ignore malformed imports
     }
   }, []);
+
+  // Load plan passed from backend
+  useEffect(() => {
+    if (initialPlan) dispatch({ type: "LOAD_PLAN", plan: initialPlan });
+  }, [initialPlan]);
+
+  // Auto-save when projectId is set and user is logged in
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!projectId) return;
+    const token = localStorage.getItem("bloomy_access_token");
+    if (!token) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveStatus("saving");
+
+    saveTimerRef.current = setTimeout(async () => {
+      const plan: PlanExport = {
+        version: 1,
+        planType: state.planType,
+        exportedAt: new Date().toISOString(),
+        shape: { vertices: state.vertices, offset: state.patioOffset },
+        tiles: {
+          size: state.tileSize,
+          rotation: state.rotation,
+          chessMode: state.chessMode,
+          groutMm: state.groutMm,
+          brickOffset: state.brickOffset,
+          herringbone: state.herringbone,
+          flooringMaterial: state.flooringMaterial,
+        },
+        view: state.viewTransform,
+      };
+      try {
+        await fetch(`${apiBaseUrl}/tile-plans/${projectId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ planData: plan }),
+        });
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("idle");
+      }
+    }, 2000);
+
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   // Escape exits shape editing
   useEffect(() => {
@@ -343,9 +410,21 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
     setDrag(DRAG_IDLE);
   }
 
-  function handleExportPdf() { exportPdf(state); }
+  function openExportModal(kind: ExportKind, doExport: () => void) {
+    const isLoggedIn = typeof window !== "undefined" && !!localStorage.getItem("bloomy_access_token");
+    if (isLoggedIn) {
+      doExport();
+    } else {
+      pendingExport.current = doExport;
+      setExportModal(kind);
+    }
+  }
 
-  function handleExportJson() {
+  function handleExportPdf() {
+    openExportModal("pdf", () => exportPdf(state));
+  }
+
+  function doExportJson() {
     const plan: PlanExport = {
       version: 1,
       planType: state.planType,
@@ -371,7 +450,11 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
     URL.revokeObjectURL(url);
   }
 
-  function handleExport() {
+  function handleExportJson() {
+    openExportModal("json", doExportJson);
+  }
+
+  function doExportPng() {
     const svg = svgRef.current;
     if (!svg) return;
     const svgStr = new XMLSerializer().serializeToString(svg);
@@ -393,6 +476,10 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
       a.click();
     };
     img.src = url;
+  }
+
+  function handleExport() {
+    openExportModal("png", doExportPng);
   }
 
   const { width: tileW, height: tileH } = resolveTileSize(state.tileSize, TILE_PRESETS);
@@ -513,6 +600,13 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
           </div>
         )}
 
+        {/* Auto-save indicator */}
+        {projectId && saveStatus !== "idle" && (
+          <div className="pointer-events-none absolute right-3 top-3 rounded border border-line bg-canvas/90 px-2.5 py-1 text-xs text-muted shadow-sm backdrop-blur-sm">
+            {saveStatus === "saving" ? "Saving…" : "Saved ✓"}
+          </div>
+        )}
+
         {/* Zoom buttons */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-1">
           <button
@@ -538,6 +632,19 @@ export function PlannerPage({ planType = "garden" }: { planType?: PlanType }) {
         onExportJson={handleExportJson}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
+      />
+
+      <ExportModal
+        kind={exportModal}
+        onDownload={() => {
+          pendingExport.current?.();
+          pendingExport.current = null;
+          setExportModal(null);
+        }}
+        onClose={() => {
+          pendingExport.current = null;
+          setExportModal(null);
+        }}
       />
     </div>
   );

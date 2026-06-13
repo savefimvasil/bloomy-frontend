@@ -47,14 +47,14 @@ export default function ImportPlanPage() {
     }
 
     localStorage.setItem("bloomy_plan_import", JSON.stringify(result.data));
-    router.push(`/plan/edit?type=${result.data.planType}`);
+    router.push(`/tile-plan/edit?type=${result.data.planType}`);
   }
 
   return (
     <div className="flex min-h-full flex-col items-center justify-center bg-canvas px-4 py-16">
       <div className="w-full max-w-lg">
         <Link
-          href="/plan"
+          href="/tile-plan"
           className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-forest"
         >
           ← Back

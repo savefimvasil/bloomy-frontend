@@ -50,7 +50,7 @@ export default function LoginPage() {
       localStorage.setItem("bloomy_access_token", data.accessToken);
       localStorage.setItem("bloomy_user_email", data.user.email);
       window.dispatchEvent(new Event("bloomy-auth-changed"));
-      router.push("/projects");
+      router.push("/cabinet");
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unknown error.");

@@ -1,10 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import React from "react";
 import type { PlanType } from "@/lib/plan/types";
+import type { PlanExport } from "@/lib/plan/schema";
+import { PlanExportSchema } from "@/lib/plan/schema";
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 class PlannerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -48,12 +52,57 @@ const PlannerPage = dynamic(
 
 function PlannerEntryInner() {
   const searchParams = useSearchParams();
-  const planType: PlanType =
-    searchParams.get("type") === "indoor" ? "indoor" : "garden";
+  const projectId = searchParams.get("id") ?? undefined;
+  const typeParam = searchParams.get("type");
+
+  const [planType, setPlanType] = useState<PlanType>(
+    typeParam === "indoor" ? "indoor" : "garden"
+  );
+  const [initialPlan, setInitialPlan] = useState<PlanExport | undefined>(undefined);
+  const [loading, setLoading] = useState(!!projectId);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const token = localStorage.getItem("bloomy_access_token");
+    if (!token) { setLoading(false); return; }
+
+    async function loadPlan() {
+      try {
+        const res = await fetch(`${apiBaseUrl}/tile-plans/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          planType?: string | null;
+          planData?: unknown;
+        };
+        if (data.planType === "indoor") setPlanType("indoor");
+        else setPlanType("garden");
+
+        if (data.planData) {
+          const parsed = PlanExportSchema.safeParse(data.planData);
+          if (parsed.success) setInitialPlan(parsed.data);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadPlan();
+  }, [projectId]);
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-canvas text-muted">
+        Loading plan…
+      </div>
+    );
+  }
 
   return (
     <PlannerErrorBoundary>
-      <PlannerPage planType={planType} />
+      <PlannerPage planType={planType} projectId={projectId} initialPlan={initialPlan} />
     </PlannerErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonVariant = "default" | "secondary" | "light" | "outline" | "ghost";
 
 type SharedProps = {
   children: ReactNode;
@@ -10,30 +10,32 @@ type SharedProps = {
 };
 
 type ButtonProps = SharedProps &
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    href?: never;
-  };
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: never };
 
-type ButtonLinkProps = SharedProps & {
-  href: string;
-};
+type ButtonLinkProps = SharedProps & { href: string };
 
 function getVariantClasses(variant: ButtonVariant) {
-  if (variant === "secondary") {
-    return "border border-paper/70 bg-paper/92 !text-forest shadow-soft hover:border-paper hover:bg-paper hover:!text-forest";
+  switch (variant) {
+    case "secondary":
+      // Light bg: white fill + dark border
+      return "bg-paper border border-line text-ink hover:border-muted";
+    case "light":
+      return "bg-paper text-forest hover:bg-paper/90";
+    case "outline":
+      // Dark bg: transparent + white border + white text
+      return "border border-paper/40 text-paper bg-transparent hover:border-paper/70";
+    case "ghost":
+      return "bg-transparent text-muted hover:text-ink";
+    default:
+      // Solid forest green
+      return "bg-forest text-paper hover:bg-moss";
   }
-
-  if (variant === "ghost") {
-    return "bg-transparent !text-forest hover:bg-paper/60 hover:!text-forest";
-  }
-
-  return "bg-gradient-to-r from-leaf to-moss !text-paper hover:from-moss hover:to-forest hover:!text-paper";
 }
 
 function getBaseClasses(variant: ButtonVariant, className?: string) {
   return [
-    "inline-flex items-center justify-center px-6 py-3 text-sm font-medium transition",
-    "disabled:cursor-not-allowed disabled:opacity-55",
+    "inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-sm font-medium transition-colors",
+    "disabled:cursor-not-allowed disabled:opacity-50",
     getVariantClasses(variant),
     className ?? "",
   ]
@@ -42,7 +44,7 @@ function getBaseClasses(variant: ButtonVariant, className?: string) {
 }
 
 export function Button(props: ButtonProps | ButtonLinkProps) {
-  const variant = props.variant ?? "primary";
+  const variant = props.variant ?? "default";
 
   if ("href" in props && typeof props.href === "string") {
     return (

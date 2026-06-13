@@ -13,8 +13,8 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navigation = [
-    { href: "/plan", label: "Tile Planner" },
-    ...(isLoggedIn ? [{ href: "/projects", label: "Projects" }] : []),
+    { href: "/tile-plan", label: "Tile Planner" },
+    ...(isLoggedIn ? [{ href: "/cabinet", label: "Cabinet" }] : []),
   ];
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function SiteHeader() {
                 Login
               </Link>
             )}
-            {isLoggedIn && pathname === "/projects" && (
+            {isLoggedIn && pathname.startsWith("/cabinet") && (
               <Button type="button" variant="ghost" className="px-0 py-0 text-[12px] uppercase tracking-[0.18em]" onClick={handleLogout}>
                 Logout
               </Button>

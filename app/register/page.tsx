@@ -7,124 +7,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 
-type RegisterResponse = {
-  message: string;
-  user: {
-    id: string;
-    name: string;
-    surname: string;
-    email: string;
-    createdAt: string;
-  };
-  project: {
-    id: string;
-    userId: string;
-    hash: string;
-    createdAt: string;
-  };
-};
-
-type LoginResponse = {
-  accessToken: string;
-  user: {
-    id: string;
-    name: string;
-    surname: string;
-    email: string;
-  };
-};
-
-type FormState = {
-  name: string;
-  surname: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-
-const initialState: FormState = {
-  name: "",
-  surname: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-};
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(initialState);
+  const [email, setEmail] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function updateField(field: keyof FormState, value: string) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
+    if (!acceptTerms) {
+      setError("You must accept the terms to continue.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/users/register`, {
+      const response = await fetch(`${apiBaseUrl}/users/register/init`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: form.name,
-          surname: form.surname,
-          email: form.email,
-          password: form.password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), acceptTerms: true }),
       });
 
-      const payload = (await response.json()) as RegisterResponse | { message?: string };
+      const payload = (await response.json()) as { message?: string };
 
       if (!response.ok) {
-        const message = "message" in payload && payload.message ? payload.message : "Request failed.";
-        throw new Error(message);
+        throw new Error(payload.message ?? "Request failed.");
       }
 
-      const loginResponse = await fetch(`${apiBaseUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
-      });
-
-      const loginPayload = (await loginResponse.json()) as LoginResponse | { message?: string };
-
-      if (!loginResponse.ok) {
-        const message =
-          "message" in loginPayload && loginPayload.message
-            ? loginPayload.message
-            : "Registration worked, but automatic login failed.";
-        throw new Error(message);
-      }
-
-      const loginData = loginPayload as LoginResponse;
-      localStorage.setItem("bloomy_access_token", loginData.accessToken);
-      localStorage.setItem("bloomy_user_email", loginData.user.email);
-      window.dispatchEvent(new Event("bloomy-auth-changed"));
-      setForm(initialState);
-      router.push("/projects");
-      router.refresh();
+      router.push(`/register/verify?email=${encodeURIComponent(email.trim())}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unknown error.");
     } finally {
@@ -144,61 +60,49 @@ export default function RegisterPage() {
             <h2 className="text-4xl font-semibold tracking-tight text-forest">
               Create a Bloomy account
             </h2>
-            <p className="mt-3 text-sm text-muted">One account for all Bloomy products</p>
+            <p className="mt-3 text-sm text-muted">
+              Enter your email and we'll send you a verification code.
+            </p>
 
-            <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit}>
-              <Input
-                label="Name"
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Your name"
-                autoComplete="given-name"
-                required
-              />
-              <Input
-                label="Surname"
-                value={form.surname}
-                onChange={(event) => updateField("surname", event.target.value)}
-                placeholder="Your surname"
-                autoComplete="family-name"
-                required
-              />
+            <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
               <Input
                 label="Email"
                 type="email"
-                value={form.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                placeholder="Your email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="your@email.com"
                 autoComplete="email"
                 required
               />
-              <Input
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={(event) => updateField("password", event.target.value)}
-                placeholder="At least 8 characters"
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-              <Input
-                label="Confirm password"
-                type="password"
-                value={form.confirmPassword}
-                onChange={(event) => updateField("confirmPassword", event.target.value)}
-                placeholder="Repeat password"
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
 
-              <Button type="submit" disabled={isSubmitting} className="mt-4 w-full">
-                {isSubmitting ? "Creating..." : "Submit"}
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  required
+                />
+                <span className="text-sm text-muted leading-snug">
+                  I agree to the{" "}
+                  <Link href="/terms" className="font-medium text-forest underline underline-offset-4">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="font-medium text-forest underline underline-offset-4">
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+
+              <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+                {isSubmitting ? "Sending code..." : "Continue"}
               </Button>
             </form>
 
-            {error ? <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
+            {error ? (
+              <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
+            ) : null}
 
             <p className="mt-8 text-sm text-muted">
               Already have an account?{" "}
