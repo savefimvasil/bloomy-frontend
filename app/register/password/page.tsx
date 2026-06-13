@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import {Suspense, useState} from "react";
+import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 
-export default function RegisterPasswordPage() {
+function RegisterPasswordPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
@@ -88,3 +88,11 @@ export default function RegisterPasswordPage() {
     </Suspense>
   );
 }
+
+export default function RegisterPasswordPage() {
+  return (
+      <Suspense>
+        <RegisterPasswordPageComponent />
+      </Suspense>
+  )
+};

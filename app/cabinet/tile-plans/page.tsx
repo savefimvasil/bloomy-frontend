@@ -268,7 +268,7 @@ export default function TilePlansPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-end gap-6 pb-4">
+      <div className="flex items-end gap-6 pb-4 pt-[60px]">
         <h1 className="text-5xl font-semibold leading-[0.9] tracking-tight text-ink">
           TILE PLANS
         </h1>

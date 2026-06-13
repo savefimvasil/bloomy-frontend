@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import {Suspense, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
-export default function RegisterVerifyPage() {
+function RegisterVerifyPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
@@ -138,4 +138,12 @@ export default function RegisterVerifyPage() {
       }
     />
   );
+}
+
+export default function RegisterVerifyPage() {
+  return (
+      <Suspense>
+        <RegisterVerifyPageComponent />
+      </Suspense>
+  )
 }

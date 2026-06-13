@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import {Suspense, useEffect, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
@@ -13,7 +13,7 @@ type LoginResponse = {
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
-export default function RegisterProfilePage() {
+function RegisterProfilePageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
@@ -161,3 +161,11 @@ export default function RegisterProfilePage() {
     />
   );
 }
+
+export default function RegisterProfilePage() {
+  return (
+      <Suspense>
+        <RegisterProfilePageComponent />
+      </Suspense>
+  )
+};
