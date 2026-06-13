@@ -522,7 +522,7 @@ export function PlannerPage({
     : null;
 
   return (
-    <div className="flex h-full flex-col md:flex-row">
+    <div className="flex h-full flex-col md:flex-row pt-[60px]">
       <div ref={canvasContainerRef} className="relative flex-1 overflow-hidden bg-paper">
         <svg
           ref={svgRef}

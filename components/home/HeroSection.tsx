@@ -47,7 +47,6 @@ export function HeroSection({
   backgroundGradient,
   label,
   badge,
-  tagline,
   scrollHint = false,
   watermark = false,
   fullHeight = true,
@@ -72,8 +71,7 @@ export function HeroSection({
 
       <div className={`container relative flex ${minH} flex-col py-24 text-paper`}>
 
-        {/* Top row — label/badge left, tagline right */}
-        {(label || badge || tagline) && (
+        {(label || badge) && (
           <div className="flex items-start justify-between">
             <div>
               {badge && (
@@ -85,9 +83,6 @@ export function HeroSection({
                 <p className="text-[11px] uppercase tracking-[0.28em] text-paper/50">{label}</p>
               )}
             </div>
-            {tagline && (
-              <p className="text-[11px] uppercase tracking-[0.22em] text-lime">{tagline}</p>
-            )}
           </div>
         )}
 

@@ -38,7 +38,7 @@ export function TilePlannerSpotlight() {
             </div>
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-end">
             <TilePlannerMockup />
           </div>
         </div>

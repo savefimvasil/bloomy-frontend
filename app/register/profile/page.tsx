@@ -78,7 +78,7 @@ export default function RegisterProfilePage() {
         window.dispatchEvent(new Event("bloomy-auth-changed"));
       }
 
-      router.push("/projects");
+      router.push("/cabinet");
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unknown error.");

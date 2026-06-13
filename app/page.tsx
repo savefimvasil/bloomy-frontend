@@ -10,7 +10,6 @@ export default function HomePage() {
     <div className="overflow-x-hidden">
       <HeroSection
         backgroundGradient="linear-gradient(160deg, #152e1a 0%, #1f4d2c 45%, #2a6338 100%)"
-        tagline="For designers & contractors"
         headline={
           <>
             EARLY LIGHT.<br />

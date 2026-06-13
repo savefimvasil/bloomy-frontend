@@ -17,7 +17,6 @@ Next.js App Router. Each subfolder is a route segment.
 | `/cabinet`          | Redirects to `/cabinet/tile-plans`                              |
 | `/cabinet/tile-plans` | List, open, create, delete tile plans (auth required)         |
 | `/cabinet/projects` | Future: full design projects (placeholder)                      |
-| `/projects`         | Legacy — kept for backward compat, may be removed               |
 
 ## Auth pattern
 
