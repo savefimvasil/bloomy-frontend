@@ -17,7 +17,6 @@ function candidate(over: Partial<Candidate> = {}): Candidate {
     offset: [0, 0],
     totalTiles: 0,
     cutPieces: 0,
-    uncoveredArea: 0,
     avgCoverage: 0,
     ...over,
   };
@@ -66,12 +65,6 @@ describe("findOptimalOffset", () => {
     expect(best.cutPieces).toBeLessThanOrEqual(baseline!.cutPieces);
   });
 
-  test("minWhiteArea result has uncoveredArea <= baseline uncoveredArea", () => {
-    const state = withSkewRect({ groutMm: 0 });
-    const { best, baseline } = findOptimalOffset(state, "minWhiteArea");
-    expect(best.uncoveredArea).toBeLessThanOrEqual(baseline!.uncoveredArea + 1e-9);
-  });
-
   test("maxAvgArea result has avgCoverage >= baseline avgCoverage", () => {
     const state = withSkewRect();
     const { best, baseline } = findOptimalOffset(state, "maxAvgArea");
@@ -102,14 +95,6 @@ describe("findOptimalOffset", () => {
     const fine = findOptimalOffset(state, "minTiles", 12);
     // finer search should be at least as good
     expect(fine.best.totalTiles).toBeLessThanOrEqual(coarse.best.totalTiles);
-  });
-
-  test("uncoveredArea is bounded by polygon area", () => {
-    const state = withSkewRect();
-    const { best } = findOptimalOffset(state, "minWhiteArea");
-    const polygonArea = 3.45 * 2.13;
-    expect(best.uncoveredArea).toBeGreaterThanOrEqual(0);
-    expect(best.uncoveredArea).toBeLessThan(polygonArea);
   });
 });
 
@@ -152,34 +137,6 @@ describe("isBetter", () => {
           candidate({ cutPieces: 4, totalTiles: 18 }),
           candidate({ cutPieces: 4, totalTiles: 19 }),
           "minCuts",
-        ),
-      ).toBe(true);
-    });
-  });
-
-  describe("minWhiteArea", () => {
-    test("prefers smaller uncovered area", () => {
-      expect(
-        isBetter(candidate({ uncoveredArea: 0.04 }), candidate({ uncoveredArea: 0.12 }), "minWhiteArea"),
-      ).toBe(true);
-      expect(
-        isBetter(candidate({ uncoveredArea: 0.20 }), candidate({ uncoveredArea: 0.05 }), "minWhiteArea"),
-      ).toBe(false);
-    });
-
-    test("tiebreaks on cuts then tiles", () => {
-      expect(
-        isBetter(
-          candidate({ uncoveredArea: 0.05, cutPieces: 5 }),
-          candidate({ uncoveredArea: 0.05, cutPieces: 6 }),
-          "minWhiteArea",
-        ),
-      ).toBe(true);
-      expect(
-        isBetter(
-          candidate({ uncoveredArea: 0.05, cutPieces: 5, totalTiles: 19 }),
-          candidate({ uncoveredArea: 0.05, cutPieces: 5, totalTiles: 20 }),
-          "minWhiteArea",
         ),
       ).toBe(true);
     });

@@ -70,7 +70,6 @@ export type Candidate = {
   offset: Vertex;
   totalTiles: number;
   cutPieces: number;
-  uncoveredArea: number;   // m² — slivers dropped because they fail the 30 mm edge rule
   avgCoverage: number;     // mean cutArea / tileArea across all tiles (0..1)
 };
 
@@ -92,7 +91,6 @@ function evaluate(state: PlannerState, dx: number, dy: number): Candidate | null
     offset,
     totalTiles: stats.totalTiles,
     cutPieces: stats.cutPieces,
-    uncoveredArea: stats.uncoveredArea,
     avgCoverage: tiles.reduce((s, t) => s + t.cutArea, 0) / tiles.length / tileArea,
   };
 }
@@ -110,7 +108,6 @@ export function isBetter(a: Candidate, b: Candidate, criterion: OptimizationCrit
       if (a.cutPieces !== b.cutPieces) return a.cutPieces < b.cutPieces;
       return a.totalTiles < b.totalTiles;
     case "minWhiteArea":
-      if (Math.abs(a.uncoveredArea - b.uncoveredArea) > 1e-9) return a.uncoveredArea < b.uncoveredArea;
       if (a.cutPieces !== b.cutPieces) return a.cutPieces < b.cutPieces;
       return a.totalTiles < b.totalTiles;
     case "maxAvgArea":
@@ -162,7 +159,7 @@ export function findOptimalOffset(
     return {
       offset: state.patioOffset,
       best: baseline ?? {
-        offset: state.patioOffset, totalTiles: 0, cutPieces: 0, uncoveredArea: 0, avgCoverage: 0,
+        offset: state.patioOffset, totalTiles: 0, cutPieces: 0, avgCoverage: 0,
       },
       baseline,
     };
