@@ -16,17 +16,14 @@ function CabinetIcon() {
 }
 
 export function SiteHeader() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() =>
-    typeof window !== "undefined"
-      ? Boolean(localStorage.getItem("bloomy_access_token"))
-      : false
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     function sync() {
       setIsLoggedIn(Boolean(localStorage.getItem("bloomy_access_token")));
     }
+    void Promise.resolve().then(sync);
     window.addEventListener("storage", sync);
     window.addEventListener("bloomy-auth-changed", sync);
     return () => {
