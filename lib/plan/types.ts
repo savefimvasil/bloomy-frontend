@@ -38,6 +38,8 @@ export type TileResult = {
 
 export type Stats = {
   areaSqM: number;
+  coveredArea: number;      // sum of rendered tile faces (m²), grout excluded
+  uncoveredArea: number;    // areaSqM − coveredArea − grout ≈ "white zones"
   fullTiles: number;
   cutPieces: number;        // number of cut pieces on the layout
   physicalCutTiles: number; // physical tiles needed for cuts after reuse
@@ -50,7 +52,6 @@ export type Stats = {
   fullWhite: number;
   physCutBlack: number;
   physCutWhite: number;
-  hasSmallPieces: boolean; // any cut edge < 30 mm
 };
 
 export type ViewTransform = {

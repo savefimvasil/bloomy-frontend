@@ -7,6 +7,7 @@ import { resolveTileSize } from "@/lib/plan/geometry";
 import { SizeSelector } from "./SizeSelector";
 import { PatternSelector } from "./PatternSelector";
 import { GroutControl } from "./GroutControl";
+import { OptimizationButtons } from "./OptimizationButtons";
 import { StatsPanel } from "@/components/plan/StatsPanel";
 import { ToggleButton } from "@/components/ui/toggle-button";
 
@@ -72,6 +73,10 @@ export function OutdoorSidebarContent({ state, dispatch, onExport, onExportPdf, 
       )}
 
       <GroutControl groutMm={state.groutMm} dispatch={dispatch} />
+
+      <div className="h-px bg-line" />
+
+      <OptimizationButtons state={state} dispatch={dispatch} />
 
       <div className="h-px bg-line" />
 
