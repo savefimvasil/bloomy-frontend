@@ -1,6 +1,7 @@
 "use client";
 
 import type { Stats } from "@/lib/plan/types";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   stats: Stats;
@@ -63,15 +64,30 @@ export function StatsPanel({ stats, tooManyTiles, chessMode, onExport, onExportP
       )}
 
       <div className="mt-2 flex gap-2">
-        <button onClick={onExport} className="flex-1 rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onExport}
+          className="flex-1 border-leaf bg-leaf/10 text-forest hover:bg-leaf/20"
+        >
           PNG
-        </button>
-        <button onClick={onExportPdf} className="flex-1 rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20">
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onExportPdf}
+          className="flex-1 border-leaf bg-leaf/10 text-forest hover:bg-leaf/20"
+        >
           PDF
-        </button>
-        <button onClick={onExportJson} className="flex-1 rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20">
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onExportJson}
+          className="flex-1 border-leaf bg-leaf/10 text-forest hover:bg-leaf/20"
+        >
           JSON
-        </button>
+        </Button>
       </div>
     </div>
   );

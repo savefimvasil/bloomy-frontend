@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { clearAuth, useAuthEmail } from "@/lib/auth";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -56,14 +57,10 @@ const CABINET_NAV = [
 export default function CabinetLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [email] = useState(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("bloomy_user_email") ?? "") : ""
-  );
+  const email = useAuthEmail() ?? "";
 
   function handleLogout() {
-    localStorage.removeItem("bloomy_access_token");
-    localStorage.removeItem("bloomy_user_email");
-    window.dispatchEvent(new Event("bloomy-auth-changed"));
+    clearAuth();
     router.push("/login");
     router.refresh();
   }
@@ -117,13 +114,15 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
               <span className="truncate text-hint text-muted">{email}</span>
             </div>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleLogout}
-            className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-body text-muted transition hover:bg-danger/5 hover:text-danger"
+            className="mt-1 w-full justify-start gap-3 text-body text-muted hover:bg-danger/5 hover:text-danger"
           >
             <LogoutIcon />
             Log out
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -149,13 +148,15 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
               </Link>
             );
           })}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleLogout}
-            className="ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-hint text-muted transition hover:text-danger"
+            className="ml-auto gap-1.5 text-hint text-muted hover:text-danger"
           >
             <LogoutIcon />
             Log out
-          </button>
+          </Button>
         </div>
 
         <div className="p-6 md:p-8">{children}</div>

@@ -6,8 +6,7 @@ import {Suspense, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+import { apiFetch } from "@/lib/api";
 
 function RegisterVerifyPageComponent() {
   const router = useRouter();
@@ -26,10 +25,9 @@ function RegisterVerifyPageComponent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/users/register/verify`, {
+      const response = await apiFetch("/users/register/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: code.trim() }),
+        body: { email, code: code.trim() },
       });
 
       const payload = (await response.json()) as { verified?: boolean; message?: string };
@@ -52,10 +50,9 @@ function RegisterVerifyPageComponent() {
     setIsResending(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/users/register/init`, {
+      const response = await apiFetch("/users/register/init", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, acceptTerms: true }),
+        body: { email, acceptTerms: true },
       });
 
       const payload = (await response.json()) as { message?: string };
@@ -117,14 +114,16 @@ function RegisterVerifyPageComponent() {
 
             <p className="mt-6 text-sm text-muted">
               Didn&apos;t receive it?{" "}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleResend}
                 disabled={isResending}
-                className="font-medium text-forest underline underline-offset-4 disabled:opacity-50"
+                className="inline px-0 font-medium text-forest underline underline-offset-4 hover:text-moss"
               >
                 {isResending ? "Sending..." : "Resend code"}
-              </button>
+              </Button>
             </p>
 
             <p className="mt-4 text-sm text-muted">

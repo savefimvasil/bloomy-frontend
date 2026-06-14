@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { TileSize, TileRotation, PlannerAction } from "@/lib/plan/types";
 import { resolveTileSize } from "@/lib/plan/geometry";
 import { TILE_PRESETS } from "@/lib/plan/constants";
+import { ToggleButton } from "@/components/ui/toggle-button";
+import { Slider } from "@/components/ui/slider";
 
 interface Props {
   tileSize: TileSize;
@@ -34,11 +36,6 @@ export function TileControls({ tileSize, rotation, chessMode, groutMm, brickOffs
   const { width: tileW, height: tileH } = resolveTileSize(tileSize, TILE_PRESETS);
   const isSquare = Math.abs(tileW - tileH) < 1e-6;
 
-  const btnBase = "flex-1 rounded border px-3 py-1.5 text-xs font-medium transition";
-  const activeBtn = `${btnBase} border-leaf bg-leaf/15 text-forest`;
-  const inactiveBtn = `${btnBase} border-line bg-paper text-muted hover:border-leaf/50`;
-  const disabledBtn = `${btnBase} border-line bg-paper text-muted/40 cursor-not-allowed opacity-40`;
-
   const layoutIsBrick = brickOffset;
   const layoutIsDiag  = !brickOffset && rotation === 45;
   const layoutIsStraight = !brickOffset && rotation === 0;
@@ -49,15 +46,15 @@ export function TileControls({ tileSize, rotation, chessMode, groutMm, brickOffs
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Tile size</p>
         <div className="flex gap-2">
-          <button className={activeKind === "600x600" ? activeBtn : inactiveBtn} onClick={() => setSize({ kind: "600x600" })}>
+          <ToggleButton active={activeKind === "600x600"} onClick={() => setSize({ kind: "600x600" })}>
             600×600
-          </button>
-          <button className={activeKind === "900x600" ? activeBtn : inactiveBtn} onClick={() => setSize({ kind: "900x600" })}>
+          </ToggleButton>
+          <ToggleButton active={activeKind === "900x600"} onClick={() => setSize({ kind: "900x600" })}>
             900×600
-          </button>
-          <button className={activeKind === "custom" ? activeBtn : inactiveBtn} onClick={applyCustom}>
+          </ToggleButton>
+          <ToggleButton active={activeKind === "custom"} onClick={applyCustom}>
             Custom
-          </button>
+          </ToggleButton>
         </div>
         <div className="mt-2 flex items-center gap-2">
           <input
@@ -87,23 +84,23 @@ export function TileControls({ tileSize, rotation, chessMode, groutMm, brickOffs
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Layout</p>
         <div className="flex gap-2">
-          <button
-            className={layoutIsStraight ? activeBtn : inactiveBtn}
+          <ToggleButton
+            active={layoutIsStraight}
             onClick={() => {
               dispatch({ type: "SET_BRICK_OFFSET", enabled: false });
               dispatch({ type: "SET_ROTATION", rotation: 0 });
             }}
           >
             Straight
-          </button>
-          <button
-            className={layoutIsBrick ? activeBtn : inactiveBtn}
+          </ToggleButton>
+          <ToggleButton
+            active={layoutIsBrick}
             onClick={() => dispatch({ type: "SET_BRICK_OFFSET", enabled: true })}
           >
             Brick
-          </button>
-          <button
-            className={!isSquare ? disabledBtn : layoutIsDiag ? activeBtn : inactiveBtn}
+          </ToggleButton>
+          <ToggleButton
+            active={layoutIsDiag}
             disabled={!isSquare}
             title={!isSquare ? "Diagonal mode requires a square tile" : undefined}
             onClick={() => {
@@ -113,7 +110,7 @@ export function TileControls({ tileSize, rotation, chessMode, groutMm, brickOffs
             }}
           >
             Diagonal
-          </button>
+          </ToggleButton>
         </div>
       </div>
 
@@ -121,37 +118,31 @@ export function TileControls({ tileSize, rotation, chessMode, groutMm, brickOffs
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Pattern</p>
         <div className="flex gap-2">
-          <button className={!chessMode ? activeBtn : inactiveBtn} onClick={() => dispatch({ type: "SET_CHESS_MODE", chessMode: false })}>
+          <ToggleButton active={!chessMode} onClick={() => dispatch({ type: "SET_CHESS_MODE", chessMode: false })}>
             Plain
-          </button>
-          <button className={chessMode ? activeBtn : inactiveBtn} onClick={() => dispatch({ type: "SET_CHESS_MODE", chessMode: true })}>
+          </ToggleButton>
+          <ToggleButton active={chessMode} onClick={() => dispatch({ type: "SET_CHESS_MODE", chessMode: true })}>
             Chess
-          </button>
+          </ToggleButton>
         </div>
       </div>
 
       {/* Grout */}
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Grout gap</p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => dispatch({ type: "SET_GROUT", groutMm: groutMm - 1 })}
-            disabled={groutMm <= 0}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-line bg-paper text-sm text-muted transition hover:border-leaf/50 disabled:opacity-30"
-          >
-            −
-          </button>
-          <span className="flex-1 text-center text-xs font-medium text-ink">
-            {groutMm} mm
-          </span>
-          <button
-            onClick={() => dispatch({ type: "SET_GROUT", groutMm: groutMm + 1 })}
-            disabled={groutMm >= 6}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-line bg-paper text-sm text-muted transition hover:border-leaf/50 disabled:opacity-30"
-          >
-            +
-          </button>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted">Grout gap</p>
+          <span className="text-xs font-medium text-ink tabular-nums">{groutMm} mm</span>
         </div>
+        <Slider
+          min={0}
+          max={6}
+          step={1}
+          value={groutMm}
+          onChange={(e) =>
+            dispatch({ type: "SET_GROUT", groutMm: parseInt(e.target.value, 10) })
+          }
+          aria-label="Grout gap"
+        />
       </div>
     </div>
   );

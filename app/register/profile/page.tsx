@@ -5,13 +5,13 @@ import {Suspense, useEffect, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { apiFetch } from "@/lib/api";
+import { setAuth } from "@/lib/auth";
 
 type LoginResponse = {
   accessToken: string;
   user: { id: string; name: string; surname: string; email: string };
 };
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 function RegisterProfilePageComponent() {
   const router = useRouter();
@@ -42,17 +42,16 @@ function RegisterProfilePageComponent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/users/register/complete`, {
+      const response = await apiFetch("/users/register/complete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           email,
           password,
           name: name.trim(),
           surname: surname.trim(),
           reason: reason.trim() || undefined,
           acceptPromo,
-        }),
+        },
       });
 
       const payload = (await response.json()) as { message?: string };
@@ -63,19 +62,16 @@ function RegisterProfilePageComponent() {
 
       sessionStorage.removeItem("bloomy_reg_password");
 
-      const loginResponse = await fetch(`${apiBaseUrl}/auth/login`, {
+      const loginResponse = await apiFetch("/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
       });
 
       const loginPayload = (await loginResponse.json()) as LoginResponse | { message?: string };
 
       if (loginResponse.ok) {
         const loginData = loginPayload as LoginResponse;
-        localStorage.setItem("bloomy_access_token", loginData.accessToken);
-        localStorage.setItem("bloomy_user_email", loginData.user.email);
-        window.dispatchEvent(new Event("bloomy-auth-changed"));
+        setAuth(loginData.accessToken, loginData.user.email);
       }
 
       router.push("/cabinet");

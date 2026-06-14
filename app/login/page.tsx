@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { apiFetch } from "@/lib/api";
+import { setAuth } from "@/lib/auth";
 
 type LoginResponse = {
   accessToken: string;
@@ -43,9 +44,7 @@ export default function LoginPage() {
       }
 
       const data = payload as LoginResponse;
-      localStorage.setItem("bloomy_access_token", data.accessToken);
-      localStorage.setItem("bloomy_user_email", data.user.email);
-      window.dispatchEvent(new Event("bloomy-auth-changed"));
+      setAuth(data.accessToken, data.user.email);
       router.push("/cabinet");
       router.refresh();
     } catch (submitError) {

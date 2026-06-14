@@ -2,6 +2,7 @@
 
 import type { InstallationPattern } from "@/lib/plan/types";
 import type { PatternDef } from "@/lib/plan/config/types";
+import { ToggleButton } from "@/components/ui/toggle-button";
 
 interface Props {
   patterns: PatternDef[];
@@ -9,11 +10,6 @@ interface Props {
   isSquare: boolean;
   onSelect: (pattern: InstallationPattern) => void;
 }
-
-const btnBase = "flex-1 min-w-[4.5rem] rounded border px-2.5 py-1.5 text-xs font-medium transition";
-const activeBtn = `${btnBase} border-leaf bg-leaf/15 text-forest`;
-const inactiveBtn = `${btnBase} border-line bg-paper text-muted hover:border-leaf/50`;
-const disabledBtn = `${btnBase} border-line bg-paper text-muted/40 cursor-not-allowed opacity-40`;
 
 export function PatternSelector({ patterns, selected, isSquare, onSelect }: Props) {
   return (
@@ -23,15 +19,16 @@ export function PatternSelector({ patterns, selected, isSquare, onSelect }: Prop
         {patterns.map(p => {
           const isDisabled = p.disabledWhen === "notSquare" && !isSquare;
           return (
-            <button
+            <ToggleButton
               key={p.id}
+              active={selected === p.id}
               disabled={isDisabled}
               title={isDisabled ? "Requires square tile" : p.description}
               onClick={() => onSelect(p.id)}
-              className={isDisabled ? disabledBtn : selected === p.id ? activeBtn : inactiveBtn}
+              className="min-w-[4.5rem]"
             >
               {p.label}
-            </button>
+            </ToggleButton>
           );
         })}
       </div>

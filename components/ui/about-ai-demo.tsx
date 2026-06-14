@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api";
 
 type GenerateResponse = {
   source: string;
@@ -9,7 +11,7 @@ type GenerateResponse = {
   output_text: string;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+const apiBaseUrlDisplay = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 export function AboutAiDemo() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,17 +24,14 @@ export function AboutAiDemo() {
     setError(null);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/ai/generate`, {
+      const response = await apiFetch("/ai/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           prompt:
             "Create a short planting idea for a small front garden with sun in the morning and shade in the afternoon.",
           systemPrompt: "You are a concise garden planning assistant for Bloomy.",
           model: "gpt-5-mini",
-        }),
+        },
       });
 
       if (!response.ok) {
@@ -68,16 +67,16 @@ export function AboutAiDemo() {
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
+          <Button
             type="button"
             onClick={handleClick}
             disabled={isLoading}
-            className="rounded-full bg-[#123524] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#1d4f37] disabled:cursor-not-allowed disabled:bg-[#7a8f82]"
+            className="rounded-full"
           >
             {isLoading ? "Sending request..." : "Test AI request"}
-          </button>
+          </Button>
           <span className="text-xs uppercase tracking-[0.18em] text-black/45">
-            Target: {apiBaseUrl}/ai/generate
+            Target: {apiBaseUrlDisplay}/ai/generate
           </span>
         </div>
 

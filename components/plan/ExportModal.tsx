@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 
 export type ExportKind = "png" | "pdf" | "json";
 
@@ -42,13 +44,14 @@ export function ExportModal({ kind, onDownload, onClose }: Props) {
         onClick={e => e.stopPropagation()}
       >
         {/* Close button */}
-        <button
+        <IconButton
+          variant="ghost"
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
+          className="absolute right-4 top-4 rounded-full"
           aria-label="Close"
         >
           ✕
-        </button>
+        </IconButton>
 
         <div className="p-7 pb-0">
           <h2 className="text-xl font-semibold text-ink">Export your plan</h2>
@@ -68,12 +71,14 @@ export function ExportModal({ kind, onDownload, onClose }: Props) {
                 All exports are stored securely — no payment ever required.
               </p>
             </div>
-            <Link
+            <Button
               href="/register"
-              className="mt-auto inline-flex items-center justify-center rounded-lg bg-lime px-4 py-2.5 text-sm font-medium text-forest transition hover:bg-lime/85"
+              variant="light"
+              size="sm"
+              className="mt-auto bg-lime text-forest hover:bg-lime/85"
             >
               Create free account
-            </Link>
+            </Button>
           </div>
 
           {/* Option B — download once */}
@@ -85,12 +90,14 @@ export function ExportModal({ kind, onDownload, onClose }: Props) {
                 file yourself.
               </p>
             </div>
-            <button
+            <Button
               onClick={onDownload}
-              className="mt-auto inline-flex items-center justify-center rounded-lg border border-line bg-paper px-4 py-2.5 text-sm font-medium text-ink transition hover:border-leaf/50 hover:bg-canvas"
+              variant="secondary"
+              size="sm"
+              className="mt-auto"
             >
               Download now
-            </button>
+            </Button>
           </div>
         </div>
 

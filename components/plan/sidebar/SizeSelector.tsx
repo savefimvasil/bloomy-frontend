@@ -3,16 +3,13 @@
 import { useState } from "react";
 import type { TileSize } from "@/lib/plan/types";
 import type { SizeDef } from "@/lib/plan/config/types";
+import { ToggleButton } from "@/components/ui/toggle-button";
 
 interface Props {
   sizes: SizeDef[];
   tileSize: TileSize;
   onSelect: (size: TileSize) => void;
 }
-
-const btnBase = "rounded border px-2.5 py-1.5 text-xs font-medium transition";
-const activeBtn = `${btnBase} border-leaf bg-leaf/15 text-forest`;
-const inactiveBtn = `${btnBase} border-line bg-paper text-muted hover:border-leaf/50`;
 
 export function SizeSelector({ sizes, tileSize, onSelect }: Props) {
   const [customW, setCustomW] = useState("600");
@@ -33,20 +30,20 @@ export function SizeSelector({ sizes, tileSize, onSelect }: Props) {
       <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Size</p>
       <div className="flex flex-wrap gap-1.5">
         {sizes.map(s => (
-          <button
+          <ToggleButton
             key={s.key}
+            active={activeKind === s.key}
             onClick={() => onSelect({ kind: s.key })}
-            className={activeKind === s.key ? activeBtn : inactiveBtn}
           >
             {s.label}
-          </button>
+          </ToggleButton>
         ))}
-        <button
+        <ToggleButton
+          active={activeKind === "custom"}
           onClick={applyCustom}
-          className={activeKind === "custom" ? activeBtn : inactiveBtn}
         >
           Custom
-        </button>
+        </ToggleButton>
       </div>
       {activeKind === "custom" && (
         <div className="mt-2 flex items-center gap-2">

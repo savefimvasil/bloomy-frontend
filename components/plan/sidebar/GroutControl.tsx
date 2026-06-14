@@ -1,6 +1,7 @@
 "use client";
 
 import type { PlannerAction } from "@/lib/plan/types";
+import { Slider } from "@/components/ui/slider";
 
 interface Props {
   groutMm: number;
@@ -10,20 +11,20 @@ interface Props {
 export function GroutControl({ groutMm, dispatch }: Props) {
   return (
     <div>
-      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Grout gap</p>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => dispatch({ type: "SET_GROUT", groutMm: groutMm - 1 })}
-          disabled={groutMm <= 0}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-line bg-paper text-sm text-muted transition hover:border-leaf/50 disabled:opacity-30"
-        >−</button>
-        <span className="flex-1 text-center text-xs font-medium text-ink">{groutMm} mm</span>
-        <button
-          onClick={() => dispatch({ type: "SET_GROUT", groutMm: groutMm + 1 })}
-          disabled={groutMm >= 6}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-line bg-paper text-sm text-muted transition hover:border-leaf/50 disabled:opacity-30"
-        >+</button>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted">Grout gap</p>
+        <span className="text-xs font-medium text-ink tabular-nums">{groutMm} mm</span>
       </div>
+      <Slider
+        min={0}
+        max={6}
+        step={1}
+        value={groutMm}
+        onChange={(e) =>
+          dispatch({ type: "SET_GROUT", groutMm: parseInt(e.target.value, 10) })
+        }
+        aria-label="Grout gap"
+      />
     </div>
   );
 }

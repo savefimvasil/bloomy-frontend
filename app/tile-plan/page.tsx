@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+import { apiFetch } from "@/lib/api";
+import { useIsLoggedIn, getAuthToken } from "@/lib/auth";
 
 type Plan = {
   id: string;
@@ -13,24 +13,75 @@ type Plan = {
   updatedAt: string;
 };
 
+// ─── Local building blocks ──────────────────────────────────────────────────
+
+function OptionCard({
+  icon,
+  title,
+  description,
+  onClick,
+  disabled,
+}: {
+  icon: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="group flex flex-col items-start gap-3 rounded-lg border border-line bg-paper p-6 text-left transition cursor-pointer hover:border-leaf hover:shadow-soft disabled:opacity-50"
+    >
+      <span className="text-3xl">{icon}</span>
+      <div>
+        <p className="font-semibold text-ink">{title}</p>
+        <p className="mt-0.5 text-xs text-muted">{description}</p>
+      </div>
+    </button>
+  );
+}
+
+function PlanListRow({ plan, onClick }: { plan: Plan; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-between rounded-lg border border-line bg-paper px-5 py-4 text-left transition hover:border-leaf hover:shadow-soft"
+    >
+      <div>
+        <p className="font-medium text-ink">{plan.name ?? "Untitled plan"}</p>
+        <p className="mt-0.5 text-xs text-muted capitalize">
+          {plan.planType ?? "garden"} ·{" "}
+          {new Date(plan.updatedAt).toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
+        </p>
+      </div>
+      <span className="text-sm text-forest">Open →</span>
+    </button>
+  );
+}
+
+// ─── Page ───────────────────────────────────────────────────────────────────
+
 export default function PlanSelectionPage() {
   const router = useRouter();
-  const [isLoggedIn] = useState(() =>
-    typeof window !== "undefined" ? !!localStorage.getItem("bloomy_access_token") : false
-  );
+  const isLoggedIn = useIsLoggedIn();
   const [showExisting, setShowExisting] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [creating, setCreating] = useState(false);
 
   async function loadPlans() {
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) return;
+    if (!getAuthToken()) return;
     setLoadingPlans(true);
     try {
-      const res = await fetch(`${apiBaseUrl}/tile-plans`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch("/tile-plans");
       const data = (await res.json()) as Plan[];
       setPlans(data ?? []);
     } finally {
@@ -44,20 +95,15 @@ export default function PlanSelectionPage() {
   }
 
   async function handleCreateNew() {
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) {
+    if (!getAuthToken()) {
       router.push("/tile-plan/edit?type=garden");
       return;
     }
     setCreating(true);
     try {
-      const res = await fetch(`${apiBaseUrl}/tile-plans`, {
+      const res = await apiFetch("/tile-plans", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ planType: "garden", name: "Garden plan" }),
+        body: { planType: "garden", name: "Garden plan" },
       });
       const project = (await res.json()) as { id: string };
       router.push(`/tile-plan/edit?id=${project.id}&type=garden`);
@@ -84,44 +130,33 @@ export default function PlanSelectionPage() {
               </p>
 
               <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <button
+                <OptionCard
+                  icon="📂"
+                  title="Edit existing plan"
+                  description="Open one of your saved plans"
                   onClick={handleShowExisting}
-                  className="group flex flex-col items-start gap-3 rounded-lg border border-line bg-paper p-6 text-left transition cursor-pointer hover:border-leaf hover:shadow-soft"
-                >
-                  <span className="text-3xl">📂</span>
-                  <div>
-                    <p className="font-semibold text-ink">Edit existing plan</p>
-                    <p className="mt-0.5 text-xs text-muted">Open one of your saved plans</p>
-                  </div>
-                </button>
-
-                <button
+                />
+                <OptionCard
+                  icon="✏️"
+                  title={creating ? "Creating..." : "Create new plan"}
+                  description="Start a fresh garden layout"
                   onClick={handleCreateNew}
                   disabled={creating}
-                  className="group flex flex-col items-start gap-3 rounded-lg border border-line bg-paper p-6 text-left transition cursor-pointer hover:border-leaf hover:shadow-soft disabled:opacity-50"
-                >
-                  <span className="text-3xl">✏️</span>
-                  <div>
-                    <p className="font-semibold text-ink">
-                      {creating ? "Creating..." : "Create new plan"}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted">Start a fresh garden layout</p>
-                  </div>
-                </button>
+                />
               </div>
             </>
           ) : (
             <>
               <div className="flex items-center gap-4">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowExisting(false)}
-                  className="text-sm text-muted hover:text-forest"
+                  className="px-0 text-sm hover:text-forest"
                 >
                   ← Back
-                </button>
-                <h1 className="text-display-sm text-ink">
-                  Your plans
-                </h1>
+                </Button>
+                <h1 className="text-display-sm text-ink">Your plans</h1>
               </div>
 
               {loadingPlans ? (
@@ -136,35 +171,17 @@ export default function PlanSelectionPage() {
               ) : (
                 <div className="mt-6 flex flex-col gap-3">
                   {plans.map((plan) => (
-                    <button
-                      key={plan.id}
-                      onClick={() => handleOpenPlan(plan)}
-                      className="flex items-center justify-between rounded-lg border border-line bg-paper px-5 py-4 text-left transition hover:border-leaf hover:shadow-soft"
-                    >
-                      <div>
-                        <p className="font-medium text-ink">
-                          {plan.name ?? "Untitled plan"}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted capitalize">
-                          {plan.planType ?? "garden"} ·{" "}
-                          {new Date(plan.updatedAt).toLocaleDateString(undefined, {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <span className="text-sm text-forest">Open →</span>
-                    </button>
+                    <PlanListRow key={plan.id} plan={plan} onClick={() => handleOpenPlan(plan)} />
                   ))}
 
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={handleCreateNew}
                     disabled={creating}
-                    className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-paper px-5 py-4 text-sm text-muted transition hover:border-leaf hover:text-forest disabled:opacity-50"
+                    className="mt-2 border-dashed text-sm text-muted hover:text-forest"
                   >
                     + {creating ? "Creating..." : "New plan"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </>
@@ -186,17 +203,18 @@ export default function PlanSelectionPage() {
         </p>
 
         <div className="mt-10">
-          <button
+          <OptionCard
+            icon="🌿"
+            title="Garden / Outdoor"
+            description={
+              <>
+                Patios, terraces, garden paths, pool surrounds
+                <br />
+                <span className="text-muted/70">Standard sizes: 600×600, 900×600 mm</span>
+              </>
+            }
             onClick={() => router.push("/tile-plan/edit?type=garden")}
-            className="group flex w-full flex-col items-start gap-3 rounded-lg border border-line bg-paper p-6 text-left transition cursor-pointer hover:border-leaf hover:shadow-soft"
-          >
-            <span className="text-3xl">🌿</span>
-            <div>
-              <p className="font-semibold text-ink">Garden / Outdoor</p>
-              <p className="mt-0.5 text-xs text-muted">Patios, terraces, garden paths, pool surrounds</p>
-            </div>
-            <p className="text-xs text-muted/70">Standard sizes: 600×600, 900×600 mm</p>
-          </button>
+          />
         </div>
 
         <p className="mt-8 text-center text-xs text-muted">

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { PlanExportSchema } from "@/lib/plan/schema";
 
 export default function ImportPlanPage() {
@@ -76,12 +77,13 @@ export default function ImportPlanPage() {
               className="hidden"
               onChange={handleFileChange}
             />
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => fileRef.current?.click()}
-              className="rounded border border-line bg-paper px-4 py-2 text-sm font-medium text-ink transition hover:border-leaf/50 hover:bg-mist"
             >
               Choose .json file
-            </button>
+            </Button>
             {text && (
               <span className="ml-3 text-xs text-muted">
                 {text.length.toLocaleString()} chars loaded
@@ -105,13 +107,15 @@ export default function ImportPlanPage() {
             </pre>
           )}
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={loadPlan}
             disabled={!text.trim() || loading}
-            className="w-full rounded border border-leaf bg-leaf/10 px-4 py-2.5 text-sm font-semibold text-forest transition hover:bg-leaf/20 disabled:opacity-40"
+            className="w-full border-leaf bg-leaf/10 font-semibold text-forest hover:bg-leaf/20"
           >
             {loading ? "Loading…" : "Load plan"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

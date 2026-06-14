@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BloomyLogo } from "@/components/ui/bloomy-logo";
+import { IconButton } from "@/components/ui/icon-button";
+import { useIsLoggedIn } from "@/lib/auth";
 
 function CabinetIcon() {
   return (
@@ -16,21 +18,8 @@ function CabinetIcon() {
 }
 
 export function SiteHeader() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isLoggedIn = useIsLoggedIn();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    function sync() {
-      setIsLoggedIn(Boolean(localStorage.getItem("bloomy_access_token")));
-    }
-    void Promise.resolve().then(sync);
-    window.addEventListener("storage", sync);
-    window.addEventListener("bloomy-auth-changed", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("bloomy-auth-changed", sync);
-    };
-  }, []);
 
   const navLinks = [{ href: "/tile-plan", label: "Tile Planner" }];
 
@@ -76,13 +65,15 @@ export function SiteHeader() {
         </nav>
 
         {/* Mobile hamburger */}
-        <button
-          className="flex h-10 w-10 items-center justify-center rounded text-ink sm:hidden"
+        <IconButton
+          variant="ghost"
+          size="lg"
+          className="sm:hidden text-base text-ink"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
-          <span className="text-base">{menuOpen ? "✕" : "☰"}</span>
-        </button>
+          {menuOpen ? "✕" : "☰"}
+        </IconButton>
       </div>
 
       {/* Mobile dropdown */}

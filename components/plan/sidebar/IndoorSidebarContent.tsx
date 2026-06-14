@@ -9,6 +9,7 @@ import { SizeSelector } from "./SizeSelector";
 import { PatternSelector } from "./PatternSelector";
 import { GroutControl } from "./GroutControl";
 import { StatsPanel } from "@/components/plan/StatsPanel";
+import { ToggleButton } from "@/components/ui/toggle-button";
 
 interface Props {
   state: PlannerState;
@@ -17,10 +18,6 @@ interface Props {
   onExportPdf: () => void;
   onExportJson: () => void;
 }
-
-const btnBase = "flex-1 rounded border px-3 py-1.5 text-xs font-medium transition";
-const activeBtn = `${btnBase} border-leaf bg-leaf/15 text-forest`;
-const inactiveBtn = `${btnBase} border-line bg-paper text-muted hover:border-leaf/50`;
 
 export function IndoorSidebarContent({ state, dispatch, onExport, onExportPdf, onExportJson }: Props) {
   const materialDef = indoorConfig.materials.find(m => m.id === state.flooringMaterial)!;
@@ -67,14 +64,18 @@ export function IndoorSidebarContent({ state, dispatch, onExport, onExportPdf, o
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Color pattern</p>
           <div className="flex gap-2">
-            <button
-              className={!state.chessMode ? activeBtn : inactiveBtn}
+            <ToggleButton
+              active={!state.chessMode}
               onClick={() => dispatch({ type: "SET_CHESS_MODE", chessMode: false })}
-            >Plain</button>
-            <button
-              className={state.chessMode ? activeBtn : inactiveBtn}
+            >
+              Plain
+            </ToggleButton>
+            <ToggleButton
+              active={state.chessMode}
               onClick={() => dispatch({ type: "SET_CHESS_MODE", chessMode: true })}
-            >Chess</button>
+            >
+              Chess
+            </ToggleButton>
           </div>
         </div>
       )}

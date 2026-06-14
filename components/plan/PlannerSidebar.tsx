@@ -2,6 +2,7 @@
 
 import type { PlannerState, PlannerAction } from "@/lib/plan/types";
 import { CollapsibleSidebar } from "@/components/ui/layout/CollapsibleSidebar";
+import { Button } from "@/components/ui/button";
 import { IndoorSidebarContent } from "./sidebar/IndoorSidebarContent";
 import { OutdoorSidebarContent } from "./sidebar/OutdoorSidebarContent";
 
@@ -37,16 +38,18 @@ export function PlannerSidebar({
         </p>
       </div>
 
-      <button
+      <Button
+        variant="secondary"
+        size="sm"
         onClick={onToggleEditShape}
         className={
           editingShape
-            ? "w-full rounded border border-amber-400 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-100"
-            : "w-full rounded border border-leaf bg-leaf/10 px-3 py-2 text-sm font-medium text-forest transition hover:bg-leaf/20"
+            ? "w-full border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100"
+            : "w-full border-leaf bg-leaf/10 text-forest hover:bg-leaf/20"
         }
       >
         {editingShape ? "Done editing shape" : "Edit shape"}
-      </button>
+      </Button>
 
       <div className="h-px bg-line" />
 

@@ -11,12 +11,14 @@ import { ShapeEditor } from "./ShapeEditor";
 import { PlannerSidebar } from "./PlannerSidebar";
 import { ExportModal, type ExportKind } from "./ExportModal";
 import { Toast } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { resolveTileSize, pixelToWorld } from "@/lib/plan/geometry";
 import { TILE_PRESETS } from "@/lib/plan/constants";
 import type { Vertex, PlanType } from "@/lib/plan/types";
 import { PlanExportSchema, type PlanExport } from "@/lib/plan/schema";
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+import { apiFetch } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth";
 
 const MIN_SCALE = 20;
 const MAX_SCALE = 600;
@@ -115,8 +117,7 @@ export function PlannerPage({
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     if (!projectId) return;
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) return;
+    if (!getAuthToken()) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
@@ -139,13 +140,9 @@ export function PlannerPage({
         view: state.viewTransform,
       };
       try {
-        await fetch(`${apiBaseUrl}/tile-plans/${projectId}`, {
+        await apiFetch(`/tile-plans/${projectId}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ planData: plan }),
+          body: { planData: plan },
         });
         setSaveStatus("saved");
       } catch {
@@ -411,8 +408,7 @@ export function PlannerPage({
   }
 
   function openExportModal(kind: ExportKind, doExport: () => void) {
-    const isLoggedIn = typeof window !== "undefined" && !!localStorage.getItem("bloomy_access_token");
-    if (isLoggedIn) {
+    if (getAuthToken()) {
       doExport();
     } else {
       pendingExport.current = doExport;
@@ -583,12 +579,14 @@ export function PlannerPage({
               Shape edit mode — drag vertices · click + to add · × to remove · Esc to finish
             </div>
             {!isSnapped && (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => dispatch({ type: "SNAP_SHAPE_TO_GRID" })}
-                className="pointer-events-auto rounded border border-forest bg-canvas/95 px-4 py-1.5 text-xs font-semibold text-forest shadow-sm backdrop-blur-sm transition hover:bg-leaf/10 active:scale-95"
+                className="pointer-events-auto border-forest bg-canvas/95 text-forest backdrop-blur-sm shadow-sm hover:bg-leaf/10 active:scale-95"
               >
                 ↕ Snap to grid
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -609,16 +607,12 @@ export function PlannerPage({
 
         {/* Zoom buttons */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-          <button
-            onClick={() => zoomBy(1.3)}
-            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper"
-            title="Zoom in"
-          >+</button>
-          <button
-            onClick={() => zoomBy(1 / 1.3)}
-            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-canvas text-lg font-medium text-ink shadow-sm transition hover:bg-paper"
-            title="Zoom out"
-          >−</button>
+          <IconButton onClick={() => zoomBy(1.3)} title="Zoom in" aria-label="Zoom in">
+            +
+          </IconButton>
+          <IconButton onClick={() => zoomBy(1 / 1.3)} title="Zoom out" aria-label="Zoom out">
+            −
+          </IconButton>
         </div>
       </div>
 

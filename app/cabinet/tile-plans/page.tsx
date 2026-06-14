@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+import { apiFetch } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth";
 
 type TilePlan = {
   id: string;
@@ -206,13 +206,12 @@ export default function TilePlansPage() {
 
   useEffect(() => {
     void Promise.resolve().then(() => {
-      const token = localStorage.getItem("bloomy_access_token");
-      if (!token) {
+      if (!getAuthToken()) {
         setError("Not logged in.");
         setLoading(false);
         return;
       }
-      void fetch(`${apiBaseUrl}/tile-plans`, { headers: { Authorization: `Bearer ${token}` } })
+      void apiFetch("/tile-plans")
         .then((res) => {
           if (!res.ok) throw new Error("Failed to load plans");
           return res.json() as Promise<TilePlan[]>;
@@ -224,14 +223,12 @@ export default function TilePlansPage() {
   }, []);
 
   async function handleCreate() {
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) return;
+    if (!getAuthToken()) return;
     setCreating(true);
     try {
-      const res = await fetch(`${apiBaseUrl}/tile-plans`, {
+      const res = await apiFetch("/tile-plans", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ planType: "garden", name: "Garden plan" }),
+        body: { planType: "garden", name: "Garden plan" },
       });
       const plan = (await res.json()) as TilePlan;
       router.push(`/tile-plan/edit?id=${plan.id}&type=garden`);
@@ -241,12 +238,8 @@ export default function TilePlansPage() {
   }
 
   async function handleDelete(id: string) {
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) return;
-    await fetch(`${apiBaseUrl}/tile-plans/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    if (!getAuthToken()) return;
+    await apiFetch(`/tile-plans/${id}`, { method: "DELETE" });
     setPlans((prev) => prev.filter((p) => p.id !== id));
   }
 
@@ -288,13 +281,15 @@ export default function TilePlansPage() {
 
       {/* Add new */}
       <div className="mt-8">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleCreate}
           disabled={creating}
-          className="text-hint text-muted transition hover:text-forest disabled:opacity-50"
+          className="px-0 text-hint"
         >
           + {creating ? "Creating..." : "New plan"}
-        </button>
+        </Button>
       </div>
     </div>
   );

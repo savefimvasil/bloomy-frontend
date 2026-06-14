@@ -7,8 +7,8 @@ import React from "react";
 import type { PlanType } from "@/lib/plan/types";
 import type { PlanExport } from "@/lib/plan/schema";
 import { PlanExportSchema } from "@/lib/plan/schema";
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+import { apiFetch } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth";
 
 class PlannerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -60,20 +60,16 @@ function PlannerEntryInner() {
   );
   const [initialPlan, setInitialPlan] = useState<PlanExport | undefined>(undefined);
   const [loading, setLoading] = useState(() =>
-    !!projectId &&
-    (typeof window === "undefined" || !!localStorage.getItem("bloomy_access_token"))
+    !!projectId && (typeof window === "undefined" || !!getAuthToken())
   );
 
   useEffect(() => {
     if (!projectId) return;
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) return;
+    if (!getAuthToken()) return;
 
     async function loadPlan() {
       try {
-        const res = await fetch(`${apiBaseUrl}/tile-plans/${projectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch(`/tile-plans/${projectId}`);
         if (!res.ok) return;
         const data = (await res.json()) as {
           planType?: string | null;

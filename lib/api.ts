@@ -1,8 +1,9 @@
+import { getAuthToken } from "./auth";
+
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 function authHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("bloomy_access_token");
+  const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
