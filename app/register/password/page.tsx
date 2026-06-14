@@ -43,7 +43,7 @@ function RegisterPasswordPageComponent() {
           aside={
             <div className="container py-12 md:py-28">
               <div className="mx-auto w-full max-w-md">
-                <h2 className="text-4xl font-semibold tracking-tight text-forest">
+                <h2 className="text-display-sm text-forest">
                   Set your password
                 </h2>
                 <p className="mt-3 text-sm text-muted">

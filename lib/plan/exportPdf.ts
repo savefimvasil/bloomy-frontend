@@ -19,7 +19,7 @@ export function exportPdf(state: PlannerState): void {
   const contentW = pageW - margin * 2;
 
   function getY(): number {
-    return (doc as any).lastAutoTable?.finalY ?? 0;
+    return (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? 0;
   }
 
   function checkPageBreak(needed: number, current: number): number {

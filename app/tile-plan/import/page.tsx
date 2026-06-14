@@ -60,7 +60,7 @@ export default function ImportPlanPage() {
           ← Back
         </Link>
 
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Import plan</h1>
+        <h1 className="text-display-sm text-ink">Import plan</h1>
         <p className="mt-1 text-sm text-muted">
           Upload a <code className="rounded bg-mist px-1 text-xs">.json</code> file exported from
           Bloomy, or paste the JSON below.

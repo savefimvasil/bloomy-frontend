@@ -119,9 +119,9 @@ export function PlannerPage({
     if (!token) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    setSaveStatus("saving");
 
     saveTimerRef.current = setTimeout(async () => {
+      setSaveStatus("saving");
       const plan: PlanExport = {
         version: 1,
         planType: state.planType,
@@ -522,7 +522,7 @@ export function PlannerPage({
     : null;
 
   return (
-    <div className="flex h-full flex-col md:flex-row pt-[60px]">
+    <div className="flex h-full flex-col md:flex-row">
       <div ref={canvasContainerRef} className="relative flex-1 overflow-hidden bg-paper">
         <svg
           ref={svgRef}

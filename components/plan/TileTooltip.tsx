@@ -70,6 +70,5 @@ export function TileTooltip({ tiles, selectedId, viewTransform, tileW, tileH }: 
         ))}
       </g>
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, selectedId, x, y, scale, tileW, tileH]);
 }

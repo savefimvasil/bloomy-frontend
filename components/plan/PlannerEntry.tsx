@@ -26,7 +26,7 @@ class PlannerErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <div className="flex h-full items-start justify-center bg-canvas p-8">
+        <div className="flex h-[calc(100vh-68px)] items-start justify-center bg-canvas p-8">
           <div className="max-w-2xl rounded border border-danger/30 bg-paper p-6 text-sm">
             <p className="mb-2 font-semibold text-danger">Planner failed to load</p>
             <pre className="whitespace-pre-wrap text-xs text-muted">{this.state.error}</pre>
@@ -64,10 +64,9 @@ function PlannerEntryInner() {
   useEffect(() => {
     if (!projectId) return;
 
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) { setLoading(false); return; }
-
     async function loadPlan() {
+      const token = localStorage.getItem("bloomy_access_token");
+      if (!token) { setLoading(false); return; }
       try {
         const res = await fetch(`${apiBaseUrl}/tile-plans/${projectId}`, {
           headers: { Authorization: `Bearer ${token}` },

@@ -1,20 +1,18 @@
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
 type Cta = { label: string; href: string };
 
-type HeroSectionProps = {
-  headline: React.ReactNode;
+export type HeroSectionProps = {
+  headline: ReactNode;
   description: string;
   primaryCta: Cta;
   secondaryCta: Cta;
-  // Background — provide one
   backgroundImage?: string;
   backgroundGradient?: string;
-  // Top elements
-  label?: string;   // small text top-left (below header)
-  badge?: string;   // pill chip top-left
-  tagline?: string; // text top-right (e.g. "FOR DESIGNERS & CONTRACTORS")
-  // Extras
+  label?: string;
+  badge?: string;
+  tagline?: string;
   scrollHint?: boolean;
   watermark?: boolean;
   fullHeight?: boolean;
@@ -38,19 +36,22 @@ function TileGridWatermark() {
   );
 }
 
-export function HeroSection({
-  headline,
-  description,
-  primaryCta,
-  secondaryCta,
-  backgroundImage,
-  backgroundGradient,
-  label,
-  badge,
-  scrollHint = false,
-  watermark = false,
-  fullHeight = true,
-}: HeroSectionProps) {
+export function HeroSection(props: HeroSectionProps) {
+  const {
+    headline,
+    description,
+    primaryCta,
+    secondaryCta,
+    backgroundImage,
+    backgroundGradient,
+    label,
+    badge,
+    tagline,
+    scrollHint = false,
+    watermark = false,
+    fullHeight = true,
+  } = props;
+
   const isDark = !!(backgroundImage || backgroundGradient);
 
   const background = backgroundImage
@@ -61,41 +62,38 @@ export function HeroSection({
 
   return (
     <section
-      className={`relative ${minH} overflow-hidden`}
+      className={`relative -mt-[68px] ${minH} overflow-hidden`}
       style={{
         background,
-        ...(backgroundImage && { backgroundSize: "cover", backgroundPosition: "center" }),
+        ...(backgroundImage ? { backgroundSize: "cover", backgroundPosition: "center" } : {}),
       }}
     >
       {watermark && <TileGridWatermark />}
 
       <div className={`container relative flex ${minH} flex-col py-24 text-paper`}>
 
-        {(label || badge) && (
+        {/* Top row — badge / label left, tagline right */}
+        {(label || badge || tagline) && (
           <div className="flex items-start justify-between">
             <div>
               {badge && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-lime/40 bg-lime/10 px-3 py-1 text-xs font-medium text-lime">
+                <span className="inline-flex items-center gap-2 rounded-full border border-lime/40 bg-lime/10 px-3 py-1 text-eyebrow text-lime">
                   {badge}
                 </span>
               )}
-              {label && (
-                <p className="text-[11px] uppercase tracking-[0.28em] text-paper/50">{label}</p>
-              )}
+              {label && <p className="text-eyebrow text-paper/50">{label}</p>}
             </div>
+            {tagline && <p className="text-eyebrow text-lime">{tagline}</p>}
           </div>
         )}
 
-        {/* Spacer pushes content down */}
         <div className="flex-1" />
 
-        {/* Main content — bottom-left */}
+        {/* Main content — bottom left */}
         <div className="max-w-3xl">
-          <h1 className="text-5xl font-semibold leading-[0.9] tracking-tight md:text-7xl lg:text-8xl">
-            {headline}
-          </h1>
+          <h1 className="text-display-xl">{headline}</h1>
 
-          <p className={`mt-7 max-w-lg text-sm leading-7 md:text-base ${isDark ? "text-paper/70" : "text-ink"}`}>
+          <p className={`mt-7 max-w-lg text-body ${isDark ? "text-paper/70" : "text-muted"}`}>
             {description}
           </p>
 
@@ -117,11 +115,10 @@ export function HeroSection({
           </div>
         </div>
 
-        {/* Scroll hint */}
         {scrollHint && (
           <div className="mt-16 flex items-center gap-3 text-paper/40">
             <div className="h-px w-10 bg-paper/30" />
-            <span className="text-[11px] uppercase tracking-[0.22em]">Scroll to explore</span>
+            <span className="text-eyebrow">Scroll to explore</span>
           </div>
         )}
       </div>

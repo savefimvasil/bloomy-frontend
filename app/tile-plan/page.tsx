@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
@@ -15,15 +15,13 @@ type Plan = {
 
 export default function PlanSelectionPage() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn] = useState(() =>
+    typeof window !== "undefined" ? !!localStorage.getItem("bloomy_access_token") : false
+  );
   const [showExisting, setShowExisting] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [creating, setCreating] = useState(false);
-
-  useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("bloomy_access_token"));
-  }, []);
 
   async function loadPlans() {
     const token = localStorage.getItem("bloomy_access_token");
@@ -78,7 +76,7 @@ export default function PlanSelectionPage() {
         <div className="w-full max-w-xl">
           {!showExisting ? (
             <>
-              <h1 className="text-center text-2xl font-semibold tracking-tight text-ink">
+              <h1 className="text-center text-display-sm text-ink">
                 What would you like to do?
               </h1>
               <p className="mt-2 text-center text-sm text-muted">
@@ -121,7 +119,7 @@ export default function PlanSelectionPage() {
                 >
                   ← Back
                 </button>
-                <h1 className="text-xl font-semibold tracking-tight text-ink">
+                <h1 className="text-display-sm text-ink">
                   Your plans
                 </h1>
               </div>
@@ -180,7 +178,7 @@ export default function PlanSelectionPage() {
   return (
     <div className="flex min-h-full flex-col items-center justify-center bg-canvas px-4 py-16">
       <div className="w-full max-w-xl">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-ink">
+        <h1 className="text-center text-display-sm text-ink">
           Create a new plan
         </h1>
         <p className="mt-2 text-center text-sm text-muted">

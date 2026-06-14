@@ -81,7 +81,7 @@ function RegisterVerifyPageComponent() {
       aside={
         <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
-            <h2 className="text-4xl font-semibold tracking-tight text-forest">
+            <h2 className="text-display-sm text-forest">
               Enter verification code
             </h2>
             <p className="mt-3 text-sm text-muted">
@@ -116,7 +116,7 @@ function RegisterVerifyPageComponent() {
             ) : null}
 
             <p className="mt-6 text-sm text-muted">
-              Didn't receive it?{" "}
+              Didn&apos;t receive it?{" "}
               <button
                 type="button"
                 onClick={handleResend}

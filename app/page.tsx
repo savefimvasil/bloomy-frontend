@@ -9,7 +9,8 @@ export default function HomePage() {
   return (
     <div className="overflow-x-hidden">
       <HeroSection
-        backgroundGradient="linear-gradient(160deg, #152e1a 0%, #1f4d2c 45%, #2a6338 100%)"
+        backgroundGradient="linear-gradient(160deg, #152e1a 0%, #234a2e 45%, #2e6040 100%)"
+        tagline="For designers & contractors"
         headline={
           <>
             EARLY LIGHT.<br />
@@ -19,7 +20,6 @@ export default function HomePage() {
         description="Plan the patio before the sun's fully up. Share the count with the yard before they open."
         primaryCta={{ label: "Start planning", href: "/tile-plan" }}
         secondaryCta={{ label: "Open Tile Planner →", href: "/tile-plan" }}
-        backgroundImage={''}
         scrollHint
       />
       <IntroStrip />

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -67,7 +66,7 @@ function TypeBadge({ type }: { type: string }) {
       <span
         className={`inline-block h-2 w-2 rotate-45 ${isGarden ? "bg-leaf" : "bg-sage"}`}
       />
-      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+      <span className="text-eyebrow text-muted">
         {type}
       </span>
     </span>
@@ -127,11 +126,11 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
       {/* Text + actions */}
       <div className="flex flex-col gap-5">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-muted">Tile Plans</p>
-        <h2 className="text-5xl font-semibold leading-[0.9] tracking-tight text-ink md:text-6xl">
-          NO PLANS YET.
+        <p className="text-eyebrow text-muted">Tile Plans</p>
+        <h2 className="text-display-xl text-ink">
+          NO PLANS<br />YET.
         </h2>
-        <p className="max-w-sm text-base leading-7 text-muted">
+        <p className="max-w-sm text-body text-muted">
           Draw your first shape — any floor or patio outline — and Bloomy counts the tiles before you order.
         </p>
         <div className="flex flex-wrap gap-3">
@@ -160,35 +159,37 @@ function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) =>
       {/* Info */}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-lg font-semibold text-ink">
+          <span className="text-body font-semibold text-ink">
             {plan.name ?? "Untitled plan"}
           </span>
           <TypeBadge type={plan.planType} />
         </div>
-        <p className="text-sm text-muted">
+        <p className="text-hint text-muted">
           {plan.planType === "garden" ? "Garden" : "Indoor"} plan
         </p>
       </div>
 
       {/* Date — hidden on hover */}
-      <p className="shrink-0 text-sm text-muted transition-opacity group-hover:opacity-0">
+      <p className="shrink-0 text-hint text-muted transition-opacity group-hover:opacity-0">
         {relativeTime(plan.updatedAt)}
       </p>
 
       {/* Actions — shown on hover */}
       <div className="absolute right-0 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-        <Link
+        <Button
           href={`/tile-plan/edit?id=${plan.id}&type=${plan.planType}`}
-          className="rounded-lg border border-line bg-paper px-4 py-2 text-sm font-medium text-ink transition hover:border-forest hover:text-forest"
+          variant="secondary"
+          size="sm"
         >
           Open
-        </Link>
-        <button
+        </Button>
+        <Button
           onClick={() => onDelete(plan.id)}
-          className="rounded-lg border border-line bg-paper px-4 py-2 text-sm font-medium text-danger/70 transition hover:border-danger hover:text-danger"
+          variant="danger"
+          size="sm"
         >
           Delete
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -202,10 +203,6 @@ export default function TilePlansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-
-  useEffect(() => {
-    void loadPlans();
-  }, []);
 
   async function loadPlans() {
     const token = localStorage.getItem("bloomy_access_token");
@@ -222,6 +219,11 @@ export default function TilePlansPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPlans();
+  }, []);
 
   async function handleCreate() {
     const token = localStorage.getItem("bloomy_access_token");
@@ -250,12 +252,12 @@ export default function TilePlansPage() {
     setPlans((prev) => prev.filter((p) => p.id !== id));
   }
 
-  if (loading) return <p className="text-sm text-muted">Loading...</p>;
+  if (loading) return <p className="text-body text-muted">Loading...</p>;
 
   if (error) {
     return (
       <div>
-        <p className="mb-4 text-sm text-danger">{error}</p>
+        <p className="mb-4 text-body text-danger">{error}</p>
         <Button href="/login">Go to login</Button>
       </div>
     );
@@ -268,11 +270,11 @@ export default function TilePlansPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-end gap-6 pb-4 pt-[60px]">
-        <h1 className="text-5xl font-semibold leading-[0.9] tracking-tight text-ink">
-          TILE PLANS
+      <div className="flex items-end gap-6 pb-4">
+        <h1 className="text-display-xl text-ink">
+          TILE<br />PLANS
         </h1>
-        <p className="mb-1 text-[11px] uppercase tracking-[0.22em] text-muted">
+        <p className="mb-1 text-eyebrow text-muted">
           {plans.length} {plans.length === 1 ? "plan" : "plans"}
         </p>
       </div>
@@ -291,7 +293,7 @@ export default function TilePlansPage() {
         <button
           onClick={handleCreate}
           disabled={creating}
-          className="text-sm text-muted transition hover:text-forest disabled:opacity-50"
+          className="text-hint text-muted transition hover:text-forest disabled:opacity-50"
         >
           + {creating ? "Creating..." : "New plan"}
         </button>

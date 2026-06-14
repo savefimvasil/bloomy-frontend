@@ -17,12 +17,10 @@ export function ProjectsTeaser() {
         <div className="grid gap-12 md:grid-cols-2 md:items-end">
           <div>
             <SectionLabel light>Coming soon</SectionLabel>
-            <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-              Full garden
-              <br />
-              design projects
+            <h2 className="mt-4 text-display-lg">
+              Full garden<br />design projects
             </h2>
-            <p className="mt-5 max-w-md text-sm leading-7 text-paper/72">
+            <p className="mt-5 max-w-md text-body text-paper/72">
               Move beyond a single tile plan. Bloomy Projects will bring together material
               lists, drawings, cost estimates, and client collaboration into one structured
               workspace — purpose-built for landscape designers and contractors.
@@ -38,7 +36,7 @@ export function ProjectsTeaser() {
             {UPCOMING_FEATURES.map((item) => (
               <div
                 key={item.label}
-                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-paper/80"
+                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-body text-paper/80"
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>

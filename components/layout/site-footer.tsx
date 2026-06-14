@@ -1,4 +1,11 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 export function SiteFooter() {
+  const pathname = usePathname();
+  if (pathname === "/tile-plan/edit") return null;
+
   return (
     <footer className="bg-forest text-paper">
       <div className="container flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between md:py-8">

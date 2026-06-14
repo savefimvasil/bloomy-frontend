@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { apiFetch } from "@/lib/api";
 
 type LoginResponse = {
   accessToken: string;
@@ -16,8 +17,6 @@ type LoginResponse = {
     email: string;
   };
 };
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,12 +31,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/auth/login`, {
+      const response = await apiFetch("/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
       });
 
       const payload = (await response.json()) as LoginResponse | { message?: string };
@@ -68,7 +64,7 @@ export default function LoginPage() {
       aside={
         <div className="container py-12 md:py-28 flex flex-col justify-center h-full">
           <div className="mx-auto w-full max-w-md">
-            <h2 className="text-4xl font-semibold tracking-tight text-forest">
+            <h2 className="text-display-sm text-forest">
               Login to your Bloomy account
             </h2>
             <p className="mt-3 text-sm text-muted">One account for all Bloomy products</p>

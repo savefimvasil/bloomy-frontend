@@ -4,7 +4,7 @@ const FEATURES = [
   {
     num: "01",
     title: "Tile Planner",
-    body: "Lay out tiles and laminate in any shape. Accurate cut piece counts, patterns, and grout gaps — all computed in real time.",
+    body: "Lay out tiles in any shape. Accurate cut piece counts, patterns, and grout gaps — all computed in real time.",
   },
   {
     num: "02",
@@ -26,8 +26,8 @@ export function IntroStrip() {
           {FEATURES.map((item) => (
             <div key={item.num} className="flex flex-col gap-4">
               <SectionLabel light>{item.num}</SectionLabel>
-              <h3 className="text-xl font-semibold tracking-tight">{item.title}</h3>
-              <p className="text-sm leading-7 text-paper/72">{item.body}</p>
+              <h3 className="text-display-sm">{item.title}</h3>
+              <p className="text-body text-paper/72">{item.body}</p>
             </div>
           ))}
         </div>

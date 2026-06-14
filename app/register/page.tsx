@@ -57,11 +57,11 @@ export default function RegisterPage() {
       aside={
         <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
-            <h2 className="text-4xl font-semibold tracking-tight text-forest">
+            <h2 className="text-display-sm text-forest">
               Create a Bloomy account
             </h2>
             <p className="mt-3 text-sm text-muted">
-              Enter your email and we'll send you a verification code.
+              Enter your email and we&apos;ll send you a verification code.
             </p>
 
             <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
