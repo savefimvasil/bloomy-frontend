@@ -59,14 +59,17 @@ function PlannerEntryInner() {
     typeParam === "indoor" ? "indoor" : "garden"
   );
   const [initialPlan, setInitialPlan] = useState<PlanExport | undefined>(undefined);
-  const [loading, setLoading] = useState(!!projectId);
+  const [loading, setLoading] = useState(() =>
+    !!projectId &&
+    (typeof window === "undefined" || !!localStorage.getItem("bloomy_access_token"))
+  );
 
   useEffect(() => {
     if (!projectId) return;
+    const token = localStorage.getItem("bloomy_access_token");
+    if (!token) return;
 
     async function loadPlan() {
-      const token = localStorage.getItem("bloomy_access_token");
-      if (!token) { setLoading(false); return; }
       try {
         const res = await fetch(`${apiBaseUrl}/tile-plans/${projectId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -78,7 +81,6 @@ function PlannerEntryInner() {
         };
         if (data.planType === "indoor") setPlanType("indoor");
         else setPlanType("garden");
-
         if (data.planData) {
           const parsed = PlanExportSchema.safeParse(data.planData);
           if (parsed.success) setInitialPlan(parsed.data);

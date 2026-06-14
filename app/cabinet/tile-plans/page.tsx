@@ -200,29 +200,27 @@ function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) =>
 export default function TilePlansPage() {
   const router = useRouter();
   const [plans, setPlans] = useState<TilePlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(() =>
+    typeof window === "undefined" || !!localStorage.getItem("bloomy_access_token")
+  );
+  const [error, setError] = useState<string | null>(() =>
+    typeof window !== "undefined" && !localStorage.getItem("bloomy_access_token")
+      ? "Not logged in."
+      : null
+  );
   const [creating, setCreating] = useState(false);
 
-  async function loadPlans() {
-    const token = localStorage.getItem("bloomy_access_token");
-    if (!token) { setError("Not logged in."); setLoading(false); return; }
-    try {
-      const res = await fetch(`${apiBaseUrl}/tile-plans`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to load plans");
-      setPlans((await res.json()) as TilePlan[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadPlans();
+    const token = localStorage.getItem("bloomy_access_token");
+    if (!token) return;
+    void fetch(`${apiBaseUrl}/tile-plans`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load plans");
+        return res.json() as Promise<TilePlan[]>;
+      })
+      .then((data) => setPlans(data))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleCreate() {
