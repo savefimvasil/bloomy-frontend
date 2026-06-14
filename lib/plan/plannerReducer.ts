@@ -151,8 +151,25 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       ]);
       return recompute({ ...state, vertices: newVertices });
     }
+    case "ROTATE_SHAPE": {
+      const n = state.vertices.length;
+      let cx = 0, cy = 0;
+      for (const [x, y] of state.vertices) { cx += x; cy += y; }
+      cx /= n; cy /= n;
+      const cw = action.direction === "cw";
+      const newVertices: Vertex[] = state.vertices.map(([x, y]) => {
+        const dx = x - cx, dy = y - cy;
+        return [
+          Math.round((cw ? cx + dy : cx - dy) * 1000) / 1000,
+          Math.round((cw ? cy - dx : cy + dx) * 1000) / 1000,
+        ];
+      });
+      return recompute({ ...state, vertices: newVertices });
+    }
     case "SET_PLAN_TYPE":
       return { ...state, planType: action.planType };
+    case "SET_SHAPE":
+      return recompute({ ...state, vertices: action.vertices, patioOffset: [0, 0] });
     case "LOAD_PLAN": {
       const { plan } = action;
       const base: PlannerState = {

@@ -92,5 +92,7 @@ export type PlannerAction =
   | { type: "SET_INSTALLATION_PATTERN"; pattern: InstallationPattern }
   | { type: "SET_FLOORING_MATERIAL"; material: FlooringMaterial }
   | { type: "SNAP_SHAPE_TO_GRID" }
+  | { type: "ROTATE_SHAPE"; direction: "cw" | "ccw" }
   | { type: "SET_PLAN_TYPE"; planType: PlanType }
-  | { type: "LOAD_PLAN"; plan: PlanExport };
+  | { type: "LOAD_PLAN"; plan: PlanExport }
+  | { type: "SET_SHAPE"; vertices: Vertex[] };

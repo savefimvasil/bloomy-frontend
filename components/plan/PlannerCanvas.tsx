@@ -606,8 +606,27 @@ export function PlannerPage({
           </div>
         )}
 
-        {/* Zoom buttons */}
+        {/* Zoom + shape-edit controls */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-1">
+          {editingShape && (
+            <>
+              <IconButton
+                onClick={() => dispatch({ type: "ROTATE_SHAPE", direction: "ccw" })}
+                title="Rotate 90° counter-clockwise"
+                aria-label="Rotate counter-clockwise"
+              >
+                ↺
+              </IconButton>
+              <IconButton
+                onClick={() => dispatch({ type: "ROTATE_SHAPE", direction: "cw" })}
+                title="Rotate 90° clockwise"
+                aria-label="Rotate clockwise"
+              >
+                ↻
+              </IconButton>
+              <div className="h-px bg-line" />
+            </>
+          )}
           <IconButton onClick={() => zoomBy(1.3)} title="Zoom in" aria-label="Zoom in">
             +
           </IconButton>

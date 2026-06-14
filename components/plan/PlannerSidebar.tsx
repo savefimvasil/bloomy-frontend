@@ -5,6 +5,7 @@ import { CollapsibleSidebar } from "@/components/ui/layout/CollapsibleSidebar";
 import { Button } from "@/components/ui/button";
 import { IndoorSidebarContent } from "./sidebar/IndoorSidebarContent";
 import { OutdoorSidebarContent } from "./sidebar/OutdoorSidebarContent";
+import { UploadFloorplanButton } from "./UploadFloorplanButton";
 
 interface Props {
   state: PlannerState;
@@ -38,18 +39,21 @@ export function PlannerSidebar({
         </p>
       </div>
 
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={onToggleEditShape}
-        className={
-          editingShape
-            ? "w-full border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100"
-            : "w-full border-leaf bg-leaf/10 text-forest hover:bg-leaf/20"
-        }
-      >
-        {editingShape ? "Done editing shape" : "Edit shape"}
-      </Button>
+      <div className="flex flex-col gap-1.5">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onToggleEditShape}
+          className={
+            editingShape
+              ? "w-full border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              : "w-full border-leaf bg-leaf/10 text-forest hover:bg-leaf/20"
+          }
+        >
+          {editingShape ? "Done editing shape" : "Edit shape"}
+        </Button>
+        <UploadFloorplanButton dispatch={dispatch} />
+      </div>
 
       <div className="h-px bg-line" />
 
