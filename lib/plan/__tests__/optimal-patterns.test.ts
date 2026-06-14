@@ -17,7 +17,7 @@ function candidate(over: Partial<Candidate> = {}): Candidate {
     offset: [0, 0],
     totalTiles: 0,
     cutPieces: 0,
-    avgCoverage: 0,
+    sliverCount: 0,
     ...over,
   };
 }
@@ -65,10 +65,20 @@ describe("findOptimalOffset", () => {
     expect(best.cutPieces).toBeLessThanOrEqual(baseline!.cutPieces);
   });
 
-  test("maxAvgArea result has avgCoverage >= baseline avgCoverage", () => {
+  test("minSlivers result has sliverCount <= baseline sliverCount", () => {
     const state = withSkewRect();
-    const { best, baseline } = findOptimalOffset(state, "maxAvgArea");
-    expect(best.avgCoverage).toBeGreaterThanOrEqual(baseline!.avgCoverage - 1e-9);
+    const { best, baseline } = findOptimalOffset(state, "minSlivers");
+    expect(best.sliverCount).toBeLessThanOrEqual(baseline!.sliverCount);
+  });
+
+  test("is deterministic — clicking twice gives the same offset", () => {
+    const state = withSkewRect();
+    const first = findOptimalOffset(state, "minTiles");
+    // simulate a second click: state now has the offset from the first result
+    const stateAfterFirst = { ...state, patioOffset: first.offset };
+    const second = findOptimalOffset(stateAfterFirst, "minTiles");
+    expect(second.offset[0]).toBeCloseTo(first.offset[0], 9);
+    expect(second.offset[1]).toBeCloseTo(first.offset[1], 9);
   });
 
   test("works with brick offset pattern", () => {
@@ -85,7 +95,7 @@ describe("findOptimalOffset", () => {
 
   test("works with herringbone pattern", () => {
     const state = withSkewRect({ herringbone: true });
-    const { best } = findOptimalOffset(state, "minWhiteArea");
+    const { best } = findOptimalOffset(state, "minSlivers");
     expect(best.totalTiles).toBeGreaterThan(0);
   });
 
@@ -142,24 +152,25 @@ describe("isBetter", () => {
     });
   });
 
-  describe("maxAvgArea", () => {
-    test("prefers higher average coverage", () => {
+  describe("minSlivers", () => {
+    test("prefers fewer sliver pieces", () => {
       expect(
-        isBetter(candidate({ avgCoverage: 0.92 }), candidate({ avgCoverage: 0.85 }), "maxAvgArea"),
+        isBetter(candidate({ sliverCount: 2 }), candidate({ sliverCount: 3 }), "minSlivers"),
       ).toBe(true);
       expect(
-        isBetter(candidate({ avgCoverage: 0.80 }), candidate({ avgCoverage: 0.81 }), "maxAvgArea"),
+        isBetter(candidate({ sliverCount: 4 }), candidate({ sliverCount: 3 }), "minSlivers"),
       ).toBe(false);
     });
 
-    test("tiebreaks on cuts when coverage is essentially equal", () => {
+    test("tiebreaks on total tiles", () => {
       expect(
         isBetter(
-          candidate({ avgCoverage: 0.9, cutPieces: 4 }),
-          candidate({ avgCoverage: 0.9, cutPieces: 5 }),
-          "maxAvgArea",
+          candidate({ sliverCount: 2, totalTiles: 18 }),
+          candidate({ sliverCount: 2, totalTiles: 19 }),
+          "minSlivers",
         ),
       ).toBe(true);
     });
   });
+
 });

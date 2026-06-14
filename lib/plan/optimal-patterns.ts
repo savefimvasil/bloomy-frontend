@@ -13,30 +13,26 @@ import { TILE_PRESETS } from "./constants";
 // ---------------------------------------------------------------------------
 
 export type OptimizationCriterion =
-  | "minTiles"       // fewest total physical tiles needed
-  | "minCuts"        // fewest cut pieces
-  | "minWhiteArea"   // smallest uncovered ("white-zone") area left by sliver drops
-  | "maxAvgArea";    // largest average tile coverage
+  | "minTiles"    // fewest total physical tiles needed
+  | "minCuts"     // fewest cut pieces
+  | "minSlivers"; // fewest tiny cut pieces (< 10 % tile area) — hardest to handle
 
 export const OPTIMIZATION_LABELS: Record<OptimizationCriterion, string> = {
   minTiles: "Min tiles",
   minCuts: "Min cuts",
-  minWhiteArea: "Fewest gaps",
-  maxAvgArea: "Biggest avg piece",
+  minSlivers: "No tiny pieces",
 };
 
 export const OPTIMIZATION_DESCRIPTIONS: Record<OptimizationCriterion, string> = {
   minTiles: "Fewest total tiles to buy",
   minCuts: "Fewest cut pieces — fastest install",
-  minWhiteArea: "Minimise the white zones left behind by sliver drops under 30 mm",
-  maxAvgArea: "Biggest average tile area — least waste",
+  minSlivers: "Avoid tiny sliver cuts under 10 % tile size — easier to handle on site",
 };
 
 export const OPTIMIZATION_CRITERIA: OptimizationCriterion[] = [
   "minTiles",
   "minCuts",
-  "minWhiteArea",
-  "maxAvgArea",
+  "minSlivers",
 ];
 
 const SEARCH_STEPS = 10; // 10×10 = 100 candidates by default
@@ -63,20 +59,21 @@ function getSearchPeriod(state: PlannerState): { periodX: number; periodY: numbe
 }
 
 // ---------------------------------------------------------------------------
-// One candidate evaluation
+// One candidate evaluation — takes an absolute offset, not relative to current
 // ---------------------------------------------------------------------------
 
 export type Candidate = {
   offset: Vertex;
   totalTiles: number;
   cutPieces: number;
-  avgCoverage: number;     // mean cutArea / tileArea across all tiles (0..1)
+  sliverCount: number;  // cut pieces whose area < 10 % of tile area
 };
 
-function evaluate(state: PlannerState, dx: number, dy: number): Candidate | null {
+function evaluate(state: PlannerState, absX: number, absY: number): Candidate | null {
   const { width: tileW, height: tileH } = resolveTileSize(state.tileSize, TILE_PRESETS);
   const grout = state.groutMm / 1000;
-  const offset: Vertex = [state.patioOffset[0] + dx, state.patioOffset[1] + dy];
+  const tileArea = tileW * tileH;
+  const offset: Vertex = [absX, absY];
 
   const { tiles, tooMany } = computeTiles(
     state.vertices, offset, tileW, tileH, state.rotation,
@@ -85,13 +82,13 @@ function evaluate(state: PlannerState, dx: number, dy: number): Candidate | null
   if (tooMany || tiles.length === 0) return null;
 
   const stats = computeStats(tiles, state.vertices, offset, state.chessMode);
-  const tileArea = tileW * tileH;
+  const sliverThreshold = tileArea * 0.10;
 
   return {
     offset,
     totalTiles: stats.totalTiles,
     cutPieces: stats.cutPieces,
-    avgCoverage: tiles.reduce((s, t) => s + t.cutArea, 0) / tiles.length / tileArea,
+    sliverCount: tiles.filter(t => t.isCut && t.cutArea < sliverThreshold).length,
   };
 }
 
@@ -107,12 +104,9 @@ export function isBetter(a: Candidate, b: Candidate, criterion: OptimizationCrit
     case "minCuts":
       if (a.cutPieces !== b.cutPieces) return a.cutPieces < b.cutPieces;
       return a.totalTiles < b.totalTiles;
-    case "minWhiteArea":
-      if (a.cutPieces !== b.cutPieces) return a.cutPieces < b.cutPieces;
+    case "minSlivers":
+      if (a.sliverCount !== b.sliverCount) return a.sliverCount < b.sliverCount;
       return a.totalTiles < b.totalTiles;
-    case "maxAvgArea":
-      if (Math.abs(a.avgCoverage - b.avgCoverage) > 1e-6) return a.avgCoverage > b.avgCoverage;
-      return a.cutPieces < b.cutPieces;
   }
 }
 
@@ -129,8 +123,9 @@ export type OptimizationResult = {
 /**
  * Brute-force search for the patio offset that optimises the given criterion.
  *
- * Returns the new patio offset to dispatch, plus the winning candidate and the
- * baseline (current-offset) candidate so callers can show before/after numbers.
+ * Always searches one full period from [0, 0] so the result is deterministic
+ * regardless of how many times the button is clicked or what the current
+ * offset is. Baseline = current offset, for before/after comparison.
  */
 export function findOptimalOffset(
   state: PlannerState,
@@ -139,12 +134,15 @@ export function findOptimalOffset(
 ): OptimizationResult {
   const { periodX, periodY } = getSearchPeriod(state);
 
-  const baseline = evaluate(state, 0, 0);
-  let best: Candidate | null = baseline;
+  // Baseline: evaluate the current offset as-is so we can show the delta.
+  const baseline = evaluate(state, state.patioOffset[0], state.patioOffset[1]);
+  let best: Candidate | null = null;
 
+  // Search one full period starting from the natural grid origin.
+  // This is deterministic — clicking the same button repeatedly always gives
+  // the same result.
   for (let i = 0; i < steps; i++) {
     for (let j = 0; j < steps; j++) {
-      if (i === 0 && j === 0) continue; // already evaluated
       const dx = (i / steps) * periodX;
       const dy = (j / steps) * periodY;
       const candidate = evaluate(state, dx, dy);
@@ -156,13 +154,10 @@ export function findOptimalOffset(
   }
 
   if (!best) {
-    return {
-      offset: state.patioOffset,
-      best: baseline ?? {
-        offset: state.patioOffset, totalTiles: 0, cutPieces: 0, avgCoverage: 0,
-      },
-      baseline,
+    const fallback = baseline ?? {
+      offset: state.patioOffset, totalTiles: 0, cutPieces: 0, avgCoverage: 0, sliverCount: 0,
     };
+    return { offset: state.patioOffset, best: fallback, baseline };
   }
   return { offset: best.offset, best, baseline };
 }

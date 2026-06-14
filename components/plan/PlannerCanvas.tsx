@@ -517,6 +517,7 @@ export function PlannerPage({
     ? { type: "warning" as const, message: "Some cut pieces are under 30 mm — difficult to cut accurately." }
     : null;
 
+  console.log(state)
   return (
     <div className="flex h-full flex-col md:flex-row">
       <div ref={canvasContainerRef} className="relative flex-1 overflow-hidden bg-paper">

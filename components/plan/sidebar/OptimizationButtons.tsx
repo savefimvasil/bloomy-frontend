@@ -34,7 +34,7 @@ export function OptimizationButtons({ state, dispatch }: Props) {
       <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
         Auto-fit
       </p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {OPTIMIZATION_CRITERIA.map((c) => (
           <Button
             key={c}

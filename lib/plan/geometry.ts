@@ -99,8 +99,6 @@ function clipTileAgainstPatio(tileRing: Ring, patioRing: Ring): Vertex[] | null 
   return outerRing.slice(0, -1) as Vertex[];
 }
 
-const MIN_CUT_FRACTION = 0.03;
-
 // ---------------------------------------------------------------------------
 // Shared grid-setup helper (deduplicates straight + diagonal setup)
 // ---------------------------------------------------------------------------
@@ -186,7 +184,7 @@ function computeTilesStraight(
       if (!clipped) continue;
 
       const clippedArea = ringArea(clipped);
-      if (clippedArea < tileArea * MIN_CUT_FRACTION) continue;
+      if (clippedArea <= 0) continue;
 
       const isCut = Math.abs(clippedArea - tileArea) > 1e-4;
       tiles.push({
@@ -235,7 +233,7 @@ function computeTilesDiagonal(
       if (!clipped) continue;
 
       const clippedArea = ringArea(clipped);
-      if (clippedArea < tileArea * MIN_CUT_FRACTION) continue;
+      if (clippedArea <= 0) continue;
 
       const isCut = Math.abs(clippedArea - tileArea) > 1e-4;
       const worldPoints: Vertex[] = isCut
@@ -309,7 +307,7 @@ function computeTilesHerringbone(
         const clipped = clipTileAgainstPatio(ring, patioRing);
         if (clipped) {
           const area = ringArea(clipped);
-          if (area >= tileArea * MIN_CUT_FRACTION) {
+          if (area > 0) {
             const isCut = Math.abs(area - tileArea) > 1e-4;
             tiles.push({
               id: `h_${col}_${row}_a`,
@@ -330,7 +328,7 @@ function computeTilesHerringbone(
         const clipped = clipTileAgainstPatio(ring, patioRing);
         if (clipped) {
           const area = ringArea(clipped);
-          if (area >= tileArea * MIN_CUT_FRACTION) {
+          if (area > 0) {
             const isCut = Math.abs(area - tileArea) > 1e-4;
             tiles.push({
               id: `h_${col}_${row}_b`,
