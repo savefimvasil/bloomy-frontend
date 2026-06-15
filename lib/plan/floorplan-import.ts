@@ -1,8 +1,5 @@
 import type { Vertex } from "./types";
 
-const AI_PLANNER_BASE =
-  process.env.NEXT_PUBLIC_AI_PLANNER_URL ?? "http://localhost:3002/api";
-
 const ACCEPTED_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
@@ -27,7 +24,7 @@ export async function extractShapeFromFloorplan(file: File): Promise<Vertex[]> {
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(`${AI_PLANNER_BASE}/ai/extract-shape`, {
+  const res = await fetch(`/ai/extract-shape`, {
     method: "POST",
     body: form,
   });
