@@ -10,13 +10,14 @@ function authHeaders(): Record<string, string> {
 type Options = Omit<RequestInit, "body"> & { body?: unknown };
 
 export async function apiFetch(path: string, { body, headers, ...rest }: Options = {}): Promise<Response> {
+  const isFormData = body instanceof FormData;
   return fetch(`${BASE}${path}`, {
     ...rest,
     headers: {
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(!isFormData && body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...authHeaders(),
       ...(headers as Record<string, string> | undefined),
     },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    ...(body !== undefined ? { body: isFormData ? body : JSON.stringify(body) } : {}),
   });
 }

@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import type { Vertex } from "./types";
 
 const ACCEPTED_TYPES = new Set([
@@ -24,7 +25,7 @@ export async function extractShapeFromFloorplan(file: File): Promise<Vertex[]> {
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(`/ai/extract-shape`, {
+  const res = await apiFetch("/ai/extract-shape", {
     method: "POST",
     body: form,
   });
