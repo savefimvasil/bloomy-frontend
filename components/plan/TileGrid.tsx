@@ -167,8 +167,6 @@ export function TileGrid({ tiles, viewTransform, chessMode, selectedId }: Props)
       }
     }
 
-    console.log(shapes)
-
     return { shapes, chessTints, highlights, labels };
   }, [tiles, x, y, scale, chessMode, selectedId]);
 
