@@ -29,9 +29,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    "../bloomy-packages/planner/src/**/*.ts",
-    "../bloomy-packages/planner/src/**/*.tsx"
+    "**/*.mts"
   ],
   "exclude": ["node_modules"]
 }
