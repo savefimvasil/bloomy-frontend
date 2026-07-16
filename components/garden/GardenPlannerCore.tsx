@@ -1,0 +1,869 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { pixelToWorld, worldToPixel } from "@bloomy/bloomy-planner";
+import type {
+  GardenZone, GardenObject, GardenBoundary, GardenPlan,
+  Vertex, ViewTransform, ZoneType, ObjectType,
+} from "./types";
+import { ZONE_CONFIGS, OBJECT_CONFIGS } from "./zone-configs";
+import { GardenSidebar } from "./GardenSidebar";
+import { ObjectIcon } from "./ObjectIcon";
+
+const MIN_SCALE = 15;
+const MAX_SCALE = 600;
+
+function generateId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function pointInPolygon(
+  px: number, py: number,
+  vertices: Vertex[], offset: Vertex,
+  vt: ViewTransform,
+): boolean {
+  const pts = vertices.map(([vx, vy]) => worldToPixel([vx + offset[0], vy + offset[1]], vt));
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function worldPointInBoundary(wx: number, wy: number, boundary: GardenBoundary): boolean {
+  const { vertices, offset } = boundary;
+  let inside = false;
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const xi = vertices[i][0] + offset[0], yi = vertices[i][1] + offset[1];
+    const xj = vertices[j][0] + offset[0], yj = vertices[j][1] + offset[1];
+    if ((yi > wy) !== (yj > wy) && wx < ((xj - xi) * (wy - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function nearestPointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): [number, number] {
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return [ax, ay];
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  return [ax + t * dx, ay + t * dy];
+}
+
+function clampToPerimeter(wx: number, wy: number, boundary: GardenBoundary): [number, number] {
+  const { vertices, offset } = boundary;
+  let bestDist = Infinity;
+  let best: [number, number] = [wx, wy];
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    const ax = vertices[i][0] + offset[0], ay = vertices[i][1] + offset[1];
+    const bx = vertices[j][0] + offset[0], by = vertices[j][1] + offset[1];
+    const pt = nearestPointOnSegment(wx, wy, ax, ay, bx, by);
+    const d = (pt[0] - wx) ** 2 + (pt[1] - wy) ** 2;
+    if (d < bestDist) { bestDist = d; best = pt; }
+  }
+  return best;
+}
+
+function hitTestZones(px: number, py: number, zones: GardenZone[], vt: ViewTransform): GardenZone | null {
+  for (let i = zones.length - 1; i >= 0; i--) {
+    if (pointInPolygon(px, py, zones[i].vertices, zones[i].offset, vt)) return zones[i];
+  }
+  return null;
+}
+
+function hitTestObject(px: number, py: number, obj: GardenObject, vt: ViewTransform): boolean {
+  const [cx, cy] = worldToPixel(obj.position, vt);
+  if (obj.size) {
+    const hw = (obj.size[0] * vt.scale) / 2;
+    const hh = (obj.size[1] * vt.scale) / 2;
+    return px >= cx - hw && px <= cx + hw && py >= cy - hh && py <= cy + hh;
+  }
+  return Math.sqrt((px - cx) ** 2 + (py - cy) ** 2) < 18;
+}
+
+function edgeLength(ax: number, ay: number, bx: number, by: number): number {
+  return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
+}
+
+function polygonArea(vertices: Vertex[]): number {
+  let sum = 0;
+  const n = vertices.length;
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = vertices[i];
+    const [x2, y2] = vertices[(i + 1) % n];
+    sum += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(sum) / 2;
+}
+
+function polyCentroid(vertices: Vertex[], offset: Vertex): Vertex {
+  const n = vertices.length;
+  let cx = 0, cy = 0;
+  for (const [x, y] of vertices) { cx += x + offset[0]; cy += y + offset[1]; }
+  return [cx / n, cy / n];
+}
+
+function verticesPath(vertices: Vertex[], offset: Vertex, vt: ViewTransform): string {
+  return vertices.map(([vx, vy], i) => {
+    const [px, py] = worldToPixel([vx + offset[0], vy + offset[1]], vt);
+    return `${i === 0 ? "M" : "L"}${px},${py}`;
+  }).join(" ") + " Z";
+}
+
+type DragMode = "pan" | "zone" | "zone-vertex" | "boundary-vertex" | "object" | null;
+
+interface DragState {
+  isDragging: boolean;
+  mode: DragMode;
+  startPx: [number, number];
+  panStart: { x: number; y: number; tx: number; ty: number } | null;
+  zoneId: string | null;
+  startOffset: Vertex;
+  vertexIndex: number;
+  vertexDragOffset: Vertex;
+  objectId: string | null;
+  objectStart: Vertex;
+}
+
+const DRAG_IDLE: DragState = {
+  isDragging: false, mode: null, startPx: [0, 0], panStart: null,
+  zoneId: null, startOffset: [0, 0],
+  vertexIndex: -1, vertexDragOffset: [0, 0],
+  objectId: null, objectStart: [0, 0],
+};
+
+export interface GardenPlannerCoreProps {
+  plan: GardenPlan;
+  onSave?: (plan: GardenPlan) => Promise<void>;
+  projectName?: string;
+  projectId?: string;
+}
+
+export function GardenPlannerCore({ plan, onSave, projectName, projectId }: GardenPlannerCoreProps) {
+  const [boundary, setBoundary] = useState<GardenBoundary | undefined>(plan.gardenBoundary);
+  const [zones, setZones] = useState<GardenZone[]>(plan.zones);
+  const [objects, setObjects] = useState<GardenObject[]>(plan.objects);
+  const [view, setView] = useState<ViewTransform>({ x: plan.view.x, y: plan.view.y, scale: plan.view.scale });
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
+  const [editingZoneVertices, setEditingZoneVertices] = useState(false);
+  const [editingBoundary, setEditingBoundary] = useState(false);
+  const [drag, setDrag] = useState<DragState>(DRAG_IDLE);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRef = useRef(view);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activePointers = useRef<Map<number, [number, number]>>(new Map());
+  const pinchRef = useRef<{ dist: number; cx: number; cy: number; origScale: number; origX: number; origY: number } | null>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => { viewRef.current = view; }, [view]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setCanvasSize({ width, height });
+    });
+    ro.observe(el);
+    setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
+    return () => ro.disconnect();
+  }, []);
+
+  // Debounced auto-save
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!onSave) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      const updated: GardenPlan = {
+        ...plan, gardenBoundary: boundary, zones, objects, view,
+        exportedAt: new Date().toISOString(),
+      };
+      setSaveStatus("saving");
+      try {
+        await onSave(updated);
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("idle");
+      }
+    }, 2000);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundary, zones, objects, view]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { setEditingZoneVertices(false); setEditingBoundary(false); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ─── Zoom ─────────────────────────────────────────────────────────────────
+
+  function zoomBy(factor: number, cx?: number, cy?: number) {
+    const { scale, x, y } = viewRef.current;
+    const ccx = cx ?? canvasSize.width / 2;
+    const ccy = cy ?? canvasSize.height / 2;
+    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
+    const next = { scale: newScale, x: ccx - ((ccx - x) / scale) * newScale, y: ccy - ((ccy - y) / scale) * newScale };
+    setView(next);
+    viewRef.current = next;
+  }
+
+  // ─── Pointer ──────────────────────────────────────────────────────────────
+
+  function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    activePointers.current.set(e.pointerId, [e.clientX, e.clientY]);
+
+    if (activePointers.current.size === 2) {
+      const pts = Array.from(activePointers.current.values());
+      const dx = pts[1][0] - pts[0][0], dy = pts[1][1] - pts[0][1];
+      pinchRef.current = {
+        dist: Math.sqrt(dx * dx + dy * dy),
+        cx: (pts[0][0] + pts[1][0]) / 2, cy: (pts[0][1] + pts[1][1]) / 2,
+        origScale: viewRef.current.scale, origX: viewRef.current.x, origY: viewRef.current.y,
+      };
+      setDrag(DRAG_IDLE);
+      return;
+    }
+
+    if (e.button !== 0 && e.button !== 1) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    const vt = viewRef.current;
+    const VHIT = 14;
+
+    // Boundary vertex edit
+    if (editingBoundary && boundary) {
+      const { vertices, offset } = boundary;
+      const n = vertices.length;
+      for (let i = 0; i < n; i++) {
+        const [vx, vy] = vertices[i];
+        const [vpx, vpy] = worldToPixel([vx + offset[0], vy + offset[1]], vt);
+        if (Math.sqrt((px - vpx) ** 2 + (py - vpy) ** 2) < VHIT) {
+          svg.setPointerCapture(e.pointerId);
+          const grabWorld = pixelToWorld(px, py, vt);
+          setDrag({
+            ...DRAG_IDLE, isDragging: true, mode: "boundary-vertex",
+            startPx: [px, py], vertexIndex: i,
+            vertexDragOffset: [vx + offset[0] - grabWorld[0], vy + offset[1] - grabWorld[1]],
+          });
+          return;
+        }
+      }
+      // Edge midpoint → add boundary vertex
+      for (let i = 0; i < n; i++) {
+        const [ax, ay] = vertices[i];
+        const [bx, by] = vertices[(i + 1) % n];
+        const [mpx, mpy] = worldToPixel([(ax + bx) / 2 + offset[0], (ay + by) / 2 + offset[1]], vt);
+        if (Math.sqrt((px - mpx) ** 2 + (py - mpy) ** 2) < 12) {
+          setBoundary(b => b ? {
+            ...b,
+            vertices: [
+              ...b.vertices.slice(0, i + 1),
+              [(ax + bx) / 2, (ay + by) / 2] as Vertex,
+              ...b.vertices.slice(i + 1),
+            ],
+          } : b);
+          return;
+        }
+      }
+    }
+
+    // Object hit — tested before zones so objects always take priority
+    for (const obj of objects) {
+      if (hitTestObject(px, py, obj, vt)) {
+        svg.setPointerCapture(e.pointerId);
+        setSelectedObjectId(obj.id);
+        setSelectedZoneId(null);
+        setEditingZoneVertices(false);
+        setEditingBoundary(false);
+        setDrag({ ...DRAG_IDLE, isDragging: true, mode: "object", startPx: [px, py], objectId: obj.id, objectStart: [...obj.position] as Vertex });
+        return;
+      }
+    }
+
+    // Zone vertex edit
+    if (editingZoneVertices && selectedZoneId) {
+      const zone = zones.find(z => z.id === selectedZoneId);
+      if (zone) {
+        const [offX, offY] = zone.offset;
+        const n = zone.vertices.length;
+        for (let i = 0; i < n; i++) {
+          const [vx, vy] = zone.vertices[i];
+          const [vpx, vpy] = worldToPixel([vx + offX, vy + offY], vt);
+          if (Math.sqrt((px - vpx) ** 2 + (py - vpy) ** 2) < VHIT) {
+            svg.setPointerCapture(e.pointerId);
+            const grabWorld = pixelToWorld(px, py, vt);
+            setDrag({
+              ...DRAG_IDLE, isDragging: true, mode: "zone-vertex",
+              startPx: [px, py], zoneId: selectedZoneId, vertexIndex: i,
+              vertexDragOffset: [vx + offX - grabWorld[0], vy + offY - grabWorld[1]],
+            });
+            return;
+          }
+        }
+        // Edge midpoint → add zone vertex
+        for (let i = 0; i < n; i++) {
+          const [ax, ay] = zone.vertices[i];
+          const [bx, by] = zone.vertices[(i + 1) % n];
+          const [mpx, mpy] = worldToPixel([(ax + bx) / 2 + offX, (ay + by) / 2 + offY], vt);
+          if (Math.sqrt((px - mpx) ** 2 + (py - mpy) ** 2) < 12) {
+            setZones(prev => prev.map(z => z.id === selectedZoneId ? {
+              ...z,
+              vertices: [
+                ...z.vertices.slice(0, i + 1),
+                [(ax + bx) / 2, (ay + by) / 2] as Vertex,
+                ...z.vertices.slice(i + 1),
+              ],
+            } : z));
+            return;
+          }
+        }
+      }
+    }
+
+    // Zone hit
+    const hitZone = hitTestZones(px, py, zones, vt);
+    if (hitZone) {
+      svg.setPointerCapture(e.pointerId);
+      if (selectedZoneId !== hitZone.id) setEditingZoneVertices(false);
+      setSelectedZoneId(hitZone.id);
+      setSelectedObjectId(null);
+      setEditingBoundary(false);
+      setDrag({
+        ...DRAG_IDLE, isDragging: true, mode: "zone",
+        startPx: [px, py], zoneId: hitZone.id, startOffset: [...hitZone.offset] as Vertex,
+      });
+      return;
+    }
+
+    // Pan (click on empty canvas)
+    setSelectedZoneId(null);
+    setSelectedObjectId(null);
+    setEditingZoneVertices(false);
+    svg.setPointerCapture(e.pointerId);
+    setDrag({
+      ...DRAG_IDLE, isDragging: true, mode: "pan", startPx: [px, py],
+      panStart: { x: e.clientX, y: e.clientY, tx: vt.x, ty: vt.y },
+    });
+  }
+
+  function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    activePointers.current.set(e.pointerId, [e.clientX, e.clientY]);
+
+    if (pinchRef.current && activePointers.current.size >= 2) {
+      const pts = Array.from(activePointers.current.values());
+      const dx = pts[1][0] - pts[0][0], dy = pts[1][1] - pts[0][1];
+      const newDist = Math.sqrt(dx * dx + dy * dy);
+      const factor = newDist / pinchRef.current.dist;
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const cx = pinchRef.current.cx - rect.left, cy = pinchRef.current.cy - rect.top;
+      const { origScale, origX, origY } = pinchRef.current;
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, origScale * factor));
+      const next = { scale: newScale, x: cx - ((cx - origX) / origScale) * newScale, y: cy - ((cy - origY) / origScale) * newScale };
+      setView(next); viewRef.current = next;
+      return;
+    }
+
+    if (!drag.isDragging) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    const vt = viewRef.current;
+    const SNAP = 0.05;
+
+    if (drag.mode === "pan" && drag.panStart) {
+      const next = { ...vt, x: drag.panStart.tx + e.clientX - drag.panStart.x, y: drag.panStart.ty + e.clientY - drag.panStart.y };
+      setView(next); viewRef.current = next;
+    } else if (drag.mode === "boundary-vertex" && boundary) {
+      const world = pixelToWorld(px, py, vt);
+      const wx = Math.round((world[0] + drag.vertexDragOffset[0]) / SNAP) * SNAP;
+      const wy = Math.round((world[1] + drag.vertexDragOffset[1]) / SNAP) * SNAP;
+      setBoundary(b => b ? {
+        ...b,
+        vertices: b.vertices.map((v, i) =>
+          i === drag.vertexIndex ? [wx - b.offset[0], wy - b.offset[1]] as Vertex : v),
+      } : b);
+    } else if (drag.mode === "zone-vertex" && drag.zoneId) {
+      const world = pixelToWorld(px, py, vt);
+      let wx = Math.round((world[0] + drag.vertexDragOffset[0]) / SNAP) * SNAP;
+      let wy = Math.round((world[1] + drag.vertexDragOffset[1]) / SNAP) * SNAP;
+      if (boundary && !worldPointInBoundary(wx, wy, boundary)) {
+        [wx, wy] = clampToPerimeter(wx, wy, boundary);
+      }
+      setZones(prev => prev.map(z => z.id === drag.zoneId ? {
+        ...z,
+        vertices: z.vertices.map((v, i) =>
+          i === drag.vertexIndex ? [wx - z.offset[0], wy - z.offset[1]] as Vertex : v),
+      } : z));
+    } else if (drag.mode === "zone" && drag.zoneId) {
+      const dx = (px - drag.startPx[0]) / vt.scale;
+      const dy = (py - drag.startPx[1]) / vt.scale;
+      const newOffset: Vertex = [drag.startOffset[0] + dx, drag.startOffset[1] + dy];
+      if (boundary) {
+        const zone = zones.find(z => z.id === drag.zoneId);
+        if (zone && !zone.vertices.every(([vx, vy]) => worldPointInBoundary(vx + newOffset[0], vy + newOffset[1], boundary))) return;
+      }
+      setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, offset: newOffset } : z));
+    } else if (drag.mode === "object" && drag.objectId) {
+      const dx = (px - drag.startPx[0]) / vt.scale;
+      const dy = (py - drag.startPx[1]) / vt.scale;
+      let [nx, ny]: [number, number] = [
+        Math.round((drag.objectStart[0] + dx) / 0.1) * 0.1,
+        Math.round((drag.objectStart[1] + dy) / 0.1) * 0.1,
+      ];
+      if (boundary && !worldPointInBoundary(nx, ny, boundary)) {
+        [nx, ny] = clampToPerimeter(nx, ny, boundary);
+      }
+      setObjects(prev => prev.map(o => o.id === drag.objectId ? { ...o, position: [nx, ny] as Vertex } : o));
+    }
+  }
+
+  function handlePointerUp(e: React.PointerEvent<SVGSVGElement>) {
+    activePointers.current.delete(e.pointerId);
+    if (activePointers.current.size < 2) pinchRef.current = null;
+    setDrag(DRAG_IDLE);
+  }
+
+  function handleDragCancel() { activePointers.current.clear(); pinchRef.current = null; setDrag(DRAG_IDLE); }
+
+  // ─── Zone mutations ────────────────────────────────────────────────────────
+
+  function addZone(type: ZoneType) {
+    const cfg = ZONE_CONFIGS[type];
+    const count = zones.filter(z => z.type === type).length;
+    const label = count > 0 ? `${cfg.label} ${count + 1}` : cfg.label;
+
+    // Default placement: inside boundary centroid (or canvas center)
+    let cx = 0, cy = 0;
+    if (boundary) {
+      const cen = polyCentroid(boundary.vertices, boundary.offset);
+      cx = cen[0] - 2;
+      cy = cen[1] - 2;
+    } else {
+      const worldCenter = pixelToWorld(canvasSize.width / 2, canvasSize.height / 2, viewRef.current);
+      cx = worldCenter[0] - 2;
+      cy = worldCenter[1] - 2;
+    }
+
+    const newZone: GardenZone = {
+      id: generateId(), type, label,
+      vertices: [[0, 0], [3, 0], [3, 3], [0, 3]],
+      offset: [cx, cy],
+    };
+    setZones(prev => [...prev, newZone]);
+    setSelectedZoneId(newZone.id);
+    setSelectedObjectId(null);
+    setEditingZoneVertices(false);
+  }
+
+  function deleteZone(id: string) {
+    setZones(prev => prev.filter(z => z.id !== id));
+    if (selectedZoneId === id) { setSelectedZoneId(null); setEditingZoneVertices(false); }
+  }
+
+  function updateZoneLabel(id: string, label: string) {
+    setZones(prev => prev.map(z => z.id === id ? { ...z, label } : z));
+  }
+
+  function updateZoneType(id: string, type: ZoneType) {
+    setZones(prev => prev.map(z => z.id === id ? { ...z, type } : z));
+  }
+
+  function removeZoneVertex(zoneId: string, vertexIndex: number) {
+    setZones(prev => prev.map(z => {
+      if (z.id !== zoneId || z.vertices.length <= 3) return z;
+      return { ...z, vertices: z.vertices.filter((_, i) => i !== vertexIndex) };
+    }));
+  }
+
+  // ─── Object mutations ──────────────────────────────────────────────────────
+
+  function addObject(type: ObjectType, size?: [number, number]) {
+    const vt = viewRef.current;
+    let pos: Vertex;
+    if (boundary) {
+      pos = polyCentroid(boundary.vertices, boundary.offset);
+    } else {
+      pos = pixelToWorld(canvasSize.width / 2, canvasSize.height / 2, vt) as Vertex;
+    }
+    const newObj: GardenObject = { id: generateId(), type, label: OBJECT_CONFIGS[type].label, position: pos, size };
+    setObjects(prev => [...prev, newObj]);
+    setSelectedObjectId(newObj.id);
+    setSelectedZoneId(null);
+  }
+
+  function deleteObject(id: string) {
+    setObjects(prev => prev.filter(o => o.id !== id));
+    if (selectedObjectId === id) setSelectedObjectId(null);
+  }
+
+  function updateObjectLabel(id: string, label: string) {
+    setObjects(prev => prev.map(o => o.id === id ? { ...o, label } : o));
+  }
+
+  // ─── Boundary vertex removal ───────────────────────────────────────────────
+
+  function removeBoundaryVertex(index: number) {
+    setBoundary(b => {
+      if (!b || b.vertices.length <= 3) return b;
+      return { ...b, vertices: b.vertices.filter((_, i) => i !== index) };
+    });
+  }
+
+  // ─── Derived ──────────────────────────────────────────────────────────────
+
+  const selectedZone = zones.find(z => z.id === selectedZoneId) ?? null;
+  const selectedObject = objects.find(o => o.id === selectedObjectId) ?? null;
+
+  const cursor = drag.mode === "pan" ? "grabbing"
+    : drag.mode === "zone-vertex" || drag.mode === "boundary-vertex" || drag.mode === "zone" || drag.mode === "object" ? "move"
+    : "default";
+
+  // Outside-boundary overlay path (evenodd)
+  const outsideOverlayPath = boundary
+    ? `M0,0 H${canvasSize.width} V${canvasSize.height} H0 Z ${verticesPath(boundary.vertices, boundary.offset, view)}`
+    : null;
+
+  const editingLabel = editingBoundary
+    ? "Boundary edit — drag vertices · click edge to add · × to remove · Esc to finish"
+    : editingZoneVertices
+    ? "Vertex edit — drag points · click edge to add · × to remove · Esc to finish"
+    : null;
+
+  return (
+    <div className="flex h-full flex-col md:flex-row">
+      <div ref={containerRef} className="relative flex-1 overflow-hidden bg-canvas">
+        <svg
+          ref={svgRef}
+          width={canvasSize.width}
+          height={canvasSize.height}
+          style={{ display: "block", cursor }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handleDragCancel}
+          onPointerCancel={handleDragCancel}
+        >
+          <GridBackground view={view} width={canvasSize.width} height={canvasSize.height} />
+
+          {/* Garden boundary fill */}
+          {boundary && (
+            <polygon
+              points={boundary.vertices.map(([vx, vy]) => {
+                const [px, py] = worldToPixel([vx + boundary.offset[0], vy + boundary.offset[1]], view);
+                return `${px},${py}`;
+              }).join(" ")}
+              fill="rgba(193,224,157,0.12)"
+            />
+          )}
+
+          {/* Zones */}
+          {zones.map(zone => {
+            const cfg = ZONE_CONFIGS[zone.type];
+            const isSelected = zone.id === selectedZoneId;
+            const pts = zone.vertices.map(([vx, vy]) => {
+              const [px, py] = worldToPixel([vx + zone.offset[0], vy + zone.offset[1]], view);
+              return `${px},${py}`;
+            }).join(" ");
+            const cen = polyCentroid(zone.vertices, zone.offset);
+            const [cenPx, cenPy] = worldToPixel(cen, view);
+            const area = polygonArea(zone.vertices);
+
+            return (
+              <g key={zone.id}>
+                <polygon
+                  points={pts}
+                  fill={cfg.fill}
+                  stroke={cfg.stroke}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
+                  strokeDasharray={isSelected ? "8 4" : undefined}
+                />
+                <text
+                  x={cenPx} y={cenPy - 6}
+                  textAnchor="middle" dominantBaseline="middle"
+                  fontSize={12} fontFamily="system-ui,sans-serif"
+                  fill={cfg.stroke} fontWeight="600"
+                  style={{ pointerEvents: "none", userSelect: "none" }}
+                >
+                  {zone.label}
+                </text>
+                <text
+                  x={cenPx} y={cenPy + 10}
+                  textAnchor="middle" dominantBaseline="middle"
+                  fontSize={10} fontFamily="system-ui,sans-serif"
+                  fill={cfg.stroke} opacity={0.8}
+                  style={{ pointerEvents: "none", userSelect: "none" }}
+                >
+                  {area.toFixed(1)} m²
+                </text>
+
+                {/* Edge lengths (selected) */}
+                {isSelected && zone.vertices.map((v, i) => {
+                  const n = zone.vertices.length;
+                  const next = zone.vertices[(i + 1) % n];
+                  const ax = v[0] + zone.offset[0], ay = v[1] + zone.offset[1];
+                  const bx = next[0] + zone.offset[0], by = next[1] + zone.offset[1];
+                  const len = edgeLength(ax, ay, bx, by);
+                  if (len < 0.1) return null;
+                  const [mpx, mpy] = worldToPixel([(ax + bx) / 2, (ay + by) / 2], view);
+                  const angle = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+                  const textAngle = (angle > 90 || angle < -90) ? angle + 180 : angle;
+                  return (
+                    <text key={i}
+                      x={mpx} y={mpy - 9}
+                      textAnchor="middle" dominantBaseline="middle"
+                      fontSize={10} fontFamily="system-ui,sans-serif"
+                      fill="#5a9466" fontWeight="600"
+                      transform={`rotate(${textAngle},${mpx},${mpy - 9})`}
+                      style={{ pointerEvents: "none", userSelect: "none" }}
+                    >
+                      {len.toFixed(2)}m
+                    </text>
+                  );
+                })}
+
+                {/* Vertex handles (zone edit mode) */}
+                {isSelected && editingZoneVertices && zone.vertices.map(([vx, vy], i) => {
+                  const [vpx, vpy] = worldToPixel([vx + zone.offset[0], vy + zone.offset[1]], view);
+                  return (
+                    <g key={i}>
+                      <circle cx={vpx} cy={vpy} r={7} fill="white" stroke={cfg.stroke} strokeWidth={2} style={{ cursor: "move" }} />
+                      {zone.vertices.length > 3 && (
+                        <g transform={`translate(${vpx + 8},${vpy - 8})`} style={{ cursor: "pointer" }}
+                          onClick={ev => { ev.stopPropagation(); removeZoneVertex(zone.id, i); }}>
+                          <circle r={5} fill="#a14537" />
+                          <text textAnchor="middle" dominantBaseline="middle" fontSize={8} fill="white" fontWeight="bold">x</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Edge midpoint handles */}
+                {isSelected && editingZoneVertices && zone.vertices.map((v, i) => {
+                  const n = zone.vertices.length;
+                  const next = zone.vertices[(i + 1) % n];
+                  const [mpx, mpy] = worldToPixel(
+                    [(v[0] + next[0]) / 2 + zone.offset[0], (v[1] + next[1]) / 2 + zone.offset[1]],
+                    view,
+                  );
+                  return (
+                    <rect key={i}
+                      x={mpx - 5} y={mpy - 5} width={10} height={10}
+                      fill="white" stroke={cfg.stroke} strokeWidth={1.5} rx={2} style={{ cursor: "pointer" }}
+                    />
+                  );
+                })}
+              </g>
+            );
+          })}
+
+          {/* Objects */}
+          {objects.map(obj => {
+            const [px, py] = worldToPixel(obj.position, view);
+            return (
+              <g key={obj.id} style={{ cursor: "move" }}>
+                <ObjectIcon type={obj.type} cx={px} cy={py} selected={obj.id === selectedObjectId} scale={view.scale} size={obj.size} />
+                <text
+                  x={px} y={py + 20}
+                  textAnchor="middle" fontSize={10}
+                  fontFamily="system-ui,sans-serif" fill="#6d6a60"
+                  style={{ pointerEvents: "none", userSelect: "none" }}
+                >
+                  {obj.label}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Outside-boundary overlay — rendered on top of zones/objects */}
+          {outsideOverlayPath && (
+            <path
+              d={outsideOverlayPath}
+              fillRule="evenodd"
+              fill="rgba(34,32,27,0.09)"
+              style={{ pointerEvents: "none" }}
+            />
+          )}
+
+          {/* Garden boundary outline */}
+          {boundary && (
+            <polygon
+              points={boundary.vertices.map(([vx, vy]) => {
+                const [px, py] = worldToPixel([vx + boundary.offset[0], vy + boundary.offset[1]], view);
+                return `${px},${py}`;
+              }).join(" ")}
+              fill="none"
+              stroke="#234a2e"
+              strokeWidth={editingBoundary ? 2.5 : 2}
+              strokeDasharray={editingBoundary ? "10 4" : "7 4"}
+              style={{ pointerEvents: "none" }}
+            />
+          )}
+
+          {/* Boundary dimension labels (always visible) */}
+          {boundary && boundary.vertices.map((v, i) => {
+            const n = boundary.vertices.length;
+            const next = boundary.vertices[(i + 1) % n];
+            const ax = v[0] + boundary.offset[0], ay = v[1] + boundary.offset[1];
+            const bx = next[0] + boundary.offset[0], by = next[1] + boundary.offset[1];
+            const len = edgeLength(ax, ay, bx, by);
+            if (len < 0.1) return null;
+            const [mpx, mpy] = worldToPixel([(ax + bx) / 2, (ay + by) / 2], view);
+            const angle = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+            const textAngle = (angle > 90 || angle < -90) ? angle + 180 : angle;
+            return (
+              <text key={i}
+                x={mpx} y={mpy + 12}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize={10} fontFamily="system-ui,sans-serif"
+                fill="#234a2e" fontWeight="600" opacity={0.8}
+                transform={`rotate(${textAngle},${mpx},${mpy + 12})`}
+                style={{ pointerEvents: "none", userSelect: "none" }}
+              >
+                {len.toFixed(1)}m
+              </text>
+            );
+          })}
+
+          {/* Boundary vertex handles (edit mode) */}
+          {boundary && editingBoundary && boundary.vertices.map(([vx, vy], i) => {
+            const [vpx, vpy] = worldToPixel([vx + boundary.offset[0], vy + boundary.offset[1]], view);
+            return (
+              <g key={i}>
+                <circle cx={vpx} cy={vpy} r={7} fill="white" stroke="#234a2e" strokeWidth={2} style={{ cursor: "move" }} />
+                {boundary.vertices.length > 3 && (
+                  <g transform={`translate(${vpx + 8},${vpy - 8})`} style={{ cursor: "pointer" }}
+                    onClick={ev => { ev.stopPropagation(); removeBoundaryVertex(i); }}>
+                    <circle r={5} fill="#a14537" />
+                    <text textAnchor="middle" dominantBaseline="middle" fontSize={8} fill="white" fontWeight="bold">x</text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Boundary edge midpoint handles */}
+          {boundary && editingBoundary && boundary.vertices.map((v, i) => {
+            const n = boundary.vertices.length;
+            const next = boundary.vertices[(i + 1) % n];
+            const [mpx, mpy] = worldToPixel(
+              [(v[0] + next[0]) / 2 + boundary.offset[0], (v[1] + next[1]) / 2 + boundary.offset[1]],
+              view,
+            );
+            return (
+              <rect key={i}
+                x={mpx - 5} y={mpy - 5} width={10} height={10}
+                fill="white" stroke="#234a2e" strokeWidth={1.5} rx={2} style={{ cursor: "pointer" }}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Floating zone action bar — shown when a zone is selected and no vertex/boundary editing is active */}
+        {selectedZone && !editingLabel && (
+          <div className="pointer-events-auto absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-px rounded-full border border-line bg-paper/95 shadow-md backdrop-blur-sm">
+            <span className="max-w-[140px] truncate px-3 py-1.5 text-hint font-medium text-ink">{selectedZone.label}</span>
+            <div className="h-4 w-px bg-line" />
+            <button
+              onClick={() => setEditingZoneVertices(v => !v)}
+              className="rounded-full px-3 py-1.5 text-hint text-muted transition hover:bg-mist hover:text-ink"
+            >
+              Edit shape
+            </button>
+            <div className="h-4 w-px bg-line" />
+            <button
+              onClick={() => deleteZone(selectedZone.id)}
+              className="rounded-full px-3 py-1.5 text-hint font-medium text-danger transition hover:bg-danger/8"
+            >
+              Delete
+            </button>
+          </div>
+        )}
+
+        {editingLabel && (
+          <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded border border-amber-400/60 bg-amber-50/90 px-3 py-1.5 text-xs font-medium text-amber-800 shadow-sm whitespace-nowrap">
+            {editingLabel}
+          </div>
+        )}
+
+        {onSave && saveStatus !== "idle" && (
+          <div className="pointer-events-none absolute right-3 top-3 rounded border border-line bg-canvas/90 px-2.5 py-1 text-xs text-muted shadow-sm backdrop-blur-sm">
+            {saveStatus === "saving" ? "Saving..." : "Saved"}
+          </div>
+        )}
+
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1">
+          <button onClick={() => zoomBy(1.3)}
+            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95" title="Zoom in">
+            +
+          </button>
+          <button onClick={() => zoomBy(1 / 1.3)}
+            className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95" title="Zoom out">
+            −
+          </button>
+        </div>
+      </div>
+
+      <GardenSidebar
+        boundary={boundary}
+        zones={zones}
+        objects={objects}
+        selectedZone={selectedZone}
+        selectedObject={selectedObject}
+        editingZoneVertices={editingZoneVertices}
+        editingBoundary={editingBoundary}
+        projectName={projectName}
+        projectId={projectId}
+        onSelectZone={id => { setSelectedZoneId(id); setSelectedObjectId(null); }}
+        onSelectObject={id => { setSelectedObjectId(id); setSelectedZoneId(null); }}
+        onAddZone={addZone}
+        onDeleteZone={deleteZone}
+        onUpdateZoneLabel={updateZoneLabel}
+        onUpdateZoneType={updateZoneType}
+        onToggleEditZoneVertices={() => setEditingZoneVertices(v => !v)}
+        onToggleEditBoundary={() => { setEditingBoundary(v => !v); setEditingZoneVertices(false); setSelectedZoneId(null); }}
+        onAddObject={(type, size) => addObject(type, size)}
+        onDeleteObject={deleteObject}
+        onUpdateObjectLabel={updateObjectLabel}
+      />
+    </div>
+  );
+}
+
+// ─── Grid background ─────────────────────────────────────────────────────────
+
+function GridBackground({ view, width, height }: { view: ViewTransform; width: number; height: number }) {
+  const { x, y, scale } = view;
+  const minor = scale * 0.5;
+  const major = scale;
+  return (
+    <g>
+      <defs>
+        <pattern id="gp-minor" width={minor} height={minor} patternUnits="userSpaceOnUse" x={x % minor} y={y % minor}>
+          <path d={`M ${minor} 0 L 0 0 0 ${minor}`} fill="none" stroke="#d8d3cc" strokeWidth="0.5" />
+        </pattern>
+        <pattern id="gp-major" width={major} height={major} patternUnits="userSpaceOnUse" x={x % major} y={y % major}>
+          <rect width={major} height={major} fill="url(#gp-minor)" />
+          <path d={`M ${major} 0 L 0 0 0 ${major}`} fill="none" stroke="#c8c3bb" strokeWidth="1" />
+        </pattern>
+      </defs>
+      <rect width={width} height={height} fill="#f4f2ec" />
+      <rect width={width} height={height} fill="url(#gp-major)" />
+    </g>
+  );
+}

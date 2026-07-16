@@ -49,7 +49,7 @@ function UserIcon() {
 
 const CABINET_NAV = [
   { href: "/cabinet/tile-plans", label: "Tile Plans", Icon: TilePlansIcon, soon: false },
-  { href: "/cabinet/projects",   label: "Projects",   Icon: ProjectsIcon,  soon: true  },
+  { href: "/cabinet/projects",   label: "Projects",   Icon: ProjectsIcon,  soon: false },
 ];
 
 // ─── Layout ─────────────────────────────────────────────────────────────────

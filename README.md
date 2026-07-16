@@ -1,3 +1,5 @@
+## Mostly vibecoded. Part of Bloomy product. https://bloomy.garden/. Frontend and Backend are public, other services are in private repos
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

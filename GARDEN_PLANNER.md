@@ -1,184 +1,147 @@
 # Garden Planner — Frontend Implementation Plan
 
-## Goal
+## Phase 1 — Planner package ✅ DONE
 
-Extract the planner into a standalone npm-ready workspace package (`@bloomy/planner`), then build the garden planner as its second consumer. The planner can be published and sold separately when ready. The tile planner must keep working identically throughout.
+### What was built
+
+The planner is now a workspace package (`@bloomy/bloomy-planner`) living at `packages/planner/` inside this repo. The frontend imports it as a local workspace dependency.
+
+**Package location:** `bloomy-frontend/packages/planner/`
+**Import name:** `@bloomy/bloomy-planner`
+**Resolution:** npm workspace symlink → `node_modules/@bloomy/bloomy-planner`
+
+### What moved into the package
+
+| Was in `components/plan/`      | Now in `packages/planner/src/`       |
+|--------------------------------|--------------------------------------|
+| `PlannerCanvas.tsx`            | `PlannerCore.tsx` (refactored)       |
+| `PlannerSidebar.tsx`           | `sidebar/PlannerSidebar.tsx`         |
+| `ShapeEditor.tsx`              | `canvas/ShapeEditor.tsx`             |
+| `PatioPolygon.tsx`             | `zones/PatioPolygon.tsx`             |
+| `TileGrid.tsx`                 | `zones/TileGrid.tsx`                 |
+| `TileGridBackground.tsx`       | `canvas/TileGridBackground.tsx`      |
+| `TileTooltip.tsx`              | `canvas/TileTooltip.tsx`             |
+| `StatsPanel.tsx`               | `sidebar/StatsPanel.tsx`             |
+| `sidebar/IndoorSidebarContent` | merged into `sidebar/sections/SidebarContent.tsx` |
+| `sidebar/OutdoorSidebarContent`| merged into `sidebar/sections/SidebarContent.tsx` |
+| `sidebar/MaterialSelector`     | `sidebar/sections/MaterialSelector.tsx` |
+| `sidebar/SizeSelector`         | `sidebar/sections/SizeSelector.tsx`  |
+| `sidebar/PatternSelector`      | `sidebar/sections/PatternSelector.tsx` |
+| `sidebar/GroutControl`         | `sidebar/sections/GroutControl.tsx`  |
+| `sidebar/OptimizationButtons`  | `sidebar/sections/OptimizationButtons.tsx` |
+| `lib/plan/` (all files)        | `packages/planner/src/lib/`         |
+
+### Stays in `bloomy-frontend/components/plan/`
+
+- `ExportModal.tsx` — knows about user accounts, handles pre-auth gate
+- `PlannerEntry.tsx` — loads plan from API, passes `onSave` / `onRequestExport` / `uploadSlot`
+- `UploadFloorplanButton.tsx` — app-specific auth-aware upload
+
+### Package public API (`packages/planner/src/index.ts`)
+
+```typescript
+// Core component
+export { PlannerCore } from "./PlannerCore"
+export type { PlannerCoreProps, ExportKind } from "./PlannerCore"
+
+// Config
+export type { PlannerConfig, MaterialDef, SizeDef, PatternDef } from "./lib/config/types"
+export { outdoorConfig } from "./lib/config/outdoorConfig"
+export { indoorConfig } from "./lib/config/indoorConfig"
+
+// Types
+export type { Vertex, PlanType, PlannerState, PlannerAction, ViewTransform, ... }
+
+// Schema
+export { PlanExportSchema } from "./lib/schema"
+export type { PlanExport } from "./lib/schema"
+
+// Utilities
+export { plannerReducer, createInitialState } from "./lib/plannerReducer"
+export { COLORS, TILE_PRESETS, ... } from "./lib/constants"
+```
+
+### PlannerCore props
+
+```typescript
+interface PlannerCoreProps {
+  planType?: PlanType                  // "garden" | "indoor"
+  initialPlan?: PlanExport
+  config?: PlannerConfig               // defaults to outdoorConfig / indoorConfig
+  onSave?: (plan: PlanExport) => Promise<void>
+  onRequestExport?: (kind: ExportKind, execute: () => void) => void
+  uploadSlot?: (dispatch: Dispatch<PlannerAction>) => ReactNode
+}
+```
+
+### PlannerConfig shape
+
+```typescript
+interface PlannerConfig {
+  label?: string           // sidebar heading
+  description?: string     // sidebar sub-heading
+  materials: MaterialDef[] // available materials, each with sizes and patterns
+}
+```
+
+Preset configs: `outdoorConfig` (tile only), `indoorConfig` (tile + laminate).
 
 ---
 
-## Package architecture
+## Phase 2 — Multi-zone garden canvas (next)
 
-The planner lives at `packages/planner/` in the monorepo root — not inside `bloomy-frontend`. The frontend imports it as a workspace dependency. This draws a clean public API boundary now, with zero extra repo overhead, and makes the path to publishing on npm trivial.
+### Concept
+
+A garden plan is a **Project** — a richer entity than a tile plan. It lives under `/projects` in the nav.
+
+### Routes
 
 ```
-bloomy/
-  packages/
-    planner/                       ← @bloomy/planner
-      src/
-        canvas/                    ← PlannerCanvas, viewport, pointer events
-        zones/                     ← ZoneLayer, per-type renderers
-        objects/                   ← ObjectLayer, draggable icons
-        sidebar/                   ← PlannerSidebar (config-driven)
-        config.ts                  ← PlannerConfig type
-        types.ts                   ← Zone, GardenObject, Layer, etc.
-        calculations.ts            ← CalculationResult type; calculator registry
-        index.ts                   ← public exports
-      configs/
-        tile-planner.config.ts     ← TilePlannerConfig (wraps existing behaviour)
-        garden-planner.config.ts   ← GardenPlannerConfig (Phase 2)
-      package.json                 ← name: "@bloomy/planner", peerDeps: react, next
-      tsconfig.json
-  bloomy-frontend/                 ← imports @bloomy/planner via workspace:*
-  bloomy-backend/
-  bloomy-ai-planner/
-  package.json                     ← root workspaces: ["packages/*", "bloomy-frontend", ...]
+/projects                     ← list of projects (cabinet)
+/projects/new                 ← create project wizard
+/projects/[id]                ← project dashboard (thumbnail, progress, quick links)
+/projects/[id]/plan           ← canvas editor (multi-zone)
+/projects/[id]/materials      ← material list (Phase 3)
+/projects/[id]/guide          ← build guide (Phase 4)
+/projects/[id]/share          ← public read-only (Phase 5)
 ```
 
-### What moves out of bloomy-frontend
+The tile planner stays at `/tile-plan` — it is a standalone lightweight tool, not a project.
 
-Existing components that belong in the package:
+### Canvas changes from tile planner
 
-| Current path (bloomy-frontend)         | New path (packages/planner)         |
-|----------------------------------------|-------------------------------------|
-| `components/plan/PlannerCanvas.tsx`    | `src/canvas/PlannerCanvas.tsx`      |
-| `components/plan/PlannerSidebar.tsx`   | `src/sidebar/PlannerSidebar.tsx`    |
-| `components/plan/ShapeEditor.tsx`      | `src/canvas/ShapeEditor.tsx`        |
-| `components/plan/PatioPolygon.tsx`     | `src/zones/PatioPolygon.tsx`        |
-| `components/plan/TileGrid.tsx`         | `src/zones/TileGrid.tsx`            |
-| `components/plan/TileControls.tsx`     | `src/sidebar/TileControls.tsx`      |
-| `components/plan/StatsPanel.tsx`       | `src/sidebar/StatsPanel.tsx`        |
-| `components/plan/TileTooltip.tsx`      | `src/canvas/TileTooltip.tsx`        |
-| `components/plan/TileGridBackground.tsx` | `src/canvas/TileGridBackground.tsx` |
-| `components/plan/sidebar/`             | `src/sidebar/sections/`             |
+| Feature               | Tile planner (today)   | Garden project            |
+|-----------------------|------------------------|---------------------------|
+| Zones on canvas       | 1                      | Unlimited                 |
+| Zone types            | tile-patio only        | 8+ types                  |
+| Objects               | none                   | Draggable icons           |
+| Zone selection        | implicit               | Click to select zone      |
+| Zone label            | plan name              | Per-zone label            |
+| Zone colour           | single neutral         | Per-type (legend)         |
+| Sidebar               | tile controls          | Dynamic per selected zone |
 
-Stays in bloomy-frontend (app-specific):
-- `ExportModal.tsx` (knows about user accounts, save-to-account flow)
-- `PlannerEntry.tsx` (new-vs-existing plan screen)
-- `UploadFloorplanButton.tsx` (file upload, app-specific auth)
-
-### Package public API
+### Extending PlannerConfig for zones
 
 ```typescript
-// packages/planner/src/index.ts
-
-// Root component — the only thing most consumers need
-export { PlannerCore } from "./PlannerCore"
-
-// Config types
-export type { PlannerConfig, ZoneTypeConfig, ObjectTypeConfig } from "./config"
-export type { Zone, GardenObject, MaterialItem } from "./types"
-
-// Pre-built configs (consumers can import and extend)
-export { TilePlannerConfig } from "../configs/tile-planner.config"
-export { GardenPlannerConfig } from "../configs/garden-planner.config"
-
-// Calculator registry (consumers can register custom zone calculators)
-export { registerCalculator, getCalculator } from "./calculations"
-```
-
-### Config shape
-
-```typescript
-// packages/planner/src/config.ts
-
-export interface PlannerConfig {
-  plannerType: string                 // "tile-plan" | "garden-plan" | custom
-  zones: ZoneTypeConfig[]
-  objects: ObjectTypeConfig[]
-  sidebar: SidebarSectionConfig[]
-  calculations: CalculationConfig
-  export: ExportConfig
+interface PlannerConfig {
+  label?: string
+  description?: string
+  materials: MaterialDef[]          // existing (tile planner)
+  zones?: ZoneTypeConfig[]          // new: multi-zone support
+  objects?: ObjectTypeConfig[]      // new: placeable objects
 }
 
-export interface ZoneTypeConfig {
-  type: string                        // "tile-patio" | "flower-bed" | "lawn" | ...
+interface ZoneTypeConfig {
+  type: string                      // "tile-patio" | "lawn" | "deck" | ...
   label: string
-  color: string                       // fill on canvas, e.g. "#b7e36f"
-  icon: string                        // lucide icon name
-  calculator: string                  // key into calculation registry
-  defaultProperties: Record<string, unknown>
+  color: string                     // fill on canvas
+  icon: string
+  calculator: string                // key into calculation registry
   propertyControls: PropertyControl[]
 }
-
-export interface ObjectTypeConfig {
-  type: string
-  label: string
-  category: string
-  icon: string
-  footprint: { w: number; h: number } // metres
-}
 ```
 
-### Tile planner config (backwards-compatible)
-
-```typescript
-// packages/planner/configs/tile-planner.config.ts
-export const TilePlannerConfig: PlannerConfig = {
-  plannerType: "tile-plan",
-  zones: [{ type: "tile-patio", label: "Tile area", color: "#e5edd9", ... }],
-  objects: [],
-  sidebar: [ /* existing TileControls sections */ ],
-  calculations: { singleZone: true, calculator: "tile" },
-  export: { formats: ["pdf", "png", "json"] },
-}
-```
-
-The tile planner page: `import { PlannerCore, TilePlannerConfig } from "@bloomy/planner"` — identical behaviour.
-
-### Styling approach
-
-The package uses Tailwind CSS classes and the Bloomy design token names (`forest`, `canvas`, `leaf`, etc.). The consuming app provides the Tailwind config — the package does not bundle CSS. This means:
-- `bloomy-frontend` works out of the box (already has the tokens)
-- Future licensees get a `tailwind.config.ts` snippet to add to their project
-
-### Phase 1 tasks
-
-- [ ] Add root `package.json` with `workspaces: ["packages/*", "bloomy-frontend", "bloomy-backend", "bloomy-ai-planner"]`
-- [ ] Create `packages/planner/package.json` (`name: "@bloomy/planner"`, `peerDependencies: react, next`)
-- [ ] Create `packages/planner/tsconfig.json` extending from root
-- [ ] Move existing planner components to `packages/planner/src/` (table above)
-- [ ] Update all import paths in `bloomy-frontend` that referenced moved files
-- [ ] Add `@bloomy/planner: "workspace:*"` to `bloomy-frontend/package.json`
-- [ ] Define `PlannerConfig` types in `packages/planner/src/config.ts`
-- [ ] Create `TilePlannerConfig` wrapping existing behaviour
-- [ ] Wrap components in `PlannerCore` accepting the config prop
-- [ ] Route `/tile-plan/edit` uses `<PlannerCore config={TilePlannerConfig} />`
-- [ ] All tile planner tests pass unchanged
-- [ ] No visible difference to the user
-
----
-
-## Phase 2 — Multi-zone garden canvas
-
-### New routes
-
-```
-/garden-plan               -- entry: new vs existing garden plans
-/garden-plan/edit          -- multi-zone canvas editor
-/cabinet/garden-plans      -- list of saved garden plans
-```
-
-### Canvas behaviour changes from tile planner
-
-| Feature               | Tile planner (today)   | Garden planner             |
-|-----------------------|------------------------|----------------------------|
-| Zones on canvas       | 1                      | Unlimited                  |
-| Zone types            | tile-patio only        | 8+ types (see main README) |
-| Objects               | none                   | Draggable icons            |
-| Zone selection        | implicit (whole plan)  | Click to select zone       |
-| Zone label            | plan name              | Per-zone label             |
-| Zone colour           | single neutral         | Per type (legend)          |
-| Sidebar               | tile controls          | Zone-type controls (dynamic) |
-
-### Zone interaction model
-
-- **Draw mode**: user picks zone type from sidebar, then draws a polygon (same tool as today)
-- **Select mode**: click a zone to select it; sidebar shows that zone's property controls
-- **Object mode**: user picks an object from the object library, clicks to place on canvas
-- Zones can overlap (e.g. pergola outline over a patio); z-order controlled by user
-- Each zone has a name editable inline on the canvas label
-
-### Garden plan JSON format extension
+### Garden plan JSON (version 2)
 
 ```jsonc
 {
@@ -186,7 +149,7 @@ The package uses Tailwind CSS classes and the Bloomy design token names (`forest
   "plannerType": "garden-plan",
   "exportedAt": "...",
   "name": "Back garden redesign",
-  "gardenBoundary": {             // optional outer boundary polygon
+  "gardenBoundary": {
     "vertices": [[0,0],[12,0],[12,8],[0,8]],
     "offset": [0, 0]
   },
@@ -196,31 +159,18 @@ The package uses Tailwind CSS classes and the Bloomy design token names (`forest
       "type": "tile-patio",
       "label": "Main patio",
       "shape": { "vertices": [...], "offset": [...] },
-      "properties": {
-        "tileSize": { "kind": "600x600" },
-        "groutMm": 3,
-        "pattern": "straight"
-      }
+      "properties": { "tileSize": { "kind": "600x600" }, "groutMm": 3, "pattern": "straight" }
     },
     {
       "id": "zone-2",
       "type": "lawn",
       "label": "Back lawn",
       "shape": { "vertices": [...], "offset": [...] },
-      "properties": {
-        "coverage": "turf",
-        "grade": "premium"
-      }
+      "properties": { "coverage": "turf", "grade": "premium" }
     }
   ],
   "objects": [
-    {
-      "id": "obj-1",
-      "type": "tree-standard",
-      "label": "Apple tree",
-      "position": [4.5, 3.2],
-      "rotation": 0
-    }
+    { "id": "obj-1", "type": "tree-standard", "label": "Apple tree", "position": [4.5, 3.2], "rotation": 0 }
   ],
   "view": { "scale": 80, "x": 0, "y": 0 }
 }
@@ -228,162 +178,105 @@ The package uses Tailwind CSS classes and the Bloomy design token names (`forest
 
 ### Tasks
 
-- [ ] Define `GardenPlannerConfig` with all 8 zone types (see main README)
-- [ ] Extend plan schema (Zod) to version 2 with `zones[]` and `objects[]`
-- [ ] `ZoneLayer` — renders coloured polygons per zone type
-- [ ] `ObjectLayer` — renders SVG icons at placed positions, drag to reposition
+- [ ] `ZoneTypeConfig` and `ObjectTypeConfig` added to `PlannerConfig`
+- [ ] `GardenPlannerConfig` preset with all 8 zone types
+- [ ] Extend Zod schema to version 2 (`zones[]`, `objects[]`, `gardenBoundary`)
+- [ ] `ZoneLayer` — replaces `PatioPolygon` for multi-zone rendering
+- [ ] `ObjectLayer` — SVG icons, draggable, click to select
 - [ ] Zone type picker panel in sidebar
-- [ ] Object library panel (category tabs, search)
-- [ ] Click-to-select zone → sidebar switches to that zone's property controls
-- [ ] Zone legend overlay on canvas (colour key)
-- [ ] Route `/garden-plan/edit` and `/cabinet/garden-plans`
-- [ ] Garden plan list page (mirrors tile plan list, different card colour)
+- [ ] Click-to-select zone → sidebar shows that zone's property controls
+- [ ] Zone legend overlay (colour key)
+- [ ] Routes: `/projects`, `/projects/new`, `/projects/[id]`, `/projects/[id]/plan`
+- [ ] Project dashboard page (thumbnail, progress widgets)
 
 ---
 
-## Phase 3 — Material list panel
+## Phase 3 — Material list
 
-### UI
-
-A collapsible panel below the sidebar (or as a separate tab on the right):
-
-```
-Material List
-─────────────────────────────────────
-Groundworks & bases
-  Concrete (C25)             2.4 m³
-  Hardcore MOT Type 1        4.8 t
-
-Hard landscaping
-  Porcelain tile 600×600     148 tiles  (+10% waste → 163)
-  Tile adhesive              4 bags (20 kg)
-  Grout (mid grey)           2 bags (5 kg)
-  Decking boards (140mm)     86 lin m
-
-Soft landscaping
-  Turf                       28 m²
-  Topsoil                    1.2 m³
-  Bark mulch                 0.8 m³
-
-Total zones: 4   Last calculated: just now
-─────────────────────────────────────
-[ Export list as PDF ]   [ Copy to clipboard ]
-```
-
-### Calculation flow
-
-1. On plan save or on "Calculate" button press, frontend sends the full plan JSON to `POST /api/garden-plans/:id/materials`
-2. Backend calculates per zone, returns aggregated `MaterialList` object
-3. Frontend caches result; shows stale indicator if plan changes after last calculation
-
-### Tasks
-
-- [ ] `MaterialPanel` component (collapsible, tab in sidebar on desktop)
-- [ ] API client call `calculateMaterials(planId)` → `MaterialList`
+- [ ] `MaterialPanel` component — collapsible, grouped by trade category
+- [ ] API call `POST /api/projects/:id/materials` → `MaterialList`
 - [ ] Stale indicator when plan is modified after last calculation
-- [ ] Group results by trade category
-- [ ] Waste factor shown explicitly per item
-- [ ] "Export list as PDF" (extend existing PDF export service)
-- [ ] "Copy to clipboard" (plain text, structured for pasting into spreadsheet)
+- [ ] Waste factor displayed per item
+- [ ] Export list as PDF / copy as plain text
+- [ ] Route `/projects/[id]/materials`
 
 ---
 
 ## Phase 4 — Build guide
 
-### UI
-
-A full-page view accessible from the plan editor ("View Build Guide"):
-
-```
-/garden-plan/:id/guide
-```
-
-Displays numbered steps, each with:
-- Step title and description
-- Materials needed at this step (subset of material list)
-- Time estimate (from AI)
-- Dependencies ("complete before starting this step")
-- Tips / warnings for DIY users
-
-### Tasks
-
-- [ ] Route `/garden-plan/:id/guide`
-- [ ] `BuildGuide` component — vertical stepper layout
-- [ ] Step card: title, description, materials, tips, time
-- [ ] "Regenerate guide" button → calls AI service
+- [ ] Route `/projects/[id]/guide`
+- [ ] `BuildGuide` component — vertical stepper
+- [ ] Step card: title, description, materials subset, time estimate, tips
+- [ ] "Regenerate" button → calls AI service
+- [ ] Step completion checkboxes (saved per user)
 - [ ] Print/PDF export of full guide with embedded plan image
-- [ ] Step completion checkboxes (saved per user, not to plan)
 
 ---
 
-## Phase 5 — Projects integration
+## Phase 5 — Client sharing
 
-### What changes
-
-- A `Project` in the cabinet can contain one garden plan
-- Project page shows: plan thumbnail, material list summary, build guide progress
-- Client share link includes plan view + material list (read-only)
-
-### Tasks
-
-- [ ] Link garden plan to Project entity
-- [ ] Project dashboard widget: plan progress (% zones drawn, guide steps done)
-- [ ] Share link: `/share/:token` renders read-only plan + list
-- [ ] Client feedback: comment thread on shared view
+- [ ] Route `/projects/[id]/share` — public read-only plan + material list
+- [ ] Comment thread for client feedback
+- [ ] Project dashboard progress widget (% zones drawn, guide steps complete)
 
 ---
 
 ## File structure after Phase 2
 
 ```
-packages/planner/                      ← @bloomy/planner (separate package)
-  src/
-    canvas/
-      PlannerCanvas.tsx
-      ShapeEditor.tsx
-      TileGridBackground.tsx
-      TileTooltip.tsx
-    zones/
-      ZoneLayer.tsx                    ← new: generalised PatioPolygon
-      PatioPolygon.tsx
-      TileGrid.tsx
-    objects/
-      ObjectLayer.tsx                  ← new
-    sidebar/
-      PlannerSidebar.tsx
-      TileControls.tsx
-      StatsPanel.tsx
-      sections/
-        ...
-    PlannerCore.tsx                    ← new root component
-    config.ts
-    types.ts
-    calculations.ts
-    index.ts
-  configs/
-    tile-planner.config.ts
-    garden-planner.config.ts
-  package.json                         ← name: "@bloomy/planner"
-
 bloomy-frontend/
+  packages/
+    planner/                        ← @bloomy/bloomy-planner (workspace package)
+      src/
+        canvas/
+        zones/
+          ZoneLayer.tsx             ← new: multi-zone renderer
+          PatioPolygon.tsx
+          TileGrid.tsx
+        objects/
+          ObjectLayer.tsx           ← new
+        sidebar/
+          PlannerSidebar.tsx
+          StatsPanel.tsx
+          sections/
+            SidebarContent.tsx
+            MaterialSelector.tsx
+            SizeSelector.tsx
+            PatternSelector.tsx
+            GroutControl.tsx
+            OptimizationButtons.tsx
+        lib/
+          config/
+            types.ts               ← PlannerConfig (+ ZoneTypeConfig Phase 2)
+            outdoorConfig.ts
+            indoorConfig.ts
+            gardenConfig.ts        ← new (Phase 2)
+        PlannerCore.tsx
+        index.ts
+
   components/
     plan/
-      ExportModal.tsx                  ← stays here (app-specific)
-      PlannerEntry.tsx                 ← stays here
-      UploadFloorplanButton.tsx        ← stays here
-      MaterialPanel.tsx                ← new (Phase 3)
+      ExportModal.tsx
+      PlannerEntry.tsx
+      UploadFloorplanButton.tsx
+      MaterialPanel.tsx             ← new (Phase 3)
 
   app/
     tile-plan/
-      edit/                            ← unchanged, passes TilePlannerConfig
-    garden-plan/
-      page.tsx                         ← new: entry (new vs existing)
-      edit/
-        page.tsx                       ← new: canvas editor
+      edit/                         ← unchanged
+      import/
+    projects/
+      page.tsx                      ← new: project list (Phase 2)
+      new/
+        page.tsx                    ← new: create project (Phase 2)
       [id]/
+        page.tsx                    ← new: project dashboard (Phase 2)
+        plan/
+          page.tsx                  ← new: canvas editor (Phase 2)
+        materials/
+          page.tsx                  ← new (Phase 3)
         guide/
-          page.tsx                     ← new: build guide (Phase 4)
-    cabinet/
-      garden-plans/
-        page.tsx                       ← new: list (Phase 2)
+          page.tsx                  ← new (Phase 4)
+        share/
+          page.tsx                  ← new (Phase 5)
 ```
