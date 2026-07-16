@@ -1,7 +1,8 @@
 {
-  "name": "front",
+  "name": "bloomy-frontend",
   "version": "0.1.0",
   "private": true,
+  "workspaces": ["packages/planner"],
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
