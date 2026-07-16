@@ -823,8 +823,6 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
 
 // ─── Image modal ──────────────────────────────────────────────────────────────
 
-const VIEW_LABELS = ["Top view", "Front perspective", "Side perspective"];
-
 function GardenImageModal({
   state, images, onClose,
 }: {
@@ -838,7 +836,7 @@ function GardenImageModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-4xl flex-col gap-4 rounded-2xl border border-line bg-paper p-6 shadow-2xl"
+        className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-line bg-paper p-6 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -856,26 +854,19 @@ function GardenImageModal({
         {state === "loading" && (
           <div className="flex flex-col items-center gap-4 py-12">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-line border-t-forest" />
-            <p className="text-body text-muted">Generating images, this may take a moment&hellip;</p>
+            <p className="text-body text-muted">Generating image, this may take a moment&hellip;</p>
           </div>
         )}
 
         {state === "error" && (
           <div className="flex flex-col items-center gap-2 py-12">
-            <p className="text-body text-danger">Failed to generate images. Please try again.</p>
+            <p className="text-body text-danger">Failed to generate image. Please try again.</p>
           </div>
         )}
 
-        {state === "done" && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {images.map((url, i) => (
-              <div key={i} className="flex flex-col gap-1.5">
-                <div className="overflow-hidden rounded-xl border border-line bg-canvas">
-                  <img src={url} alt={VIEW_LABELS[i]} className="h-auto w-full object-cover" />
-                </div>
-                <p className="text-center text-hint text-muted">{VIEW_LABELS[i]}</p>
-              </div>
-            ))}
+        {state === "done" && images[0] && (
+          <div className="overflow-hidden rounded-xl border border-line bg-canvas">
+            <img src={images[0]} alt="AI garden visualisation" className="h-auto w-full object-cover" />
           </div>
         )}
       </div>
