@@ -864,13 +864,23 @@ function GardenImageModal({
           </div>
         )}
 
-        {state === "done" && images[0] && (
-          <div className="overflow-hidden rounded-xl border border-line bg-canvas">
-            <img
-              src={images[0]}
-              alt="AI garden visualisation — top view · front perspective · side perspective"
-              className="h-auto w-full object-cover"
-            />
+        {state === "done" && images.length > 0 && (
+          <div className="flex gap-3">
+            {images.map((src, i) => {
+              const labels = ["Top view", "Front perspective", "Isometric view"];
+              return (
+                <div key={i} className="flex flex-1 flex-col gap-1.5 overflow-hidden">
+                  <p className="text-hint text-muted">{labels[i] ?? `View ${i + 1}`}</p>
+                  <div className="overflow-hidden rounded-xl border border-line bg-canvas">
+                    <img
+                      src={src}
+                      alt={labels[i] ?? `Garden view ${i + 1}`}
+                      className="h-auto w-full object-cover"
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
