@@ -1,14 +1,15 @@
 FROM node:22-alpine AS deps
 WORKDIR /monorepo
 
-# Root workspace manifests
+# 1. Install workspace (planner package) — creates @bloomy/bloomy-planner symlink
+#    and installs its deps (jspdf, jspdf-autotable, zod) into root node_modules
 COPY package*.json ./
-# Planner package manifests (workspace member)
 COPY bloomy-packages/planner/package*.json ./bloomy-packages/planner/
-# Frontend manifests
-COPY bloomy-frontend/package*.json ./bloomy-frontend/
+RUN npm ci
 
-# Install all workspace deps — creates the @bloomy/bloomy-planner symlink
+# 2. Install frontend deps
+COPY bloomy-frontend/package*.json ./bloomy-frontend/
+WORKDIR /monorepo/bloomy-frontend
 RUN npm ci
 
 FROM node:22-alpine AS builder
@@ -17,14 +18,13 @@ WORKDIR /monorepo
 ARG BACKEND_INTERNAL_URL=http://backend:3000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 
-# Restore installed modules from deps stage
+# Workspace node_modules (contains the @bloomy/bloomy-planner symlink)
 COPY --from=deps /monorepo/node_modules ./node_modules
-COPY --from=deps /monorepo/bloomy-frontend/node_modules ./bloomy-frontend/node_modules
-
-# Copy planner source (node_modules symlink resolves here at build time)
+# Planner source (the symlink resolves here at build time)
 COPY bloomy-packages/planner/ ./bloomy-packages/planner/
 
-# Copy frontend source
+# Frontend node_modules and source
+COPY --from=deps /monorepo/bloomy-frontend/node_modules ./bloomy-frontend/node_modules
 COPY bloomy-frontend/ ./bloomy-frontend/
 
 WORKDIR /monorepo/bloomy-frontend
