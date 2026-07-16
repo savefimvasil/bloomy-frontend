@@ -28,7 +28,6 @@ export async function extractShapeFromFloorplan(file: File): Promise<Vertex[]> {
   const res = await apiFetch("/ai/extract-shape", {
     method: "POST",
     body: formData,
-    rawBody: true,
   });
 
   if (!res.ok) {

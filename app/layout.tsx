@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="h-full overflow-hidden bg-canvas text-ink">
+      <body className="h-full overflow-hidden bg-canvas text-ink" suppressHydrationWarning>
         <div className="flex h-full flex-col">
           <ScrollToTop />
           <SiteHeader />

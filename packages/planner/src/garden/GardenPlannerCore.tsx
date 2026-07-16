@@ -836,7 +836,7 @@ function GardenImageModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-line bg-paper p-6 shadow-2xl"
+        className="flex w-full max-w-5xl flex-col gap-4 rounded-2xl border border-line bg-paper p-6 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -866,7 +866,11 @@ function GardenImageModal({
 
         {state === "done" && images[0] && (
           <div className="overflow-hidden rounded-xl border border-line bg-canvas">
-            <img src={images[0]} alt="AI garden visualisation" className="h-auto w-full object-cover" />
+            <img
+              src={images[0]}
+              alt="AI garden visualisation — top view · front perspective · side perspective"
+              className="h-auto w-full object-cover"
+            />
           </div>
         )}
       </div>
