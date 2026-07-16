@@ -3,9 +3,10 @@ WORKDIR /monorepo
 
 # 1. Install workspace (planner package) — creates @bloomy/bloomy-planner symlink
 #    and installs its deps (jspdf, jspdf-autotable, zod) into root node_modules
-COPY package*.json ./
-COPY bloomy-packages/planner/package*.json ./bloomy-packages/planner/
-RUN npm ci
+#    Uses npm install (not ci) because the root lockfile is not committed
+COPY package.json ./
+COPY bloomy-packages/planner/package.json ./bloomy-packages/planner/
+RUN npm install
 
 # 2. Install frontend deps
 COPY bloomy-frontend/package*.json ./bloomy-frontend/
