@@ -1,14 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import React from "react";
-import type { PlanType } from "@/lib/plan/types";
-import type { PlanExport } from "@/lib/plan/schema";
-import { PlanExportSchema } from "@/lib/plan/schema";
+import type { PlanType } from "@bloomy/bloomy-planner";
+import type { PlanExport, ExportKind } from "@bloomy/bloomy-planner";
+import { PlanExportSchema } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
+import { ExportModal } from "./ExportModal";
+import { UploadFloorplanButton } from "./UploadFloorplanButton";
 
 class PlannerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -38,8 +40,8 @@ class PlannerErrorBoundary extends React.Component<
   }
 }
 
-const PlannerPage = dynamic(
-  () => import("./PlannerCanvas").then((m) => m.PlannerPage),
+const PlannerCore = dynamic(
+  () => import("@bloomy/bloomy-planner").then((m) => m.PlannerCore),
   {
     ssr: false,
     loading: () => (
@@ -62,6 +64,8 @@ function PlannerEntryInner() {
   const [loading, setLoading] = useState(() =>
     !!projectId && (typeof window === "undefined" || !!getAuthToken())
   );
+  const [exportModal, setExportModal] = useState<ExportKind | null>(null);
+  const pendingExport = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
@@ -89,6 +93,23 @@ function PlannerEntryInner() {
     void loadPlan();
   }, [projectId]);
 
+  async function handleSave(plan: PlanExport) {
+    if (!projectId || !getAuthToken()) return;
+    await apiFetch(`/tile-plans/${projectId}`, {
+      method: "PUT",
+      body: { planData: plan },
+    });
+  }
+
+  function handleRequestExport(kind: ExportKind, execute: () => void) {
+    if (getAuthToken()) {
+      execute();
+    } else {
+      pendingExport.current = execute;
+      setExportModal(kind);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-canvas text-muted">
@@ -99,7 +120,25 @@ function PlannerEntryInner() {
 
   return (
     <PlannerErrorBoundary>
-      <PlannerPage planType={planType} projectId={projectId} initialPlan={initialPlan} />
+      <PlannerCore
+        planType={planType}
+        initialPlan={initialPlan}
+        onSave={projectId ? handleSave : undefined}
+        onRequestExport={handleRequestExport}
+        uploadSlot={(dispatch) => <UploadFloorplanButton dispatch={dispatch} />}
+      />
+      <ExportModal
+        kind={exportModal}
+        onDownload={() => {
+          pendingExport.current?.();
+          pendingExport.current = null;
+          setExportModal(null);
+        }}
+        onClose={() => {
+          pendingExport.current = null;
+          setExportModal(null);
+        }}
+      />
     </PlannerErrorBoundary>
   );
 }

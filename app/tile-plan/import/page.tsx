@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PlanExportSchema } from "@/lib/plan/schema";
+import { PlanExportSchema } from "@bloomy/bloomy-planner";
 
 export default function ImportPlanPage() {
   const router = useRouter();

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Vertex, PlannerAction } from "@/lib/plan/types";
+import type { Vertex, PlannerAction } from "@bloomy/bloomy-planner";
 
 interface Props {
   vertices: Vertex[];

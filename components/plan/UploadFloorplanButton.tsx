@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { PlannerAction } from "@/lib/plan/types";
+import type { PlannerAction } from "@bloomy/bloomy-planner";
 import {
   extractShapeFromFloorplan,
   FLOORPLAN_ACCEPT,
-} from "@/lib/plan/floorplan-import";
+} from "@/lib/floorplan-import";
 import { useIsLoggedIn } from "@/lib/auth";
 
 interface Props {

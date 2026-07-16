@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@bloomy/bloomy-planner": ["../bloomy-packages/planner/src/index.ts"]
     }
   },
   "include": [
@@ -28,7 +29,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "../bloomy-packages/planner/src/**/*.ts",
+    "../bloomy-packages/planner/src/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }
