@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
-import { GardenPlannerCore } from "@/components/garden/GardenPlannerCore";
-import type { GardenPlan } from "@/components/garden/types";
+import { GardenPlannerCore } from "@bloomy/bloomy-planner";
+import type { GardenPlan } from "@bloomy/bloomy-planner";
 
 type ProjectMeta = {
   id: string;
@@ -67,12 +67,22 @@ export default function ProjectPlanPage() {
         view: { scale: 60, x: 80, y: 60 },
       };
 
+  async function handleGenerateImage(gardenPlan: GardenPlan) {
+    const res = await apiFetch("/ai/generate-garden-image", {
+      method: "POST",
+      body: { plan: gardenPlan as unknown as Record<string, unknown> },
+    });
+    if (!res.ok) throw new Error("Image generation failed");
+    return res.json() as Promise<{ images: string[] }>;
+  }
+
   return (
     <GardenPlannerCore
       plan={plan}
       onSave={handleSave}
+      onGenerateImage={handleGenerateImage}
       projectName={project.name ?? "Garden project"}
-      projectId={id}
+      onBack={() => router.push("/cabinet/projects")}
     />
   );
 }

@@ -6,8 +6,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
-import { BoundaryEditor, boundaryArea } from "@/components/garden/BoundaryEditor";
-import type { GardenPlan, Vertex } from "@/components/garden/types";
+import { BoundaryEditor, boundaryArea } from "@bloomy/bloomy-planner";
+import type { GardenPlan, Vertex } from "@bloomy/bloomy-planner";
 
 const DEFAULT_VERTICES: Vertex[] = [[0, 0], [8, 0], [8, 10], [0, 10]];
 

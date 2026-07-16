@@ -1,20 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { polygonArea } from "../lib/geometry";
 import type { GardenBoundary, GardenZone, GardenObject, ZoneType, ObjectType } from "./types";
 import { ZONE_CONFIGS, OBJECT_CONFIGS, ZONE_TYPES, OBJECT_TYPES } from "./zone-configs";
-
-function polygonArea(vertices: [number, number][]): number {
-  let sum = 0;
-  const n = vertices.length;
-  for (let i = 0; i < n; i++) {
-    const [x1, y1] = vertices[i];
-    const [x2, y2] = vertices[(i + 1) % n];
-    sum += x1 * y2 - x2 * y1;
-  }
-  return Math.abs(sum) / 2;
-}
 
 function ZoneSwatch({ type }: { type: ZoneType }) {
   const cfg = ZONE_CONFIGS[type];
@@ -154,7 +143,7 @@ interface Props {
   editingZoneVertices: boolean;
   editingBoundary: boolean;
   projectName?: string;
-  projectId?: string;
+  onBack?: () => void;
   onSelectZone: (id: string) => void;
   onSelectObject: (id: string) => void;
   onAddZone: (type: ZoneType) => void;
@@ -166,16 +155,18 @@ interface Props {
   onAddObject: (type: ObjectType, size?: [number, number]) => void;
   onDeleteObject: (id: string) => void;
   onUpdateObjectLabel: (id: string, label: string) => void;
+  onGenerateImage?: () => void;
 }
 
 export function GardenSidebar({
   boundary, zones, objects,
   selectedZone, selectedObject,
   editingZoneVertices, editingBoundary,
-  projectName, projectId,
+  projectName, onBack,
   onSelectZone, onSelectObject,
   onAddZone, onDeleteZone, onUpdateZoneLabel, onUpdateZoneType, onToggleEditZoneVertices, onToggleEditBoundary,
   onAddObject, onDeleteObject, onUpdateObjectLabel,
+  onGenerateImage,
 }: Props) {
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [showObjectPicker, setShowObjectPicker] = useState(false);
@@ -188,17 +179,17 @@ export function GardenSidebar({
       {showObjectPicker && <ObjectTypePicker onPick={onAddObject} onClose={() => setShowObjectPicker(false)} />}
 
       <aside className="flex w-full shrink-0 flex-col border-t border-line bg-paper md:w-[260px] md:border-l md:border-t-0">
-        {projectId && (
+        {onBack && (
           <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
-            <Link
-              href="/cabinet/projects"
+            <button
+              onClick={onBack}
               className="flex items-center gap-1 text-hint text-muted hover:text-ink"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 10 L3 6 L8 2" />
               </svg>
               Projects
-            </Link>
+            </button>
             {projectName && (
               <>
                 <span className="text-hint text-line">/</span>
@@ -431,6 +422,22 @@ export function GardenSidebar({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {onGenerateImage && (
+          <div className="border-t border-line p-4">
+            <button
+              onClick={onGenerateImage}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-forest px-4 py-2.5 text-body font-medium text-white transition hover:bg-moss active:scale-95"
+            >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="1" width="13" height="13" rx="2" />
+                <path d="M1 10l3.5-3.5 2.5 2.5 2.5-3 3.5 4" />
+                <circle cx="10.5" cy="4.5" r="1" fill="currentColor" stroke="none" />
+              </svg>
+              Generate image
+            </button>
           </div>
         )}
       </aside>

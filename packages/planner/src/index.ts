@@ -47,3 +47,27 @@ export { indoorConfig } from "./lib/config/indoorConfig";
 
 // Labels
 export { tileLetter, pieceLabel, edgeLengthsMm } from "./lib/labels";
+
+// ─── Garden planner ──────────────────────────────────────────────────────────
+
+// Core component
+export { GardenPlannerCore } from "./garden/GardenPlannerCore";
+export type { GardenPlannerCoreProps } from "./garden/GardenPlannerCore";
+
+// Boundary editor (used on the new-project page)
+export { BoundaryEditor, boundaryArea } from "./garden/BoundaryEditor";
+export type { BoundaryEditorProps } from "./garden/BoundaryEditor";
+
+// Types
+export type {
+  GardenPlan,
+  GardenZone,
+  GardenObject,
+  GardenBoundary,
+  ZoneType,
+  ObjectType,
+} from "./garden/types";
+
+// Configuration (zone colours, object defaults — override to customise)
+export { ZONE_CONFIGS, ZONE_TYPES, OBJECT_CONFIGS, OBJECT_TYPES } from "./garden/zone-configs";
+export type { ZoneConfig, ObjectConfig } from "./garden/zone-configs";

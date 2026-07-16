@@ -1,4 +1,6 @@
-export type Vertex = [number, number];
+// Re-exported from shared lib so garden code can import from one place
+import type { Vertex, ViewTransform } from "../lib/types";
+export type { Vertex, ViewTransform };
 
 export type ZoneType =
   | "tile-patio"
@@ -52,8 +54,3 @@ export interface GardenPlan {
   view: { scale: number; x: number; y: number };
 }
 
-export interface ViewTransform {
-  x: number;
-  y: number;
-  scale: number;
-}

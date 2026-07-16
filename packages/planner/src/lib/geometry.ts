@@ -523,3 +523,75 @@ export function computeEdgeLabels(
 
   return labels;
 }
+
+// ---------------------------------------------------------------------------
+// Shared canvas utilities
+// ---------------------------------------------------------------------------
+
+export function edgeLength(ax: number, ay: number, bx: number, by: number): number {
+  return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
+}
+
+/** Ray-casting point-in-polygon test. Vertices must be in absolute world coords. */
+export function worldPointInPolygon(wx: number, wy: number, verts: Vertex[]): boolean {
+  let inside = false;
+  for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+    const [xi, yi] = verts[i];
+    const [xj, yj] = verts[j];
+    if ((yi > wy) !== (yj > wy) && wx < ((xj - xi) * (wy - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** Nearest point on segment AB to point P. */
+export function nearestPointOnSegment(
+  px: number, py: number,
+  ax: number, ay: number,
+  bx: number, by: number,
+): [number, number] {
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return [ax, ay];
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  return [ax + t * dx, ay + t * dy];
+}
+
+/** Apply a zoom factor around canvas point (cx, cy), clamped to [min, max]. */
+export function applyZoom(
+  vt: { x: number; y: number; scale: number },
+  factor: number,
+  cx: number,
+  cy: number,
+  min: number,
+  max: number,
+): { x: number; y: number; scale: number } {
+  const newScale = Math.min(max, Math.max(min, vt.scale * factor));
+  return {
+    scale: newScale,
+    x: cx - ((cx - vt.x) / vt.scale) * newScale,
+    y: cy - ((cy - vt.y) / vt.scale) * newScale,
+  };
+}
+
+/** Compute a ViewTransform that fits a polygon into the canvas with padding. */
+export function computeFitView(
+  verts: Vertex[],
+  canvasWidth: number,
+  canvasHeight: number,
+  padding = 90,
+  maxScale = 120,
+): { x: number; y: number; scale: number } {
+  if (verts.length === 0 || canvasWidth === 0 || canvasHeight === 0) return { x: 80, y: 60, scale: 50 };
+  const xs = verts.map(v => v[0]);
+  const ys = verts.map(v => v[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const vw = Math.max(maxX - minX, 0.1);
+  const vh = Math.max(maxY - minY, 0.1);
+  const scale = Math.min((canvasWidth - padding * 2) / vw, (canvasHeight - padding * 2) / vh, maxScale);
+  return {
+    scale,
+    x: (canvasWidth - vw * scale) / 2 - minX * scale,
+    y: (canvasHeight - vh * scale) / 2 - minY * scale,
+  };
+}

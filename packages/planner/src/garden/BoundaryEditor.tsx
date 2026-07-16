@@ -1,48 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pixelToWorld, worldToPixel } from "@bloomy/bloomy-planner";
-import type { Vertex, ViewTransform } from "./types";
-
-// ─── Geometry helpers ─────────────────────────────────────────────────────────
+import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, applyZoom, computeFitView } from "../lib/geometry";
+import { GridBackground } from "../canvas/GridBackground";
+import { useCanvasSize } from "../lib/hooks";
+import type { Vertex } from "./types";
 
 export function boundaryArea(vertices: Vertex[]): number {
-  let sum = 0;
-  const n = vertices.length;
-  for (let i = 0; i < n; i++) {
-    const [x1, y1] = vertices[i];
-    const [x2, y2] = vertices[(i + 1) % n];
-    sum += x1 * y2 - x2 * y1;
-  }
-  return Math.abs(sum) / 2;
-}
-
-function edgeLength(ax: number, ay: number, bx: number, by: number) {
-  return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
-}
-
-function polyCentroid(vertices: Vertex[]): Vertex {
-  const n = vertices.length;
-  let cx = 0, cy = 0;
-  for (const [x, y] of vertices) { cx += x; cy += y; }
-  return [cx / n, cy / n];
-}
-
-function computeFitView(verts: Vertex[], cw: number, ch: number): ViewTransform {
-  if (verts.length === 0 || cw === 0 || ch === 0) return { x: 80, y: 60, scale: 50 };
-  const xs = verts.map(v => v[0]);
-  const ys = verts.map(v => v[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const vw = Math.max(maxX - minX, 0.1);
-  const vh = Math.max(maxY - minY, 0.1);
-  const PAD = 90;
-  const scale = Math.min((cw - PAD * 2) / vw, (ch - PAD * 2) / vh, 120);
-  return {
-    scale,
-    x: (cw - vw * scale) / 2 - minX * scale,
-    y: (ch - vh * scale) / 2 - minY * scale,
-  };
+  return polygonArea(vertices);
 }
 
 // ─── Drag state ────────────────────────────────────────────────────────────────
@@ -71,9 +36,8 @@ export interface BoundaryEditorProps {
 }
 
 export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
-  const [view, setView] = useState<ViewTransform>({ x: 80, y: 60, scale: 50 });
+  const [view, setView] = useState({ x: 80, y: 60, scale: 50 });
   const [drag, setDrag] = useState<DragState>(DRAG_IDLE);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,31 +49,26 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
 
   useEffect(() => { viewRef.current = view; }, [view]);
 
+  const canvasSize = useCanvasSize(containerRef as React.RefObject<HTMLElement | null>);
+
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setCanvasSize({ width, height });
-      if (!didAutoFit.current && width > 0 && height > 0) {
-        didAutoFit.current = true;
-        const fit = computeFitView(initVerts.current, width, height);
-        setView(fit);
-        viewRef.current = fit;
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    const { width, height } = canvasSize;
+    if (!didAutoFit.current && width > 0 && height > 0) {
+      didAutoFit.current = true;
+      const fit = computeFitView(initVerts.current, width, height);
+      setView(fit);
+      viewRef.current = fit;
+    }
+  }, [canvasSize]);
 
   // ─── Zoom ────────────────────────────────────────────────────────────────────
 
+  const MIN_SCALE = 15, MAX_SCALE = 600;
+
   function zoomBy(factor: number, cx?: number, cy?: number) {
-    const { scale, x, y } = viewRef.current;
     const ccx = cx ?? canvasSize.width / 2;
     const ccy = cy ?? canvasSize.height / 2;
-    const newScale = Math.min(600, Math.max(15, scale * factor));
-    const next = { scale: newScale, x: ccx - ((ccx - x) / scale) * newScale, y: ccy - ((ccy - y) / scale) * newScale };
+    const next = applyZoom(viewRef.current, factor, ccx, ccy, MIN_SCALE, MAX_SCALE);
     setView(next);
     viewRef.current = next;
   }
@@ -197,8 +156,7 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
       if (!rect) return;
       const cx = pinchRef.current.cx - rect.left, cy = pinchRef.current.cy - rect.top;
       const { origScale, origX, origY } = pinchRef.current;
-      const newScale = Math.min(600, Math.max(15, origScale * factor));
-      const next = { scale: newScale, x: cx - ((cx - origX) / origScale) * newScale, y: cy - ((cy - origY) / origScale) * newScale };
+      const next = applyZoom({ scale: origScale, x: origX, y: origY }, factor, cx, cy, MIN_SCALE, MAX_SCALE);
       setView(next); viewRef.current = next;
       return;
     }
@@ -235,18 +193,19 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
+  const { width, height } = canvasSize;
   const n = vertices.length;
   const area = boundaryArea(vertices);
-  const cen = n >= 3 ? polyCentroid(vertices) : ([0, 0] as Vertex);
+  const cen = n >= 3 ? centroid(vertices) : ([0, 0] as Vertex);
   const [cenPx, cenPy] = worldToPixel(cen, view);
 
-  const boundaryPts = vertices.map(([vx, vy]) => {
-    const [px, py] = worldToPixel([vx, vy], view);
+  const boundaryPts = vertices.map(v => {
+    const [px, py] = worldToPixel(v, view);
     return `${px},${py}`;
   }).join(" ");
 
-  const outsidePath = canvasSize.width > 0
-    ? `M0,0 H${canvasSize.width} V${canvasSize.height} H0 Z M${boundaryPts}`
+  const outsidePath = width > 0
+    ? `M0,0 H${width} V${height} H0 Z M${boundaryPts}`
     : "";
 
   const cursor = drag.mode === "pan" ? "grabbing" : drag.mode === "vertex" ? "move" : "default";
@@ -255,8 +214,8 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
     <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-canvas">
       <svg
         ref={svgRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
+        width={width}
+        height={height}
         style={{ display: "block", cursor }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -265,29 +224,18 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
         onPointerCancel={() => { activePointers.current.clear(); pinchRef.current = null; setDrag(DRAG_IDLE); }}
         onWheel={handleWheel}
       >
-        <GridBackground view={view} width={canvasSize.width} height={canvasSize.height} />
+        <GridBackground view={view} width={width} height={height} id="be" />
 
-        {/* Garden fill */}
         {n >= 3 && <polygon points={boundaryPts} fill="rgba(193,224,157,0.2)" />}
 
-        {/* Outside overlay */}
         {outsidePath && (
           <path d={outsidePath} fillRule="evenodd" fill="rgba(34,32,27,0.07)" style={{ pointerEvents: "none" }} />
         )}
 
-        {/* Boundary outline */}
         {n >= 3 && (
-          <polygon
-            points={boundaryPts}
-            fill="none"
-            stroke="#234a2e"
-            strokeWidth={2.5}
-            strokeDasharray="9 4"
-            strokeLinejoin="round"
-          />
+          <polygon points={boundaryPts} fill="none" stroke="#234a2e" strokeWidth={2.5} strokeDasharray="9 4" strokeLinejoin="round" />
         )}
 
-        {/* Edge length labels */}
         {vertices.map((v, i) => {
           const next = vertices[(i + 1) % n];
           const len = edgeLength(v[0], v[1], next[0], next[1]);
@@ -296,11 +244,8 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
           const angle = Math.atan2(next[1] - v[1], next[0] - v[0]) * 180 / Math.PI;
           const textAngle = (angle > 90 || angle < -90) ? angle + 180 : angle;
           return (
-            <text key={i}
-              x={mpx} y={mpy - 12}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize={11} fontFamily="system-ui,sans-serif"
-              fill="#234a2e" fontWeight="600"
+            <text key={i} x={mpx} y={mpy - 12} textAnchor="middle" dominantBaseline="middle"
+              fontSize={11} fontFamily="system-ui,sans-serif" fill="#234a2e" fontWeight="600"
               transform={`rotate(${textAngle},${mpx},${mpy - 12})`}
               style={{ pointerEvents: "none", userSelect: "none" }}
             >
@@ -309,33 +254,21 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
           );
         })}
 
-        {/* Area in centroid */}
         {n >= 3 && (
-          <text
-            x={cenPx} y={cenPy}
-            textAnchor="middle" dominantBaseline="middle"
-            fontSize={16} fontFamily="system-ui,sans-serif"
-            fill="#234a2e" fontWeight="700" opacity={0.35}
+          <text x={cenPx} y={cenPy} textAnchor="middle" dominantBaseline="middle"
+            fontSize={16} fontFamily="system-ui,sans-serif" fill="#234a2e" fontWeight="700" opacity={0.35}
             style={{ pointerEvents: "none", userSelect: "none" }}
           >
             {area.toFixed(0)} m²
           </text>
         )}
 
-        {/* Edge midpoint handles (add vertex) */}
         {vertices.map((v, i) => {
           const next = vertices[(i + 1) % n];
           const [mpx, mpy] = worldToPixel([(v[0] + next[0]) / 2, (v[1] + next[1]) / 2], view);
-          return (
-            <rect key={i}
-              x={mpx - 6} y={mpy - 6} width={12} height={12}
-              fill="white" stroke="#234a2e" strokeWidth={1.5} rx={3}
-              style={{ cursor: "pointer" }}
-            />
-          );
+          return <rect key={i} x={mpx - 6} y={mpy - 6} width={12} height={12} fill="white" stroke="#234a2e" strokeWidth={1.5} rx={3} style={{ cursor: "pointer" }} />;
         })}
 
-        {/* Vertex handles */}
         {vertices.map(([vx, vy], i) => {
           const [vpx, vpy] = worldToPixel([vx, vy], view);
           return (
@@ -353,36 +286,10 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
         })}
       </svg>
 
-      {/* Zoom controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-        <button onClick={() => zoomBy(1.3)}
-          className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95">+</button>
-        <button onClick={() => zoomBy(1 / 1.3)}
-          className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95">−</button>
+        <button onClick={() => zoomBy(1.3)} className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95">+</button>
+        <button onClick={() => zoomBy(1 / 1.3)} className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95">−</button>
       </div>
     </div>
-  );
-}
-
-// ─── Grid ─────────────────────────────────────────────────────────────────────
-
-function GridBackground({ view, width, height }: { view: ViewTransform; width: number; height: number }) {
-  const { x, y, scale } = view;
-  const minor = scale * 0.5;
-  const major = scale;
-  return (
-    <g>
-      <defs>
-        <pattern id="be-minor" width={minor} height={minor} patternUnits="userSpaceOnUse" x={x % minor} y={y % minor}>
-          <path d={`M ${minor} 0 L 0 0 0 ${minor}`} fill="none" stroke="#d8d3cc" strokeWidth="0.5" />
-        </pattern>
-        <pattern id="be-major" width={major} height={major} patternUnits="userSpaceOnUse" x={x % major} y={y % major}>
-          <rect width={major} height={major} fill="url(#be-minor)" />
-          <path d={`M ${major} 0 L 0 0 0 ${major}`} fill="none" stroke="#c8c3bb" strokeWidth="1" />
-        </pattern>
-      </defs>
-      <rect width={width} height={height} fill="#f4f2ec" />
-      <rect width={width} height={height} fill="url(#be-major)" />
-    </g>
   );
 }

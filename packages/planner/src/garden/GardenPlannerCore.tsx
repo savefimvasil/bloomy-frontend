@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pixelToWorld, worldToPixel } from "@bloomy/bloomy-planner";
+import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, worldPointInPolygon, nearestPointOnSegment, applyZoom } from "../lib/geometry";
+import { GridBackground } from "../canvas/GridBackground";
+import { useCanvasSize } from "../lib/hooks";
 import type {
   GardenZone, GardenObject, GardenBoundary, GardenPlan,
   Vertex, ViewTransform, ZoneType, ObjectType,
@@ -17,49 +19,17 @@ function generateId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function pointInPolygon(
-  px: number, py: number,
-  vertices: Vertex[], offset: Vertex,
-  vt: ViewTransform,
-): boolean {
-  const pts = vertices.map(([vx, vy]) => worldToPixel([vx + offset[0], vy + offset[1]], vt));
-  let inside = false;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, yi] = pts[i];
-    const [xj, yj] = pts[j];
-    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
+function inBoundary(wx: number, wy: number, b: GardenBoundary): boolean {
+  return worldPointInPolygon(wx, wy, b.vertices.map(([vx, vy]) => [vx + b.offset[0], vy + b.offset[1]] as Vertex));
 }
 
-function worldPointInBoundary(wx: number, wy: number, boundary: GardenBoundary): boolean {
-  const { vertices, offset } = boundary;
-  let inside = false;
-  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-    const xi = vertices[i][0] + offset[0], yi = vertices[i][1] + offset[1];
-    const xj = vertices[j][0] + offset[0], yj = vertices[j][1] + offset[1];
-    if ((yi > wy) !== (yj > wy) && wx < ((xj - xi) * (wy - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-function nearestPointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): [number, number] {
-  const dx = bx - ax, dy = by - ay;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq === 0) return [ax, ay];
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
-  return [ax + t * dx, ay + t * dy];
-}
-
-function clampToPerimeter(wx: number, wy: number, boundary: GardenBoundary): [number, number] {
-  const { vertices, offset } = boundary;
+function clampToBoundary(wx: number, wy: number, b: GardenBoundary): [number, number] {
+  const { vertices, offset } = b;
   let bestDist = Infinity;
   let best: [number, number] = [wx, wy];
   for (let i = 0; i < vertices.length; i++) {
     const j = (i + 1) % vertices.length;
-    const ax = vertices[i][0] + offset[0], ay = vertices[i][1] + offset[1];
-    const bx = vertices[j][0] + offset[0], by = vertices[j][1] + offset[1];
-    const pt = nearestPointOnSegment(wx, wy, ax, ay, bx, by);
+    const pt = nearestPointOnSegment(wx, wy, vertices[i][0] + offset[0], vertices[i][1] + offset[1], vertices[j][0] + offset[0], vertices[j][1] + offset[1]);
     const d = (pt[0] - wx) ** 2 + (pt[1] - wy) ** 2;
     if (d < bestDist) { bestDist = d; best = pt; }
   }
@@ -67,8 +37,10 @@ function clampToPerimeter(wx: number, wy: number, boundary: GardenBoundary): [nu
 }
 
 function hitTestZones(px: number, py: number, zones: GardenZone[], vt: ViewTransform): GardenZone | null {
+  const [wx, wy] = pixelToWorld(px, py, vt);
   for (let i = zones.length - 1; i >= 0; i--) {
-    if (pointInPolygon(px, py, zones[i].vertices, zones[i].offset, vt)) return zones[i];
+    const z = zones[i];
+    if (worldPointInPolygon(wx, wy, z.vertices.map(([vx, vy]) => [vx + z.offset[0], vy + z.offset[1]] as Vertex))) return z;
   }
   return null;
 }
@@ -81,28 +53,6 @@ function hitTestObject(px: number, py: number, obj: GardenObject, vt: ViewTransf
     return px >= cx - hw && px <= cx + hw && py >= cy - hh && py <= cy + hh;
   }
   return Math.sqrt((px - cx) ** 2 + (py - cy) ** 2) < 18;
-}
-
-function edgeLength(ax: number, ay: number, bx: number, by: number): number {
-  return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
-}
-
-function polygonArea(vertices: Vertex[]): number {
-  let sum = 0;
-  const n = vertices.length;
-  for (let i = 0; i < n; i++) {
-    const [x1, y1] = vertices[i];
-    const [x2, y2] = vertices[(i + 1) % n];
-    sum += x1 * y2 - x2 * y1;
-  }
-  return Math.abs(sum) / 2;
-}
-
-function polyCentroid(vertices: Vertex[], offset: Vertex): Vertex {
-  const n = vertices.length;
-  let cx = 0, cy = 0;
-  for (const [x, y] of vertices) { cx += x + offset[0]; cy += y + offset[1]; }
-  return [cx / n, cy / n];
 }
 
 function verticesPath(vertices: Vertex[], offset: Vertex, vt: ViewTransform): string {
@@ -137,11 +87,12 @@ const DRAG_IDLE: DragState = {
 export interface GardenPlannerCoreProps {
   plan: GardenPlan;
   onSave?: (plan: GardenPlan) => Promise<void>;
+  onGenerateImage?: (plan: GardenPlan) => Promise<{ images: string[] }>;
   projectName?: string;
-  projectId?: string;
+  onBack?: () => void;
 }
 
-export function GardenPlannerCore({ plan, onSave, projectName, projectId }: GardenPlannerCoreProps) {
+export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, onBack }: GardenPlannerCoreProps) {
   const [boundary, setBoundary] = useState<GardenBoundary | undefined>(plan.gardenBoundary);
   const [zones, setZones] = useState<GardenZone[]>(plan.zones);
   const [objects, setObjects] = useState<GardenObject[]>(plan.objects);
@@ -151,8 +102,8 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
   const [editingZoneVertices, setEditingZoneVertices] = useState(false);
   const [editingBoundary, setEditingBoundary] = useState(false);
   const [drag, setDrag] = useState<DragState>(DRAG_IDLE);
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [imageModal, setImageModal] = useState<{ state: "loading" | "done" | "error"; images: string[] } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -164,17 +115,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
 
   useEffect(() => { viewRef.current = view; }, [view]);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setCanvasSize({ width, height });
-    });
-    ro.observe(el);
-    setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
-    return () => ro.disconnect();
-  }, []);
+  const canvasSize = useCanvasSize(containerRef as React.RefObject<HTMLElement | null>);
 
   // Debounced auto-save
   useEffect(() => {
@@ -206,14 +147,29 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // ─── Image generation ─────────────────────────────────────────────────────
+
+  async function handleGenerateImage() {
+    if (!onGenerateImage) return;
+    setImageModal({ state: "loading", images: [] });
+    const currentPlan: GardenPlan = {
+      ...plan, gardenBoundary: boundary, zones, objects, view,
+      exportedAt: new Date().toISOString(),
+    };
+    try {
+      const result = await onGenerateImage(currentPlan);
+      setImageModal({ state: "done", images: result.images });
+    } catch {
+      setImageModal({ state: "error", images: [] });
+    }
+  }
+
   // ─── Zoom ─────────────────────────────────────────────────────────────────
 
   function zoomBy(factor: number, cx?: number, cy?: number) {
-    const { scale, x, y } = viewRef.current;
     const ccx = cx ?? canvasSize.width / 2;
     const ccy = cy ?? canvasSize.height / 2;
-    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
-    const next = { scale: newScale, x: ccx - ((ccx - x) / scale) * newScale, y: ccy - ((ccy - y) / scale) * newScale };
+    const next = applyZoom(viewRef.current, factor, ccx, ccy, MIN_SCALE, MAX_SCALE);
     setView(next);
     viewRef.current = next;
   }
@@ -371,8 +327,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
       if (!rect) return;
       const cx = pinchRef.current.cx - rect.left, cy = pinchRef.current.cy - rect.top;
       const { origScale, origX, origY } = pinchRef.current;
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, origScale * factor));
-      const next = { scale: newScale, x: cx - ((cx - origX) / origScale) * newScale, y: cy - ((cy - origY) / origScale) * newScale };
+      const next = applyZoom({ scale: origScale, x: origX, y: origY }, factor, cx, cy, MIN_SCALE, MAX_SCALE);
       setView(next); viewRef.current = next;
       return;
     }
@@ -401,8 +356,8 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
       const world = pixelToWorld(px, py, vt);
       let wx = Math.round((world[0] + drag.vertexDragOffset[0]) / SNAP) * SNAP;
       let wy = Math.round((world[1] + drag.vertexDragOffset[1]) / SNAP) * SNAP;
-      if (boundary && !worldPointInBoundary(wx, wy, boundary)) {
-        [wx, wy] = clampToPerimeter(wx, wy, boundary);
+      if (boundary && !inBoundary(wx, wy, boundary)) {
+        [wx, wy] = clampToBoundary(wx, wy, boundary);
       }
       setZones(prev => prev.map(z => z.id === drag.zoneId ? {
         ...z,
@@ -415,7 +370,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
       const newOffset: Vertex = [drag.startOffset[0] + dx, drag.startOffset[1] + dy];
       if (boundary) {
         const zone = zones.find(z => z.id === drag.zoneId);
-        if (zone && !zone.vertices.every(([vx, vy]) => worldPointInBoundary(vx + newOffset[0], vy + newOffset[1], boundary))) return;
+        if (zone && !zone.vertices.every(([vx, vy]) => inBoundary(vx + newOffset[0], vy + newOffset[1], boundary))) return;
       }
       setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, offset: newOffset } : z));
     } else if (drag.mode === "object" && drag.objectId) {
@@ -425,8 +380,8 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
         Math.round((drag.objectStart[0] + dx) / 0.1) * 0.1,
         Math.round((drag.objectStart[1] + dy) / 0.1) * 0.1,
       ];
-      if (boundary && !worldPointInBoundary(nx, ny, boundary)) {
-        [nx, ny] = clampToPerimeter(nx, ny, boundary);
+      if (boundary && !inBoundary(nx, ny, boundary)) {
+        [nx, ny] = clampToBoundary(nx, ny, boundary);
       }
       setObjects(prev => prev.map(o => o.id === drag.objectId ? { ...o, position: [nx, ny] as Vertex } : o));
     }
@@ -447,10 +402,9 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
     const count = zones.filter(z => z.type === type).length;
     const label = count > 0 ? `${cfg.label} ${count + 1}` : cfg.label;
 
-    // Default placement: inside boundary centroid (or canvas center)
     let cx = 0, cy = 0;
     if (boundary) {
-      const cen = polyCentroid(boundary.vertices, boundary.offset);
+      const cen = centroid(boundary.vertices.map(([vx, vy]) => [vx + boundary.offset[0], vy + boundary.offset[1]] as Vertex));
       cx = cen[0] - 2;
       cy = cen[1] - 2;
     } else {
@@ -496,7 +450,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
     const vt = viewRef.current;
     let pos: Vertex;
     if (boundary) {
-      pos = polyCentroid(boundary.vertices, boundary.offset);
+      pos = centroid(boundary.vertices.map(([vx, vy]) => [vx + boundary.offset[0], vy + boundary.offset[1]] as Vertex));
     } else {
       pos = pixelToWorld(canvasSize.width / 2, canvasSize.height / 2, vt) as Vertex;
     }
@@ -533,7 +487,6 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
     : drag.mode === "zone-vertex" || drag.mode === "boundary-vertex" || drag.mode === "zone" || drag.mode === "object" ? "move"
     : "default";
 
-  // Outside-boundary overlay path (evenodd)
   const outsideOverlayPath = boundary
     ? `M0,0 H${canvasSize.width} V${canvasSize.height} H0 Z ${verticesPath(boundary.vertices, boundary.offset, view)}`
     : null;
@@ -558,7 +511,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
           onPointerLeave={handleDragCancel}
           onPointerCancel={handleDragCancel}
         >
-          <GridBackground view={view} width={canvasSize.width} height={canvasSize.height} />
+          <GridBackground view={view} width={canvasSize.width} height={canvasSize.height} id="gp" />
 
           {/* Garden boundary fill */}
           {boundary && (
@@ -579,7 +532,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
               const [px, py] = worldToPixel([vx + zone.offset[0], vy + zone.offset[1]], view);
               return `${px},${py}`;
             }).join(" ");
-            const cen = polyCentroid(zone.vertices, zone.offset);
+            const cen = centroid(zone.vertices.map(([vx, vy]) => [vx + zone.offset[0], vy + zone.offset[1]] as Vertex));
             const [cenPx, cenPy] = worldToPixel(cen, view);
             const area = polygonArea(zone.vertices);
 
@@ -774,7 +727,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
           })}
         </svg>
 
-        {/* Floating zone action bar — shown when a zone is selected and no vertex/boundary editing is active */}
+        {/* Floating zone action bar */}
         {selectedZone && !editingLabel && (
           <div className="pointer-events-auto absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-px rounded-full border border-line bg-paper/95 shadow-md backdrop-blur-sm">
             <span className="max-w-[140px] truncate px-3 py-1.5 text-hint font-medium text-ink">{selectedZone.label}</span>
@@ -791,6 +744,20 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
               className="rounded-full px-3 py-1.5 text-hint font-medium text-danger transition hover:bg-danger/8"
             >
               Delete
+            </button>
+          </div>
+        )}
+
+        {/* Floating object action bar */}
+        {selectedObject && !editingLabel && !selectedZone && (
+          <div className="pointer-events-auto absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-px rounded-full border border-line bg-paper/95 shadow-md backdrop-blur-sm">
+            <span className="max-w-[140px] truncate px-3 py-1.5 text-hint font-medium text-ink">{selectedObject.label}</span>
+            <div className="h-4 w-px bg-line" />
+            <button
+              onClick={() => deleteObject(selectedObject.id)}
+              className="rounded-full px-3 py-1.5 text-hint font-medium text-danger transition hover:bg-danger/8"
+            >
+              Remove
             </button>
           </div>
         )}
@@ -828,7 +795,7 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
         editingZoneVertices={editingZoneVertices}
         editingBoundary={editingBoundary}
         projectName={projectName}
-        projectId={projectId}
+        onBack={onBack}
         onSelectZone={id => { setSelectedZoneId(id); setSelectedObjectId(null); }}
         onSelectObject={id => { setSelectedObjectId(id); setSelectedZoneId(null); }}
         onAddZone={addZone}
@@ -840,30 +807,78 @@ export function GardenPlannerCore({ plan, onSave, projectName, projectId }: Gard
         onAddObject={(type, size) => addObject(type, size)}
         onDeleteObject={deleteObject}
         onUpdateObjectLabel={updateObjectLabel}
+        onGenerateImage={onGenerateImage ? handleGenerateImage : undefined}
       />
+
+      {imageModal && (
+        <GardenImageModal
+          state={imageModal.state}
+          images={imageModal.images}
+          onClose={() => setImageModal(null)}
+        />
+      )}
     </div>
   );
 }
 
-// ─── Grid background ─────────────────────────────────────────────────────────
+// ─── Image modal ──────────────────────────────────────────────────────────────
 
-function GridBackground({ view, width, height }: { view: ViewTransform; width: number; height: number }) {
-  const { x, y, scale } = view;
-  const minor = scale * 0.5;
-  const major = scale;
+const VIEW_LABELS = ["Top view", "Front perspective", "Side perspective"];
+
+function GardenImageModal({
+  state, images, onClose,
+}: {
+  state: "loading" | "done" | "error";
+  images: string[];
+  onClose: () => void;
+}) {
   return (
-    <g>
-      <defs>
-        <pattern id="gp-minor" width={minor} height={minor} patternUnits="userSpaceOnUse" x={x % minor} y={y % minor}>
-          <path d={`M ${minor} 0 L 0 0 0 ${minor}`} fill="none" stroke="#d8d3cc" strokeWidth="0.5" />
-        </pattern>
-        <pattern id="gp-major" width={major} height={major} patternUnits="userSpaceOnUse" x={x % major} y={y % major}>
-          <rect width={major} height={major} fill="url(#gp-minor)" />
-          <path d={`M ${major} 0 L 0 0 0 ${major}`} fill="none" stroke="#c8c3bb" strokeWidth="1" />
-        </pattern>
-      </defs>
-      <rect width={width} height={height} fill="#f4f2ec" />
-      <rect width={width} height={height} fill="url(#gp-major)" />
-    </g>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="flex w-full max-w-4xl flex-col gap-4 rounded-2xl border border-line bg-paper p-6 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-body font-semibold text-ink">AI garden visualisation</p>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-mist hover:text-ink"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M2 2l10 10M12 2L2 12" />
+            </svg>
+          </button>
+        </div>
+
+        {state === "loading" && (
+          <div className="flex flex-col items-center gap-4 py-12">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-line border-t-forest" />
+            <p className="text-body text-muted">Generating images, this may take a moment&hellip;</p>
+          </div>
+        )}
+
+        {state === "error" && (
+          <div className="flex flex-col items-center gap-2 py-12">
+            <p className="text-body text-danger">Failed to generate images. Please try again.</p>
+          </div>
+        )}
+
+        {state === "done" && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {images.map((url, i) => (
+              <div key={i} className="flex flex-col gap-1.5">
+                <div className="overflow-hidden rounded-xl border border-line bg-canvas">
+                  <img src={url} alt={VIEW_LABELS[i]} className="h-auto w-full object-cover" />
+                </div>
+                <p className="text-center text-hint text-muted">{VIEW_LABELS[i]}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
