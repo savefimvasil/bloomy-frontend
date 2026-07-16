@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BloomyLogo } from "@/components/ui/bloomy-logo";
+import { Dropdown } from "@/components/ui/dropdown";
 import { IconButton } from "@/components/ui/icon-button";
 import { useIsLoggedIn } from "@/lib/auth";
 
@@ -17,11 +18,14 @@ function CabinetIcon() {
   );
 }
 
+const PRODUCTS = [
+  { href: "/projects/new", label: "Garden Planner" },
+  { href: "/tile-plan", label: "Tile Planner" },
+];
+
 export function SiteHeader() {
   const isLoggedIn = useIsLoggedIn();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const navLinks = [{ href: "/tile-plan", label: "Tile Planner" }];
 
   return (
     <header className="fixed top-0 z-40 w-full border-b border-line/60 bg-paper/95 backdrop-blur-md">
@@ -34,15 +38,7 @@ export function SiteHeader() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-7 sm:flex">
-          {navLinks.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-eyebrow text-muted transition hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
+          <Dropdown label="Products" items={PRODUCTS} />
 
           <span className="h-4 w-px bg-line" />
 
@@ -66,7 +62,7 @@ export function SiteHeader() {
 
         {/* Mobile hamburger */}
         <IconButton
-          variant="ghost"
+          variant="ghost"text-display-xl text-ink
           size="lg"
           className="sm:hidden text-base text-ink"
           onClick={() => setMenuOpen((v) => !v)}
@@ -76,19 +72,22 @@ export function SiteHeader() {
         </IconButton>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile menu */}
       {menuOpen && (
-        <div className="absolute left-0 right-0 top-[68px] flex flex-col gap-4 border-t border-line bg-paper/98 px-6 py-4 shadow-soft backdrop-blur-md sm:hidden">
-          {navLinks.map((item) => (
+        <div className="absolute left-0 right-0 top-[68px] flex flex-col gap-1 border-t border-line bg-paper/98 px-6 py-4 shadow-soft backdrop-blur-md sm:hidden">
+          <p className="mb-1 text-eyebrow text-muted/50">Products</p>
+          {PRODUCTS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-eyebrow text-muted transition hover:text-ink"
+              className="py-2 pl-2 text-eyebrow text-muted transition hover:text-ink"
               onClick={() => setMenuOpen(false)}
             >
               {item.label}
             </Link>
           ))}
+
+          <div className="my-2 h-px bg-line" />
 
           {isLoggedIn ? (
             <Link

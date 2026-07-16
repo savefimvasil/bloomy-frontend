@@ -1,8 +1,8 @@
 import { FinalCta } from "@/components/home/FinalCta";
+import { GardenPlannerPromo } from "@/components/home/GardenPlannerPromo";
 import { HeroSection } from "@/components/home/HeroSection";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { IntroStrip } from "@/components/home/IntroStrip";
-import { ProjectsTeaser } from "@/components/home/ProjectsTeaser";
 import { TilePlannerSpotlight } from "@/components/home/TilePlannerSpotlight";
 
 export default function HomePage() {
@@ -18,14 +18,14 @@ export default function HomePage() {
           </>
         }
         description="Plan the patio before the sun's fully up. Share the count with the yard before they open."
-        primaryCta={{ label: "Start planning", href: "/tile-plan" }}
+        primaryCta={{ label: "Start planning", href: "/projects/new" }}
         secondaryCta={{ label: "Open Tile Planner →", href: "/tile-plan" }}
         scrollHint
       />
       <IntroStrip />
+      <GardenPlannerPromo />
       <TilePlannerSpotlight />
       <HowItWorks />
-      <ProjectsTeaser />
       <FinalCta />
     </div>
   );

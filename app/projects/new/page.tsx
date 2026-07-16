@@ -22,8 +22,17 @@ export default function NewProjectPage() {
   const area = boundaryArea(vertices);
 
   async function handleCreate() {
-    if (!getAuthToken()) { router.push("/login"); return; }
     if (!valid) return;
+
+    if (!getAuthToken()) {
+      sessionStorage.setItem(
+        "bloomy_draft_plan",
+        JSON.stringify({ vertices, name: name.trim() }),
+      );
+      router.push("/projects/demo");
+      return;
+    }
+
     setCreating(true);
     setError(null);
 
@@ -85,7 +94,7 @@ export default function NewProjectPage() {
         </div>
 
         {/* Sidebar */}
-        <aside className="flex w-[220px] shrink-0 flex-col gap-5 border-l border-line bg-paper p-5">
+        <aside className="flex w-[260px] shrink-0 flex-col gap-5 border-l border-line bg-paper p-5">
           <div>
             <p className="mb-4 text-eyebrow text-muted">Step 1 of 2</p>
             <p className="text-body font-semibold text-ink">Garden boundary</p>
@@ -124,7 +133,7 @@ export default function NewProjectPage() {
 
           <div className="mt-auto">
             <Button onClick={handleCreate} disabled={!valid || creating} className="w-full">
-              {creating ? "Creating..." : "Create project"}
+              {creating ? "Creating..." : getAuthToken() ? "Create project" : "Start planning →"}
             </Button>
           </div>
         </aside>

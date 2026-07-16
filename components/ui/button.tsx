@@ -19,17 +19,17 @@ type ButtonLinkProps = SharedProps & { href: string };
 function getVariantClasses(variant: ButtonVariant) {
   switch (variant) {
     case "secondary":
-      return "bg-paper border border-line text-ink hover:border-muted";
+      return "border-line bg-paper text-ink hover:border-muted";
     case "light":
-      return "bg-paper text-forest hover:bg-paper/90";
+      return "border-transparent bg-paper text-forest hover:bg-paper/90";
     case "outline":
-      return "border border-paper/40 text-paper bg-transparent hover:border-paper/70";
+      return "border-paper/40 bg-transparent text-paper hover:border-paper/70";
     case "ghost":
-      return "bg-transparent text-muted hover:text-ink";
+      return "border-transparent bg-transparent text-muted hover:text-ink";
     case "danger":
-      return "border border-line/60 bg-transparent text-danger/70 hover:border-danger hover:text-danger";
+      return "border-line/60 bg-transparent text-danger/70 hover:border-danger hover:text-danger";
     default:
-      return "bg-forest text-paper hover:bg-moss";
+      return "border-transparent bg-forest text-paper hover:bg-moss";
   }
 }
 
@@ -44,7 +44,7 @@ function getSizeClasses(size: ButtonSize) {
 
 function getBaseClasses(variant: ButtonVariant, size: ButtonSize, className?: string) {
   return [
-    "inline-flex items-center justify-center gap-2 font-medium transition-colors",
+    "inline-flex items-center justify-center gap-2 border font-medium transition-colors",
     "disabled:cursor-not-allowed disabled:opacity-50",
     getSizeClasses(size),
     getVariantClasses(variant),

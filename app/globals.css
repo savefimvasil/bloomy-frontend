@@ -124,11 +124,6 @@ a {
   text-decoration: none;
 }
 
-button,
-input {
-  font: inherit;
-}
-
 .container {
   width: 100%;
   max-width: 1024px;

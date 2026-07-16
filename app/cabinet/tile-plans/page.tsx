@@ -3,27 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PageHeading } from "@/components/ui/page-heading";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
-
-type TilePlan = {
-  id: string;
-  name: string | null;
-  planType: string;
-  updatedAt: string;
-  createdAt: string;
-};
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-function relativeTime(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "Edited today";
-  if (days === 1) return "Edited yesterday";
-  if (days < 30) return `Edited ${days} days ago`;
-  return `Edited ${new Date(dateStr).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
-}
+import { useRequireAuth } from "@/lib/useRequireAuth";
+import { relativeTime } from "@/lib/dateUtils";
+import type { TilePlan } from "@/types/models";
 
 // ─── Tile thumbnail SVG ──────────────────────────────────────────────────────
 
@@ -171,7 +156,7 @@ function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) =>
 
       {/* Date — hidden on hover */}
       <p className="shrink-0 text-hint text-muted transition-opacity group-hover:opacity-0">
-        {relativeTime(plan.updatedAt)}
+        {relativeTime(plan.updatedAt, "Edited")}
       </p>
 
       {/* Actions — shown on hover */}
@@ -204,22 +189,18 @@ export default function TilePlansPage() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
+  useRequireAuth();
+
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!getAuthToken()) {
-        setError("Not logged in.");
-        setLoading(false);
-        return;
-      }
-      void apiFetch("/tile-plans")
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to load plans");
-          return res.json() as Promise<TilePlan[]>;
-        })
-        .then((data) => setPlans(data))
-        .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
-        .finally(() => setLoading(false));
-    });
+    if (!getAuthToken()) return;
+    void apiFetch("/tile-plans")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load plans");
+        return res.json() as Promise<TilePlan[]>;
+      })
+      .then((data) => setPlans(data))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleCreate() {
@@ -246,12 +227,7 @@ export default function TilePlansPage() {
   if (loading) return <p className="text-body text-muted">Loading...</p>;
 
   if (error) {
-    return (
-      <div>
-        <p className="mb-4 text-body text-danger">{error}</p>
-        <Button href="/login">Go to login</Button>
-      </div>
-    );
+    return <p className="text-body text-danger">{error}</p>;
   }
 
   if (plans.length === 0) {
@@ -261,14 +237,16 @@ export default function TilePlansPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-end gap-6 pb-4">
-        <h1 className="text-display-xl text-ink">
-          TILE<br />PLANS
-        </h1>
-        <p className="mb-1 text-eyebrow text-muted">
-          {plans.length} {plans.length === 1 ? "plan" : "plans"}
-        </p>
-      </div>
+      <PageHeading
+        title={<>TILE PLANS</>}
+        count={plans.length}
+        unit={["plan", "plans"]}
+        action={
+          <Button variant="secondary" size="sm" onClick={handleCreate} disabled={creating}>
+            + {creating ? "Creating..." : "New plan"}
+          </Button>
+        }
+      />
 
       <div className="border-t border-line" />
 
@@ -279,18 +257,6 @@ export default function TilePlansPage() {
         ))}
       </div>
 
-      {/* Add new */}
-      <div className="mt-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCreate}
-          disabled={creating}
-          className="px-0 text-hint"
-        >
-          + {creating ? "Creating..." : "New plan"}
-        </Button>
-      </div>
     </div>
   );
 }

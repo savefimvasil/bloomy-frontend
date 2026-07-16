@@ -82,6 +82,7 @@ export default function PlanSelectionPage() {
     setLoadingPlans(true);
     try {
       const res = await apiFetch("/tile-plans");
+      if (!res.ok) throw new Error("Failed to load plans");
       const data = (await res.json()) as Plan[];
       setPlans(data ?? []);
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, applyZoom, computeFitView } from "../lib/geometry";
+import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, computeFitView } from "../lib/geometry";
 import { GridBackground } from "../canvas/GridBackground";
 import { useCanvasSize } from "../lib/hooks";
 import type { Vertex } from "./types";
@@ -42,8 +42,6 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef(view);
-  const activePointers = useRef<Map<number, [number, number]>>(new Map());
-  const pinchRef = useRef<{ dist: number; cx: number; cy: number; origScale: number; origX: number; origY: number } | null>(null);
   const didAutoFit = useRef(false);
   const initVerts = useRef(vertices);
 
@@ -61,42 +59,9 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
     }
   }, [canvasSize]);
 
-  // ─── Zoom ────────────────────────────────────────────────────────────────────
-
-  const MIN_SCALE = 15, MAX_SCALE = 600;
-
-  function zoomBy(factor: number, cx?: number, cy?: number) {
-    const ccx = cx ?? canvasSize.width / 2;
-    const ccy = cy ?? canvasSize.height / 2;
-    const next = applyZoom(viewRef.current, factor, ccx, ccy, MIN_SCALE, MAX_SCALE);
-    setView(next);
-    viewRef.current = next;
-  }
-
-  function handleWheel(e: React.WheelEvent<SVGSVGElement>) {
-    e.preventDefault();
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
-  }
-
   // ─── Pointer ─────────────────────────────────────────────────────────────────
 
   function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
-    activePointers.current.set(e.pointerId, [e.clientX, e.clientY]);
-
-    if (activePointers.current.size === 2) {
-      const pts = Array.from(activePointers.current.values());
-      const dx = pts[1][0] - pts[0][0], dy = pts[1][1] - pts[0][1];
-      pinchRef.current = {
-        dist: Math.sqrt(dx * dx + dy * dy),
-        cx: (pts[0][0] + pts[1][0]) / 2, cy: (pts[0][1] + pts[1][1]) / 2,
-        origScale: viewRef.current.scale, origX: viewRef.current.x, origY: viewRef.current.y,
-      };
-      setDrag(DRAG_IDLE);
-      return;
-    }
-
     if (e.button !== 0 && e.button !== 1) return;
     const svg = svgRef.current;
     if (!svg) return;
@@ -145,22 +110,6 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
   }
 
   function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
-    activePointers.current.set(e.pointerId, [e.clientX, e.clientY]);
-
-    if (pinchRef.current && activePointers.current.size >= 2) {
-      const pts = Array.from(activePointers.current.values());
-      const dx = pts[1][0] - pts[0][0], dy = pts[1][1] - pts[0][1];
-      const newDist = Math.sqrt(dx * dx + dy * dy);
-      const factor = newDist / pinchRef.current.dist;
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const cx = pinchRef.current.cx - rect.left, cy = pinchRef.current.cy - rect.top;
-      const { origScale, origX, origY } = pinchRef.current;
-      const next = applyZoom({ scale: origScale, x: origX, y: origY }, factor, cx, cy, MIN_SCALE, MAX_SCALE);
-      setView(next); viewRef.current = next;
-      return;
-    }
-
     if (!drag.isDragging) return;
     const svg = svgRef.current;
     if (!svg) return;
@@ -180,9 +129,7 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
     }
   }
 
-  function handlePointerUp(e: React.PointerEvent<SVGSVGElement>) {
-    activePointers.current.delete(e.pointerId);
-    if (activePointers.current.size < 2) pinchRef.current = null;
+  function handlePointerUp() {
     setDrag(DRAG_IDLE);
   }
 
@@ -220,9 +167,8 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerLeave={() => { activePointers.current.clear(); pinchRef.current = null; setDrag(DRAG_IDLE); }}
-        onPointerCancel={() => { activePointers.current.clear(); pinchRef.current = null; setDrag(DRAG_IDLE); }}
-        onWheel={handleWheel}
+        onPointerLeave={() => setDrag(DRAG_IDLE)}
+        onPointerCancel={() => setDrag(DRAG_IDLE)}
       >
         <GridBackground view={view} width={width} height={height} id="be" />
 
@@ -285,11 +231,6 @@ export function BoundaryEditor({ vertices, onChange }: BoundaryEditorProps) {
           );
         })}
       </svg>
-
-      <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-        <button onClick={() => zoomBy(1.3)} className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95">+</button>
-        <button onClick={() => zoomBy(1 / 1.3)} className="flex h-8 w-8 items-center justify-center rounded border border-line bg-paper font-mono text-ink shadow-sm hover:bg-mist active:scale-95">−</button>
-      </div>
     </div>
   );
 }

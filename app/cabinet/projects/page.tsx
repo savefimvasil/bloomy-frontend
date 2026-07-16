@@ -3,26 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PageHeading } from "@/components/ui/page-heading";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
-
-type GardenProject = {
-  id: string;
-  name: string | null;
-  updatedAt: string;
-  createdAt: string;
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function relativeTime(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "Updated today";
-  if (days === 1) return "Updated yesterday";
-  if (days < 30) return `Updated ${days} days ago`;
-  return `Updated ${new Date(dateStr).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
-}
+import { useRequireAuth } from "@/lib/useRequireAuth";
+import { relativeTime } from "@/lib/dateUtils";
+import type { GardenProject } from "@/types/models";
 
 // ─── Project thumbnail ────────────────────────────────────────────────────────
 
@@ -165,22 +151,18 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useRequireAuth();
+
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!getAuthToken()) {
-        setError("Not logged in.");
-        setLoading(false);
-        return;
-      }
-      void apiFetch("/garden-projects")
-        .then(res => {
-          if (!res.ok) throw new Error("Failed to load projects");
-          return res.json() as Promise<GardenProject[]>;
-        })
-        .then(data => setProjects(data))
-        .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
-        .finally(() => setLoading(false));
-    });
+    if (!getAuthToken()) return;
+    void apiFetch("/garden-projects")
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load projects");
+        return res.json() as Promise<GardenProject[]>;
+      })
+      .then(data => setProjects(data))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
+      .finally(() => setLoading(false));
   }, []);
 
   function handleCreate() {
@@ -196,12 +178,7 @@ export default function ProjectsPage() {
   if (loading) return <p className="text-body text-muted">Loading...</p>;
 
   if (error) {
-    return (
-      <div>
-        <p className="mb-4 text-body text-danger">{error}</p>
-        <Button href="/login">Go to login</Button>
-      </div>
-    );
+    return <p className="text-body text-danger">{error}</p>;
   }
 
   if (projects.length === 0) {
@@ -210,14 +187,16 @@ export default function ProjectsPage() {
 
   return (
     <div>
-      <div className="flex items-end gap-6 pb-4">
-        <h1 className="text-display-xl text-ink">
-          GARDEN<br />PROJECTS
-        </h1>
-        <p className="mb-1 text-eyebrow text-muted">
-          {projects.length} {projects.length === 1 ? "project" : "projects"}
-        </p>
-      </div>
+      <PageHeading
+        title={<>GARDEN PROJECTS</>}
+        count={projects.length}
+        unit={["project", "projects"]}
+        action={
+          <Button variant="secondary" size="sm" onClick={handleCreate}>
+            + New project
+          </Button>
+        }
+      />
 
       <div className="border-t border-line" />
 
@@ -227,16 +206,6 @@ export default function ProjectsPage() {
         ))}
       </div>
 
-      <div className="mt-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCreate}
-          className="px-0 text-hint"
-        >
-          + New project
-        </Button>
-      </div>
     </div>
   );
 }

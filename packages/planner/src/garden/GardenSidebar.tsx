@@ -429,7 +429,7 @@ export function GardenSidebar({
           <div className="border-t border-line p-4">
             <button
               onClick={onGenerateImage}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-forest px-4 py-2.5 text-body font-medium text-white transition hover:bg-moss active:scale-95"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-forest px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-moss active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="1" y="1" width="13" height="13" rx="2" />
