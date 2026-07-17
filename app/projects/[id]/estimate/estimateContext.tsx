@@ -20,6 +20,7 @@ import type {
 import { DEFAULT_PARAMS, defaultExistingStructure } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
+import { Spinner } from "@/components/ui/spinner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -206,7 +207,7 @@ export function EstimateProvider({ children }: { children: React.ReactNode }) {
   }, [id, project, constructionData]);
 
   if (loading || !project || !constructionData) {
-    return <div className="flex h-full items-center justify-center bg-canvas"><div className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-forest" /></div>;
+    return <div className="flex h-full items-center justify-center bg-canvas"><Spinner /></div>;
   }
 
   return (

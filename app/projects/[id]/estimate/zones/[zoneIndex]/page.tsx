@@ -16,6 +16,9 @@ import type {
   PergolaBaseParams,
 } from "@bloomy/bloomy-planner";
 import { ZONE_CONFIGS, polygonArea, BASEMENT_FOR_SURFACE } from "@bloomy/bloomy-planner";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { ZoneDot } from "@/components/estimate/ZoneDot";
+import { StepNav } from "@/components/estimate/StepNav";
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
 
@@ -24,8 +27,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function SliderRow({
-  label, value, min, max, step = 10, unit,
-  onChange,
+  label, value, min, max, step = 10, unit, onChange,
 }: {
   label: string; value: number; min: number; max: number; step?: number; unit: string;
   onChange: (v: number) => void;
@@ -112,12 +114,7 @@ function PatioForm({ params, onChange }: { params: PatioParams; onChange: (p: Pa
 
   return (
     <>
-      <Toggle
-        label="Surface material"
-        value={surfaceMaterial}
-        options={SURFACE_OPTIONS}
-        onChange={handleSurface}
-      />
+      <Toggle label="Surface material" value={surfaceMaterial} options={SURFACE_OPTIONS} onChange={handleSurface} />
       {surfaceMaterial === "porcelain" && (
         <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-hint text-amber-900">
           Porcelain requires a concrete bed + flexible tile adhesive for a lasting bond.
@@ -135,21 +132,11 @@ function PatioForm({ params, onChange }: { params: PatioParams; onChange: (p: Pa
       />
       <NumberInput label="Edging (linear metres)" value={params.edgingLm ?? 0} onChange={v => onChange({ ...params, edgingLm: v })} />
       <div className="flex items-center gap-3">
-        <button
-          onClick={() => onChange({ ...params, includeTiles: !params.includeTiles })}
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${
-            params.includeTiles
-              ? "border-forest bg-forest text-paper"
-              : "border-line bg-canvas hover:border-forest/60"
-          }`}
+        <Checkbox
+          checked={params.includeTiles ?? false}
+          onChange={checked => onChange({ ...params, includeTiles: checked })}
           aria-label={params.includeTiles ? "Exclude tile supply cost" : "Include tile supply cost"}
-        >
-          {params.includeTiles && (
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 4l3 3 5-6" />
-            </svg>
-          )}
-        </button>
+        />
         <FieldLabel>Include tile supply cost in estimate</FieldLabel>
       </div>
     </>
@@ -235,7 +222,6 @@ export default function ZoneStepPage() {
   const { steps, currentStepIndex, save, saving } = useEstimate();
   const { zone, spec, updateZoneSpec } = useEstimateZone(zoneIndex);
 
-  // Context only renders children once loaded, so spec is available at mount
   const [localParams, setLocalParams] = useState<ZoneSpec["params"] | null>(() => spec?.params ?? null);
 
   if (!zone || !spec || !localParams) {
@@ -260,16 +246,18 @@ export default function ZoneStepPage() {
     if (next) router.push(next.href);
   }
 
-  function handlePrev() {
+  function handleBack() {
     const prev = steps[currentStepIndex - 1];
     if (prev) router.push(prev.href);
   }
+
+  const isLastZoneStep = currentStepIndex === steps.length - 2;
 
   return (
     <div className="mx-auto max-w-xl px-5 py-10">
       {/* Zone header */}
       <div className="mb-8 flex items-center gap-3">
-        <span className="h-4 w-4 shrink-0 rounded-sm border" style={{ background: cfg.fill, borderColor: cfg.stroke }} />
+        <ZoneDot fill={cfg.fill} stroke={cfg.stroke} size="md" />
         <div>
           <p className="text-hint text-muted">{cfg.label}</p>
           <h1 className="text-display-sm text-ink">{zone.label}</h1>
@@ -294,25 +282,14 @@ export default function ZoneStepPage() {
         {zone.type === "pergola-base"  && <PergolaBaseForm params={localParams as PergolaBaseParams} onChange={handleChange} />}
       </div>
 
-      {/* Navigation */}
-      <div className="mt-6 flex items-center justify-between">
-        <button
-          onClick={handlePrev}
-          disabled={currentStepIndex === 0}
-          className="flex items-center gap-1 text-hint text-muted hover:text-ink disabled:opacity-30"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M8 10L3 6l5-4"/></svg>
-          Previous
-        </button>
-
-        <button
-          onClick={() => void handleNext()}
-          disabled={saving}
-          className="rounded-xl bg-forest px-7 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:opacity-50"
-        >
-          {saving ? "Saving…" : currentStepIndex === steps.length - 2 ? "Save & view summary" : "Save & continue →"}
-        </button>
-      </div>
+      <StepNav
+        onBack={handleBack}
+        backDisabled={currentStepIndex === 0}
+        onNext={handleNext}
+        nextLabel={isLastZoneStep ? "Save & view summary" : "Save & continue →"}
+        nextDisabled={saving}
+        nextLoading={saving}
+      />
     </div>
   );
 }

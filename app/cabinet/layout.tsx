@@ -59,8 +59,8 @@ function UserIcon() {
 // ─── Nav config ─────────────────────────────────────────────────────────────
 
 const CABINET_NAV = [
-  { href: "/cabinet/tile-plans", label: "Tile Plans", Icon: TilePlansIcon,  soon: false },
   { href: "/cabinet/projects",   label: "Projects",   Icon: ProjectsIcon,   soon: false },
+  { href: "/cabinet/tile-plans", label: "Tile Plans", Icon: TilePlansIcon,  soon: false },
   { href: "/cabinet/estimates",  label: "Estimates",  Icon: EstimatesIcon,  soon: false },
 ];
 

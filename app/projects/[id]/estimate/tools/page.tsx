@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEstimate } from "../estimateContext";
 import { apiFetch } from "@/lib/api";
-
-const GBP = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 });
+import { fmtGBP0 } from "@/lib/currency";
+import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { StepNav } from "@/components/estimate/StepNav";
 
 interface ToolEntry {
   id: string;
@@ -50,6 +52,11 @@ export default function ToolsPage() {
     if (next) router.push(next.href);
   }
 
+  function handleBack() {
+    const prev = steps[currentStepIndex - 1];
+    if (prev) router.push(prev.href);
+  }
+
   return (
     <div className="mx-auto max-w-xl px-5 py-10">
       <h1 className="mb-2 text-display-sm text-ink">Tools to rent</h1>
@@ -59,7 +66,7 @@ export default function ToolsPage() {
 
       {loadingCatalog ? (
         <div className="flex justify-center py-10">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-forest" />
+          <Spinner />
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -75,26 +82,17 @@ export default function ToolsPage() {
                   checked ? "border-forest/40 bg-forest/5" : "border-line bg-paper"
                 }`}
               >
-                <button
-                  onClick={() => toggleTool(tool.id)}
-                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${
-                    checked
-                      ? "border-forest bg-forest text-paper"
-                      : "border-line bg-canvas hover:border-forest/60"
-                  }`}
+                <Checkbox
+                  checked={checked}
+                  onChange={() => toggleTool(tool.id)}
+                  className="mt-0.5"
                   aria-label={checked ? `Remove ${tool.name}` : `Add ${tool.name}`}
-                >
-                  {checked && (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 4l3 3 5-6" />
-                    </svg>
-                  )}
-                </button>
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-body font-medium text-ink">{tool.name}</span>
-                    <span className="shrink-0 text-hint text-muted">{GBP.format(tool.pricePerDay)}/day</span>
+                    <span className="shrink-0 text-hint text-muted">{fmtGBP0(tool.pricePerDay)}/day</span>
                   </div>
                   <p className="mt-0.5 text-hint text-muted">{tool.description}</p>
                 </div>
@@ -116,7 +114,7 @@ export default function ToolsPage() {
                       +
                     </button>
                     <span className="ml-1 w-16 text-right text-hint text-forest">
-                      {GBP.format(lineCost ?? 0)}
+                      {fmtGBP0(lineCost ?? 0)}
                     </span>
                   </div>
                 )}
@@ -129,28 +127,16 @@ export default function ToolsPage() {
       {totalEstimate > 0 && (
         <div className="mt-5 flex items-center justify-between rounded-xl border border-forest/20 bg-forest/5 px-4 py-3">
           <span className="text-body font-medium text-ink">Tool rental estimate</span>
-          <span className="text-body font-bold text-forest">{GBP.format(totalEstimate)}</span>
+          <span className="text-body font-bold text-forest">{fmtGBP0(totalEstimate)}</span>
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="mt-8 flex items-center justify-between">
-        <button
-          onClick={() => { const p = steps[currentStepIndex - 1]; if (p) router.push(p.href); }}
-          className="flex items-center gap-1 text-hint text-muted hover:text-ink"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M8 10L3 6l5-4"/></svg>
-          Previous
-        </button>
-
-        <button
-          onClick={() => void handleNext()}
-          disabled={saving}
-          className="rounded-xl bg-forest px-7 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save & continue →"}
-        </button>
-      </div>
+      <StepNav
+        onBack={handleBack}
+        onNext={handleNext}
+        nextDisabled={saving}
+        nextLoading={saving}
+      />
     </div>
   );
 }
