@@ -501,17 +501,43 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
       const sy = (wy - anchor[1]) / dyO;
       if (sx <= 0.05 || sy <= 0.05) return;
       const off = drag.resizeOrigOffset;
-      const newVerts = orig.map(([vx, vy]) => [
-        anchor[0] + (vx - anchor[0]) * sx - off[0],
-        anchor[1] + (vy - anchor[1]) * sy - off[1],
-      ] as Vertex);
-      const newAbs = newVerts.map(([vx, vy]) => [vx + off[0], vy + off[1]] as Vertex);
-      const overlaps = zones.some(other =>
-        other.id !== drag.zoneId &&
-        polygonsOverlap(newAbs, other.vertices.map(([vx, vy]) => [vx + other.offset[0], vy + other.offset[1]] as Vertex))
-      );
-      if (!overlaps) {
-        setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: newVerts } : z));
+
+      // Build relative verts from a scale interpolated at t (t=0 → original, t=1 → target)
+      const vertsAt = (t: number): Vertex[] => {
+        const sxT = 1 + (sx - 1) * t;
+        const syT = 1 + (sy - 1) * t;
+        return orig.map(([vx, vy]) => [
+          anchor[0] + (vx - anchor[0]) * sxT - off[0],
+          anchor[1] + (vy - anchor[1]) * syT - off[1],
+        ] as Vertex);
+      };
+      const isResizeBlocked = (relVerts: Vertex[]): boolean => {
+        const abs = relVerts.map(([vx, vy]) => [vx + off[0], vy + off[1]] as Vertex);
+        if (boundary && !abs.every(([vx, vy]) => inBoundary(vx, vy, boundary))) return true;
+        return zones.some(other =>
+          other.id !== drag.zoneId &&
+          polygonsOverlap(abs, other.vertices.map(([vx, vy]) => [vx + other.offset[0], vy + other.offset[1]] as Vertex))
+        );
+      };
+
+      const targetVerts = vertsAt(1);
+      if (!isResizeBlocked(targetVerts)) {
+        setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: targetVerts } : z));
+      } else {
+        // Binary search: t=0 is the original (always valid), t=1 is blocked
+        let lo = 0, hi = 1, bestT = 0;
+        for (let iter = 0; iter < 8; iter++) {
+          const mid = (lo + hi) / 2;
+          const sxMid = 1 + (sx - 1) * mid, syMid = 1 + (sy - 1) * mid;
+          if (sxMid <= 0.05 || syMid <= 0.05 || isResizeBlocked(vertsAt(mid))) {
+            hi = mid;
+          } else {
+            bestT = mid; lo = mid;
+          }
+        }
+        if (bestT > 0) {
+          setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: vertsAt(bestT) } : z));
+        }
       }
     } else if (drag.mode === "object" && drag.objectId) {
       const dx = (px - drag.startPx[0]) / vt.scale;
