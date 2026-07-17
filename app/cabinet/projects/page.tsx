@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { Spinner } from "@/components/ui/spinner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { useRequireAuth } from "@/lib/useRequireAuth";
@@ -105,7 +107,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 // ─── Project row ──────────────────────────────────────────────────────────────
 
-function ProjectRow({ project, onDelete }: { project: GardenProject; onDelete: (id: string) => void }) {
+function ProjectRow({ project, onDelete }: { project: GardenProject; onDelete: (id: string) => void; }) {
   return (
     <div className="group relative flex items-center gap-5 py-6">
       <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg">
@@ -131,11 +133,7 @@ function ProjectRow({ project, onDelete }: { project: GardenProject; onDelete: (
         >
           Open
         </Button>
-        <Button
-          onClick={() => onDelete(project.id)}
-          variant="danger"
-          size="sm"
-        >
+        <Button onClick={() => onDelete(project.id)} variant="danger" size="sm">
           Delete
         </Button>
       </div>
@@ -150,6 +148,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<GardenProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   useRequireAuth();
 
@@ -175,7 +174,11 @@ export default function ProjectsPage() {
     setProjects(prev => prev.filter(p => p.id !== id));
   }
 
-  if (loading) return <p className="text-body text-muted">Loading...</p>;
+  if (loading) return (
+    <div className="flex justify-center py-12">
+      <Spinner label="Loading projects..." />
+    </div>
+  );
 
   if (error) {
     return <p className="text-body text-danger">{error}</p>;
@@ -187,6 +190,19 @@ export default function ProjectsPage() {
 
   return (
     <div>
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) {
+            void handleDelete(pendingDeleteId);
+            setPendingDeleteId(null);
+          }
+        }}
+        title="Delete project?"
+        message="This will permanently delete the project and all its plan data."
+      />
+
       <PageHeading
         title={<>GARDEN PROJECTS</>}
         count={projects.length}
@@ -202,7 +218,7 @@ export default function ProjectsPage() {
 
       <div className="divide-y divide-line">
         {projects.map(project => (
-          <ProjectRow key={project.id} project={project} onDelete={handleDelete} />
+          <ProjectRow key={project.id} project={project} onDelete={setPendingDeleteId} />
         ))}
       </div>
 

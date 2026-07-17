@@ -832,24 +832,26 @@ function GardenImageModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-5xl flex-col gap-4 rounded-2xl border border-line bg-paper p-6 shadow-2xl"
+        className="relative w-full max-w-5xl rounded-2xl border border-line bg-paper p-6 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between pr-8">
           <p className="text-body font-semibold text-ink">AI garden visualisation</p>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-mist hover:text-ink"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M2 2l10 10M12 2L2 12" />
-            </svg>
-          </button>
         </div>
+
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-mist hover:text-ink"
+          aria-label="Close"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M2 2l10 10M12 2L2 12" />
+          </svg>
+        </button>
 
         {state === "loading" && (
           <div className="flex flex-col items-center gap-4 py-12">
@@ -859,7 +861,7 @@ function GardenImageModal({
         )}
 
         {state === "error" && (
-          <div className="flex flex-col items-center gap-2 py-12">
+          <div className="flex flex-col items-center py-12">
             <p className="text-body text-danger">Failed to generate image. Please try again.</p>
           </div>
         )}

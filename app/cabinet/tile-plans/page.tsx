@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { Spinner } from "@/components/ui/spinner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 import { useRequireAuth } from "@/lib/useRequireAuth";
@@ -39,22 +42,6 @@ function TileThumbnail() {
       <rect width="96" height="96" fill="#f0ede8" rx="8" />
       {cells}
     </svg>
-  );
-}
-
-// ─── Type badge ──────────────────────────────────────────────────────────────
-
-function TypeBadge({ type }: { type: string }) {
-  const isGarden = type === "garden";
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        className={`inline-block h-2 w-2 rotate-45 ${isGarden ? "bg-leaf" : "bg-sage"}`}
-      />
-      <span className="text-eyebrow text-muted">
-        {type}
-      </span>
-    </span>
   );
 }
 
@@ -147,7 +134,7 @@ function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) =>
           <span className="text-body font-semibold text-ink">
             {plan.name ?? "Untitled plan"}
           </span>
-          <TypeBadge type={plan.planType} />
+          <Badge dot color={plan.planType === "garden" ? "green" : "sage"}>{plan.planType}</Badge>
         </div>
         <p className="text-hint text-muted">
           {plan.planType === "garden" ? "Garden" : "Indoor"} plan
@@ -188,6 +175,7 @@ export default function TilePlansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   useRequireAuth();
 
@@ -224,7 +212,11 @@ export default function TilePlansPage() {
     setPlans((prev) => prev.filter((p) => p.id !== id));
   }
 
-  if (loading) return <p className="text-body text-muted">Loading...</p>;
+  if (loading) return (
+    <div className="flex justify-center py-12">
+      <Spinner label="Loading plans..." />
+    </div>
+  );
 
   if (error) {
     return <p className="text-body text-danger">{error}</p>;
@@ -236,6 +228,19 @@ export default function TilePlansPage() {
 
   return (
     <div>
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) {
+            void handleDelete(pendingDeleteId);
+            setPendingDeleteId(null);
+          }
+        }}
+        title="Delete plan?"
+        message="This will permanently delete the tile plan and all its data."
+      />
+
       {/* Header */}
       <PageHeading
         title={<>TILE PLANS</>}
@@ -253,7 +258,7 @@ export default function TilePlansPage() {
       {/* List */}
       <div className="divide-y divide-line">
         {plans.map((plan) => (
-          <PlanRow key={plan.id} plan={plan} onDelete={handleDelete} />
+          <PlanRow key={plan.id} plan={plan} onDelete={setPendingDeleteId} />
         ))}
       </div>
 

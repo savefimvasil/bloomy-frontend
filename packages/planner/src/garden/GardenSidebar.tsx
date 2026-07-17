@@ -4,6 +4,7 @@ import { useState } from "react";
 import { polygonArea } from "../lib/geometry";
 import type { GardenBoundary, GardenZone, GardenObject, ZoneType, ObjectType } from "./types";
 import { ZONE_CONFIGS, OBJECT_CONFIGS, ZONE_TYPES, OBJECT_TYPES } from "./zone-configs";
+import { PlannerButton } from "../ui/button";
 
 function ZoneSwatch({ type }: { type: ZoneType }) {
   const cfg = ZONE_CONFIGS[type];
@@ -83,12 +84,8 @@ function ObjectTypePicker({ onPick, onClose }: { onPick: (t: ObjectType, size?: 
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button onClick={() => setSizing(null)} className="flex-1 rounded-lg border border-line bg-canvas px-3 py-2 text-body text-muted hover:bg-mist">
-              Back
-            </button>
-            <button onClick={confirm} className="flex-1 rounded-lg bg-forest px-3 py-2 text-body font-medium text-white hover:bg-moss">
-              Add
-            </button>
+            <PlannerButton onClick={() => setSizing(null)} variant="secondary" className="flex-1">Back</PlannerButton>
+            <PlannerButton onClick={confirm} variant="default" className="flex-1">Add</PlannerButton>
           </div>
         </div>
       </div>
@@ -359,12 +356,9 @@ export function GardenSidebar({
                 >
                   {editingZoneVertices ? "Done editing" : "Edit shape"}
                 </button>
-                <button
-                  onClick={() => onDeleteZone(selectedZone.id)}
-                  className="rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-body font-medium text-danger transition hover:bg-danger/10"
-                >
+                <PlannerButton onClick={() => onDeleteZone(selectedZone.id)} variant="danger" fullWidth>
                   Delete zone
-                </button>
+                </PlannerButton>
               </div>
             </div>
           )}
@@ -396,12 +390,9 @@ export function GardenSidebar({
                 </span>
               </div>
 
-              <button
-                onClick={() => onDeleteObject(selectedObject.id)}
-                className="rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-body font-medium text-danger transition hover:bg-danger/10"
-              >
+              <PlannerButton onClick={() => onDeleteObject(selectedObject.id)} variant="danger" fullWidth>
                 Remove
-              </button>
+              </PlannerButton>
             </div>
           )}
 

@@ -118,16 +118,16 @@ function RegisterProfilePageComponent() {
                 required
               />
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-forest">
+                <label className="text-hint text-muted">
                   Why are you using Bloomy?{" "}
-                  <span className="font-normal text-muted">(optional)</span>
+                  <span className="text-muted/70">(optional)</span>
                 </label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="e.g. planning a garden renovation, interior flooring project..."
                   rows={3}
-                  className="w-full rounded-md border border-muted/30 bg-canvas px-3 py-2 text-sm text-forest placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-forest/30 resize-none"
+                  className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
                 />
               </div>
 

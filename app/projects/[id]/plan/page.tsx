@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
+import { Spinner } from "@/components/ui/spinner";
 import { GardenPlannerCore } from "@bloomy/bloomy-planner";
 import type { GardenPlan } from "@bloomy/bloomy-planner";
 
@@ -45,7 +46,7 @@ export default function ProjectPlanPage() {
 
   if (loading) return (
     <div className="flex h-full items-center justify-center bg-canvas">
-      <p className="text-body text-muted">Loading project...</p>
+      <Spinner label="Loading project..." />
     </div>
   );
 
