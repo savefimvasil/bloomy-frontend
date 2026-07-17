@@ -62,7 +62,7 @@ export function SiteHeader() {
 
         {/* Mobile hamburger */}
         <IconButton
-          variant="ghost"text-display-xl text-ink
+          variant="ghost"
           size="lg"
           className="sm:hidden text-base text-ink"
           onClick={() => setMenuOpen((v) => !v)}
