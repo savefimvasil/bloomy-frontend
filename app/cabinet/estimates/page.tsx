@@ -68,7 +68,7 @@ function EstimateRow({ project }: { project: GardenProject }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={`/projects/${project.id}/estimate`}
+            href={`/projects/${project.id}/estimate/summary`}
             className="text-body font-semibold text-ink hover:text-forest"
           >
             {project.name ?? "Untitled project"}
@@ -115,7 +115,7 @@ function EstimateRow({ project }: { project: GardenProject }) {
 
       <div className="absolute right-0 opacity-0 transition-opacity group-hover:opacity-100">
         <Link
-          href={`/projects/${project.id}/estimate`}
+          href={`/projects/${project.id}/estimate/summary`}
           className="inline-flex items-center rounded-lg border border-line bg-paper px-3 py-1.5 text-hint font-medium text-ink shadow-sm transition hover:border-forest/40 hover:text-forest"
         >
           View estimate
