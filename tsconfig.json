@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@bloomy/bloomy-planner": ["./packages/planner/src/index.ts"]
+      "@bloomy/bloomy-planner": ["../bloomy-packages/planner/src/index.ts"]
     }
   },
   "include": [

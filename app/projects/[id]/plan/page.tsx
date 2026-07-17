@@ -82,6 +82,7 @@ export default function ProjectPlanPage() {
       plan={plan}
       onSave={handleSave}
       onGenerateImage={handleGenerateImage}
+      onBuildEstimate={() => router.push(`/projects/${id}/estimate`)}
       projectName={project.name ?? "Garden project"}
       onBack={() => router.push("/cabinet/projects")}
     />

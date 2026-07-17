@@ -13,6 +13,11 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Planner package renders AI images at runtime URLs — can't use next/image
+  {
+    files: ["packages/planner/src/**/*.tsx"],
+    rules: { "@next/next/no-img-element": "off" },
+  },
 ]);
 
 export default eslintConfig;

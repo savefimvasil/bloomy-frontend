@@ -3,6 +3,8 @@ export type GardenProject = {
   name: string | null;
   updatedAt: string;
   createdAt: string;
+  hasEstimate?: boolean;
+  tilePlanIds?: string[];
 };
 
 export type TilePlan = {

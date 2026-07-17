@@ -2,9 +2,7 @@
   "name": "bloomy-frontend",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "packages/planner"
-  ],
+  "workspaces": [],
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
@@ -15,6 +13,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@bloomy/bloomy-planner": "file:../bloomy-packages/planner",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "konva": "^10.3.0",
