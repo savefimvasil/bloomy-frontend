@@ -257,18 +257,34 @@ export function GardenSidebar({
                 {zones.map(zone => {
                   const isSelected = zone.id === selectedZone?.id;
                   return (
-                    <button key={zone.id}
-                      onClick={() => onSelectZone(zone.id)}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition ${
-                        isSelected ? "bg-forest/8 text-ink" : "text-muted hover:bg-mist/60 hover:text-ink"
-                      }`}
-                    >
-                      <ZoneSwatch type={zone.type} />
-                      <span className="min-w-0 flex-1 truncate text-body">{zone.label}</span>
-                      <span className="shrink-0 text-hint text-muted/60">
-                        {polygonArea(zone.vertices).toFixed(1)}m²
-                      </span>
-                    </button>
+                    <div key={zone.id} className="group relative">
+                      <button
+                        onClick={() => onSelectZone(zone.id)}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition ${
+                          isSelected ? "bg-forest/8 text-ink" : "text-muted hover:bg-mist/60 hover:text-ink"
+                        }`}
+                      >
+                        <ZoneSwatch type={zone.type} />
+                        <span className="min-w-0 flex-1 truncate text-body">{zone.label}</span>
+                        <span className="shrink-0 text-hint text-muted/60 transition-opacity group-hover:opacity-0">
+                          {polygonArea(zone.vertices).toFixed(1)}m²
+                        </span>
+                      </button>
+                      <div className="absolute right-1.5 top-1/2 z-10 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          onClick={() => onSelectZone(zone.id)}
+                          className="rounded px-1.5 py-0.5 text-xs font-medium text-muted hover:bg-mist hover:text-ink"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onDeleteZone(zone.id)}
+                          className="rounded px-1.5 py-0.5 text-xs font-medium text-danger hover:bg-danger/8"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -293,17 +309,33 @@ export function GardenSidebar({
                 {objects.map(obj => {
                   const isSelected = obj.id === selectedObject?.id;
                   return (
-                    <button key={obj.id}
-                      onClick={() => onSelectObject(obj.id)}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition ${
-                        isSelected ? "bg-forest/8 text-ink" : "text-muted hover:bg-mist/60 hover:text-ink"
-                      }`}
-                    >
-                      <span className="min-w-0 flex-1 truncate text-body">{obj.label}</span>
-                      <span className="shrink-0 text-hint text-muted/60">
-                        {OBJECT_CONFIGS[obj.type].category}
-                      </span>
-                    </button>
+                    <div key={obj.id} className="group relative">
+                      <button
+                        onClick={() => onSelectObject(obj.id)}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition ${
+                          isSelected ? "bg-forest/8 text-ink" : "text-muted hover:bg-mist/60 hover:text-ink"
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1 truncate text-body">{obj.label}</span>
+                        <span className="shrink-0 text-hint text-muted/60 transition-opacity group-hover:opacity-0">
+                          {OBJECT_CONFIGS[obj.type].category}
+                        </span>
+                      </button>
+                      <div className="absolute right-1.5 top-1/2 z-10 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          onClick={() => onSelectObject(obj.id)}
+                          className="rounded px-1.5 py-0.5 text-xs font-medium text-muted hover:bg-mist hover:text-ink"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onDeleteObject(obj.id)}
+                          className="rounded px-1.5 py-0.5 text-xs font-medium text-danger hover:bg-danger/8"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
