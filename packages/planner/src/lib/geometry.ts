@@ -543,6 +543,34 @@ export function worldPointInPolygon(wx: number, wy: number, verts: Vertex[]): bo
   return inside;
 }
 
+function segmentsIntersect(
+  ax1: number, ay1: number, ax2: number, ay2: number,
+  bx1: number, by1: number, bx2: number, by2: number,
+): boolean {
+  const d1x = ax2 - ax1, d1y = ay2 - ay1;
+  const d2x = bx2 - bx1, d2y = by2 - by1;
+  const cross = d1x * d2y - d1y * d2x;
+  if (Math.abs(cross) < 1e-10) return false;
+  const t = ((bx1 - ax1) * d2y - (by1 - ay1) * d2x) / cross;
+  const u = ((bx1 - ax1) * d1y - (by1 - ay1) * d1x) / cross;
+  return t > 0 && t < 1 && u > 0 && u < 1;
+}
+
+/** True if two absolute-coordinate polygons overlap (share any area). */
+export function polygonsOverlap(polyA: Vertex[], polyB: Vertex[]): boolean {
+  const nA = polyA.length, nB = polyB.length;
+  for (const [vx, vy] of polyA) if (worldPointInPolygon(vx, vy, polyB)) return true;
+  for (const [vx, vy] of polyB) if (worldPointInPolygon(vx, vy, polyA)) return true;
+  for (let i = 0; i < nA; i++) {
+    const [ax1, ay1] = polyA[i];
+    const [ax2, ay2] = polyA[(i + 1) % nA];
+    for (let j = 0; j < nB; j++) {
+      if (segmentsIntersect(ax1, ay1, ax2, ay2, polyB[j][0], polyB[j][1], polyB[(j + 1) % nB][0], polyB[(j + 1) % nB][1])) return true;
+    }
+  }
+  return false;
+}
+
 /** Nearest point on segment AB to point P. */
 export function nearestPointOnSegment(
   px: number, py: number,

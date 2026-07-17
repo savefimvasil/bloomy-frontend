@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, worldPointInPolygon, nearestPointOnSegment, applyZoom } from "../lib/geometry";
+import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, worldPointInPolygon, nearestPointOnSegment, applyZoom, polygonsOverlap } from "../lib/geometry";
 import { GridBackground } from "../canvas/GridBackground";
 import { useCanvasSize } from "../lib/hooks";
 import type {
@@ -367,12 +367,38 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     } else if (drag.mode === "zone" && drag.zoneId) {
       const dx = (px - drag.startPx[0]) / vt.scale;
       const dy = (py - drag.startPx[1]) / vt.scale;
-      const newOffset: Vertex = [drag.startOffset[0] + dx, drag.startOffset[1] + dy];
-      if (boundary) {
-        const zone = zones.find(z => z.id === drag.zoneId);
-        if (zone && !zone.vertices.every(([vx, vy]) => inBoundary(vx + newOffset[0], vy + newOffset[1], boundary))) return;
+      const targetOffset: Vertex = [drag.startOffset[0] + dx, drag.startOffset[1] + dy];
+
+      const zone = zones.find(z => z.id === drag.zoneId);
+      if (!zone) return;
+      const otherZones = zones.filter(z => z.id !== drag.zoneId);
+
+      const isBlocked = (off: Vertex): boolean => {
+        const abs = zone.vertices.map(([vx, vy]) => [vx + off[0], vy + off[1]] as Vertex);
+        if (boundary && !zone.vertices.every(([vx, vy]) => inBoundary(vx + off[0], vy + off[1], boundary))) return true;
+        return otherZones.some(other =>
+          polygonsOverlap(abs, other.vertices.map(([vx, vy]) => [vx + other.offset[0], vy + other.offset[1]] as Vertex))
+        );
+      };
+
+      let resolvedOffset = targetOffset;
+      if (isBlocked(targetOffset)) {
+        // Binary search from drag start (valid) to target to snap against the perimeter
+        let lo = 0, hi = 1, bestT = 0;
+        for (let iter = 0; iter < 8; iter++) {
+          const mid = (lo + hi) / 2;
+          const testOff: Vertex = [
+            drag.startOffset[0] + (targetOffset[0] - drag.startOffset[0]) * mid,
+            drag.startOffset[1] + (targetOffset[1] - drag.startOffset[1]) * mid,
+          ];
+          if (isBlocked(testOff)) { hi = mid; } else { bestT = mid; lo = mid; }
+        }
+        resolvedOffset = [
+          drag.startOffset[0] + (targetOffset[0] - drag.startOffset[0]) * bestT,
+          drag.startOffset[1] + (targetOffset[1] - drag.startOffset[1]) * bestT,
+        ];
       }
-      setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, offset: newOffset } : z));
+      setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, offset: resolvedOffset } : z));
     } else if (drag.mode === "object" && drag.objectId) {
       const dx = (px - drag.startPx[0]) / vt.scale;
       const dy = (py - drag.startPx[1]) / vt.scale;
@@ -402,21 +428,42 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     const count = zones.filter(z => z.type === type).length;
     const label = count > 0 ? `${cfg.label} ${count + 1}` : cfg.label;
 
-    let cx = 0, cy = 0;
+    const defaultVerts: Vertex[] = [[0, 0], [3, 0], [3, 3], [0, 3]];
+
+    let baseCx = 0, baseCy = 0;
     if (boundary) {
       const cen = centroid(boundary.vertices.map(([vx, vy]) => [vx + boundary.offset[0], vy + boundary.offset[1]] as Vertex));
-      cx = cen[0] - 2;
-      cy = cen[1] - 2;
+      baseCx = cen[0] - 1.5;
+      baseCy = cen[1] - 1.5;
     } else {
       const worldCenter = pixelToWorld(canvasSize.width / 2, canvasSize.height / 2, viewRef.current);
-      cx = worldCenter[0] - 2;
-      cy = worldCenter[1] - 2;
+      baseCx = worldCenter[0] - 1.5;
+      baseCy = worldCenter[1] - 1.5;
+    }
+
+    // Find a non-overlapping placement; try base position then spiral outwards
+    const step = 3.5;
+    const candidates: Vertex[] = [
+      [baseCx, baseCy],
+      [baseCx + step, baseCy], [baseCx - step, baseCy],
+      [baseCx, baseCy + step], [baseCx, baseCy - step],
+      [baseCx + step, baseCy + step], [baseCx - step, baseCy + step],
+      [baseCx + step, baseCy - step], [baseCx - step, baseCy - step],
+    ];
+
+    let chosenOffset: Vertex = [baseCx, baseCy];
+    for (const [cx, cy] of candidates) {
+      const absVerts = defaultVerts.map(([vx, vy]) => [vx + cx, vy + cy] as Vertex);
+      const overlaps = zones.some(z =>
+        polygonsOverlap(absVerts, z.vertices.map(([vx, vy]) => [vx + z.offset[0], vy + z.offset[1]] as Vertex))
+      );
+      if (!overlaps) { chosenOffset = [cx, cy]; break; }
     }
 
     const newZone: GardenZone = {
       id: generateId(), type, label,
-      vertices: [[0, 0], [3, 0], [3, 3], [0, 3]],
-      offset: [cx, cy],
+      vertices: defaultVerts,
+      offset: chosenOffset,
     };
     setZones(prev => [...prev, newZone]);
     setSelectedZoneId(newZone.id);
