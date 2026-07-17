@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { polygonArea } from "../lib/geometry";
 import type { GardenBoundary, GardenZone, GardenObject, ZoneType, ObjectType } from "./types";
 import { ZONE_CONFIGS, OBJECT_CONFIGS, ZONE_TYPES, OBJECT_TYPES } from "./zone-configs";
@@ -141,6 +141,8 @@ interface Props {
   editingBoundary: boolean;
   projectName?: string;
   onBack?: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
   onSelectZone: (id: string) => void;
   onSelectObject: (id: string) => void;
   onAddZone: (type: ZoneType) => void;
@@ -152,6 +154,7 @@ interface Props {
   onAddObject: (type: ObjectType, size?: [number, number]) => void;
   onDeleteObject: (id: string) => void;
   onUpdateObjectLabel: (id: string, label: string) => void;
+  onUpdateObjectSize: (id: string, size: [number, number]) => void;
   onGenerateImage?: () => void;
 }
 
@@ -159,23 +162,46 @@ export function GardenSidebar({
   boundary, zones, objects,
   selectedZone, selectedObject,
   editingZoneVertices, editingBoundary,
-  projectName, onBack,
+  projectName, onBack, mobileOpen, onMobileClose,
   onSelectZone, onSelectObject,
   onAddZone, onDeleteZone, onUpdateZoneLabel, onUpdateZoneType, onToggleEditZoneVertices, onToggleEditBoundary,
-  onAddObject, onDeleteObject, onUpdateObjectLabel,
+  onAddObject, onDeleteObject, onUpdateObjectLabel, onUpdateObjectSize,
   onGenerateImage,
 }: Props) {
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [showObjectPicker, setShowObjectPicker] = useState(false);
+  const [objW, setObjW] = useState("");
+  const [objH, setObjH] = useState("");
 
   const boundaryArea = boundary ? polygonArea(boundary.vertices) : 0;
+
+  useEffect(() => {
+    setObjW(selectedObject?.size ? String(selectedObject.size[0]) : "");
+    setObjH(selectedObject?.size ? String(selectedObject.size[1]) : "");
+  }, [selectedObject?.id]);
 
   return (
     <>
       {showZonePicker && <ZoneTypePicker onPick={onAddZone} onClose={() => setShowZonePicker(false)} />}
       {showObjectPicker && <ObjectTypePicker onPick={onAddObject} onClose={() => setShowObjectPicker(false)} />}
 
-      <aside className="flex w-full shrink-0 flex-col border-t border-line bg-paper md:w-[260px] md:border-l md:border-t-0">
+      <aside className={`flex w-full shrink-0 flex-col border-line bg-paper md:w-[260px] md:border-l ${
+        mobileOpen
+          ? "fixed inset-x-0 bottom-0 z-40 max-h-[70vh] rounded-t-2xl border-t shadow-xl md:static md:max-h-none md:rounded-none md:shadow-none"
+          : "hidden md:flex"
+      }`}>
+        {/* Mobile drag handle */}
+        {mobileOpen && (
+          <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2 md:hidden">
+            <div className="mx-auto h-1 w-10 rounded-full bg-line" />
+            <button onClick={onMobileClose} className="absolute right-4 text-muted hover:text-ink">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M2 2l10 10M12 2L2 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {onBack && (
           <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
             <button
@@ -199,6 +225,18 @@ export function GardenSidebar({
         <div className="flex-1 overflow-y-auto p-4">
 
           <p className="mb-4 text-eyebrow text-muted">Garden</p>
+
+          {/* Onboarding hint */}
+          {!boundary && zones.length === 0 && objects.length === 0 && (
+            <div className="mb-4 rounded-xl border border-dashed border-forest/30 bg-forest/5 p-3">
+              <p className="text-hint font-semibold text-forest">Getting started</p>
+              <ol className="mt-1.5 flex flex-col gap-1 text-hint text-muted">
+                <li>1. Edit the garden boundary</li>
+                <li>2. Add zones (lawn, patio…)</li>
+                <li>3. Place objects (trees, furniture)</li>
+              </ol>
+            </div>
+          )}
 
           {/* Garden boundary */}
           {boundary && (
@@ -240,13 +278,11 @@ export function GardenSidebar({
               <p className="text-hint font-semibold uppercase tracking-widest text-muted">
                 Zones {zones.length > 0 && <span className="font-normal normal-case">({zones.length})</span>}
               </p>
-              <button
-                onClick={() => setShowZonePicker(true)}
-                className="text-hint text-forest hover:text-moss"
-              >
-                + Add
-              </button>
             </div>
+
+            <PlannerButton onClick={() => setShowZonePicker(true)} variant="secondary" fullWidth className="mb-2">
+              + Add zone
+            </PlannerButton>
 
             {zones.length === 0 ? (
               <p className="text-hint text-muted/70">
@@ -297,10 +333,10 @@ export function GardenSidebar({
               <p className="text-hint font-semibold uppercase tracking-widest text-muted">
                 Objects {objects.length > 0 && <span className="font-normal normal-case">({objects.length})</span>}
               </p>
-              <button onClick={() => setShowObjectPicker(true)} className="text-hint text-forest hover:text-moss">
-                + Add
-              </button>
             </div>
+            <PlannerButton onClick={() => setShowObjectPicker(true)} variant="secondary" fullWidth className="mb-2">
+              + Add object
+            </PlannerButton>
 
             {objects.length === 0 ? (
               <p className="text-hint text-muted/70">Trees, sheds, furniture&hellip;</p>
@@ -422,6 +458,39 @@ export function GardenSidebar({
                 </span>
               </div>
 
+              {selectedObject.size && (
+                <div>
+                  <label className="mb-1 block text-hint text-muted">Size (m)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number" min="0.1" step="0.1"
+                      value={objW}
+                      onChange={e => setObjW(e.target.value)}
+                      onBlur={() => {
+                        const w = parseFloat(objW);
+                        const h = parseFloat(objH);
+                        if (w > 0 && h > 0) onUpdateObjectSize(selectedObject.id, [w, h]);
+                      }}
+                      className="w-full rounded-lg border border-line bg-canvas px-2 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
+                      placeholder="W"
+                    />
+                    <span className="shrink-0 text-hint text-muted">×</span>
+                    <input
+                      type="number" min="0.1" step="0.1"
+                      value={objH}
+                      onChange={e => setObjH(e.target.value)}
+                      onBlur={() => {
+                        const w = parseFloat(objW);
+                        const h = parseFloat(objH);
+                        if (w > 0 && h > 0) onUpdateObjectSize(selectedObject.id, [w, h]);
+                      }}
+                      className="w-full rounded-lg border border-line bg-canvas px-2 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
+                      placeholder="D"
+                    />
+                  </div>
+                </div>
+              )}
+
               <PlannerButton onClick={() => onDeleteObject(selectedObject.id)} variant="danger" fullWidth>
                 Remove
               </PlannerButton>
@@ -432,21 +501,6 @@ export function GardenSidebar({
             <p className="mt-4 text-hint text-muted/70">Click a zone or object on the canvas to select it.</p>
           )}
         </div>
-
-        {/* Zone legend */}
-        {zones.length > 0 && (
-          <div className="border-t border-line p-4">
-            <p className="mb-2 text-hint font-semibold uppercase tracking-widest text-muted">Legend</p>
-            <div className="flex flex-col gap-1.5">
-              {Array.from(new Set(zones.map(z => z.type))).map(type => (
-                <div key={type} className="flex items-center gap-2">
-                  <ZoneSwatch type={type} />
-                  <span className="text-hint text-muted">{ZONE_CONFIGS[type].label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {onGenerateImage && (
           <div className="border-t border-line p-4">

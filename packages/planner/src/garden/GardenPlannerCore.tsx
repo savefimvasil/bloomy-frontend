@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, worldPointInPolygon, nearestPointOnSegment, applyZoom, polygonsOverlap } from "../lib/geometry";
+import { pixelToWorld, worldToPixel, polygonArea, centroid, edgeLength, worldPointInPolygon, nearestPointOnSegment, applyZoom, polygonsOverlap, boundingBox } from "../lib/geometry";
 import { GridBackground } from "../canvas/GridBackground";
 import { useCanvasSize } from "../lib/hooks";
 import type {
@@ -62,7 +62,7 @@ function verticesPath(vertices: Vertex[], offset: Vertex, vt: ViewTransform): st
   }).join(" ") + " Z";
 }
 
-type DragMode = "pan" | "zone" | "zone-vertex" | "boundary-vertex" | "object" | null;
+type DragMode = "pan" | "zone" | "zone-vertex" | "zone-resize" | "boundary-vertex" | "object" | null;
 
 interface DragState {
   isDragging: boolean;
@@ -75,6 +75,10 @@ interface DragState {
   vertexDragOffset: Vertex;
   objectId: string | null;
   objectStart: Vertex;
+  resizeCornerIdx: number;
+  resizeAnchor: Vertex;
+  resizeOrigAbsVerts: Vertex[];
+  resizeOrigOffset: Vertex;
 }
 
 const DRAG_IDLE: DragState = {
@@ -82,7 +86,11 @@ const DRAG_IDLE: DragState = {
   zoneId: null, startOffset: [0, 0],
   vertexIndex: -1, vertexDragOffset: [0, 0],
   objectId: null, objectStart: [0, 0],
+  resizeCornerIdx: -1, resizeAnchor: [0, 0], resizeOrigAbsVerts: [], resizeOrigOffset: [0, 0],
 };
+
+const RESIZE_CURSORS = ["nw-resize", "ne-resize", "se-resize", "sw-resize"] as const;
+const RESIZE_ANCHOR_IDX = [2, 3, 0, 1];
 
 export interface GardenPlannerCoreProps {
   plan: GardenPlan;
@@ -104,14 +112,17 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
   const [drag, setDrag] = useState<DragState>(DRAG_IDLE);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [imageModal, setImageModal] = useState<{ state: "loading" | "done" | "error"; images: string[] } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef(view);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedFlashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activePointers = useRef<Map<number, [number, number]>>(new Map());
   const pinchRef = useRef<{ dist: number; cx: number; cy: number; origScale: number; origX: number; origY: number } | null>(null);
   const isFirstRender = useRef(true);
+  const historyRef = useRef<Array<{ zones: GardenZone[]; objects: GardenObject[]; boundary: GardenBoundary | undefined }>>([]);
 
   useEffect(() => { viewRef.current = view; }, [view]);
 
@@ -131,6 +142,8 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
       try {
         await onSave(updated);
         setSaveStatus("saved");
+        if (savedFlashRef.current) clearTimeout(savedFlashRef.current);
+        savedFlashRef.current = setTimeout(() => setSaveStatus("idle"), 2500);
       } catch {
         setSaveStatus("idle");
       }
@@ -139,13 +152,34 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boundary, zones, objects, view]);
 
+  function pushHistory() {
+    const h = historyRef.current;
+    h.push({ zones, objects, boundary });
+    if (h.length > 50) h.shift();
+  }
+
+  function undo() {
+    const h = historyRef.current;
+    if (h.length === 0) return;
+    const snapshot = h.pop()!;
+    setZones(snapshot.zones);
+    setObjects(snapshot.objects);
+    setBoundary(snapshot.boundary);
+    setSelectedZoneId(null);
+    setSelectedObjectId(null);
+    setEditingZoneVertices(false);
+    setEditingBoundary(false);
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { setEditingZoneVertices(false); setEditingBoundary(false); }
+      if (e.key === "Escape") { setEditingZoneVertices(false); setEditingBoundary(false); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); undo(); }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zones, objects, boundary]);
 
   // ─── Image generation ─────────────────────────────────────────────────────
 
@@ -199,6 +233,35 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     const vt = viewRef.current;
     const VHIT = 14;
 
+    // Resize corner handles (selected zone, not in vertex/boundary edit)
+    if (selectedZoneId && !editingZoneVertices && !editingBoundary) {
+      const zone = zones.find(z => z.id === selectedZoneId);
+      if (zone) {
+        const absVerts = zone.vertices.map(([vx, vy]) => [vx + zone.offset[0], vy + zone.offset[1]] as Vertex);
+        const bb = boundingBox(absVerts);
+        const corners: Vertex[] = [
+          [bb.minX, bb.minY], [bb.maxX, bb.minY],
+          [bb.maxX, bb.maxY], [bb.minX, bb.maxY],
+        ];
+        for (let ci = 0; ci < 4; ci++) {
+          const [cpx, cpy] = worldToPixel(corners[ci], vt);
+          if (Math.sqrt((px - cpx) ** 2 + (py - cpy) ** 2) < 10) {
+            pushHistory();
+            svg.setPointerCapture(e.pointerId);
+            setDrag({
+              ...DRAG_IDLE, isDragging: true, mode: "zone-resize",
+              startPx: [px, py], zoneId: selectedZoneId,
+              resizeCornerIdx: ci,
+              resizeAnchor: corners[RESIZE_ANCHOR_IDX[ci]],
+              resizeOrigAbsVerts: absVerts,
+              resizeOrigOffset: [...zone.offset] as Vertex,
+            });
+            return;
+          }
+        }
+      }
+    }
+
     // Boundary vertex edit
     if (editingBoundary && boundary) {
       const { vertices, offset } = boundary;
@@ -207,6 +270,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         const [vx, vy] = vertices[i];
         const [vpx, vpy] = worldToPixel([vx + offset[0], vy + offset[1]], vt);
         if (Math.sqrt((px - vpx) ** 2 + (py - vpy) ** 2) < VHIT) {
+          pushHistory();
           svg.setPointerCapture(e.pointerId);
           const grabWorld = pixelToWorld(px, py, vt);
           setDrag({
@@ -239,6 +303,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     // Object hit — tested before zones so objects always take priority
     for (const obj of objects) {
       if (hitTestObject(px, py, obj, vt)) {
+        pushHistory();
         svg.setPointerCapture(e.pointerId);
         setSelectedObjectId(obj.id);
         setSelectedZoneId(null);
@@ -259,6 +324,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
           const [vx, vy] = zone.vertices[i];
           const [vpx, vpy] = worldToPixel([vx + offX, vy + offY], vt);
           if (Math.sqrt((px - vpx) ** 2 + (py - vpy) ** 2) < VHIT) {
+            pushHistory();
             svg.setPointerCapture(e.pointerId);
             const grabWorld = pixelToWorld(px, py, vt);
             setDrag({
@@ -292,6 +358,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     // Zone hit
     const hitZone = hitTestZones(px, py, zones, vt);
     if (hitZone) {
+      pushHistory();
       svg.setPointerCapture(e.pointerId);
       if (selectedZoneId !== hitZone.id) setEditingZoneVertices(false);
       setSelectedZoneId(hitZone.id);
@@ -399,6 +466,27 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         ];
       }
       setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, offset: resolvedOffset } : z));
+    } else if (drag.mode === "zone-resize" && drag.zoneId) {
+      const [wx, wy] = pixelToWorld(px, py, vt);
+      const anchor = drag.resizeAnchor;
+      const orig = drag.resizeOrigAbsVerts;
+      const bb = boundingBox(orig);
+      const corners: Vertex[] = [
+        [bb.minX, bb.minY], [bb.maxX, bb.minY],
+        [bb.maxX, bb.maxY], [bb.minX, bb.maxY],
+      ];
+      const origCorner = corners[drag.resizeCornerIdx];
+      const dxO = origCorner[0] - anchor[0], dyO = origCorner[1] - anchor[1];
+      if (Math.abs(dxO) < 0.01 || Math.abs(dyO) < 0.01) return;
+      const sx = (wx - anchor[0]) / dxO;
+      const sy = (wy - anchor[1]) / dyO;
+      if (sx <= 0.05 || sy <= 0.05) return;
+      const off = drag.resizeOrigOffset;
+      const newVerts = orig.map(([vx, vy]) => [
+        anchor[0] + (vx - anchor[0]) * sx - off[0],
+        anchor[1] + (vy - anchor[1]) * sy - off[1],
+      ] as Vertex);
+      setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: newVerts } : z));
     } else if (drag.mode === "object" && drag.objectId) {
       const dx = (px - drag.startPx[0]) / vt.scale;
       const dy = (py - drag.startPx[1]) / vt.scale;
@@ -472,6 +560,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
   }
 
   function deleteZone(id: string) {
+    pushHistory();
     setZones(prev => prev.filter(z => z.id !== id));
     if (selectedZoneId === id) { setSelectedZoneId(null); setEditingZoneVertices(false); }
   }
@@ -481,6 +570,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
   }
 
   function updateZoneType(id: string, type: ZoneType) {
+    pushHistory();
     setZones(prev => prev.map(z => z.id === id ? { ...z, type } : z));
   }
 
@@ -508,8 +598,13 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
   }
 
   function deleteObject(id: string) {
+    pushHistory();
     setObjects(prev => prev.filter(o => o.id !== id));
     if (selectedObjectId === id) setSelectedObjectId(null);
+  }
+
+  function updateObjectSize(id: string, size: [number, number]) {
+    setObjects(prev => prev.map(o => o.id === id ? { ...o, size } : o));
   }
 
   function updateObjectLabel(id: string, label: string) {
@@ -781,9 +876,9 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
             <div className="h-4 w-px bg-line" />
             <button
               onClick={() => setEditingZoneVertices(v => !v)}
-              className="rounded-full px-3 py-1.5 text-hint text-muted transition hover:bg-mist hover:text-ink"
+              className={`rounded-full px-3 py-1.5 text-hint transition ${editingZoneVertices ? "bg-amber-50 font-medium text-amber-800" : "text-muted hover:bg-mist hover:text-ink"}`}
             >
-              Edit shape
+              {editingZoneVertices ? "Done editing" : "Edit shape"}
             </button>
             <div className="h-4 w-px bg-line" />
             <button
@@ -816,10 +911,46 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         )}
 
         {onSave && saveStatus !== "idle" && (
-          <div className="pointer-events-none absolute right-3 top-3 rounded border border-line bg-canvas/90 px-2.5 py-1 text-xs text-muted shadow-sm backdrop-blur-sm">
-            {saveStatus === "saving" ? "Saving..." : "Saved"}
+          <div className={`pointer-events-none absolute right-3 top-3 rounded-full border px-3 py-1 text-xs font-medium shadow-sm backdrop-blur-sm transition-all ${
+            saveStatus === "saved"
+              ? "border-leaf/40 bg-forest/10 text-forest"
+              : "border-line bg-canvas/90 text-muted"
+          }`}>
+            {saveStatus === "saving" ? "Saving…" : "✓ Saved"}
           </div>
         )}
+
+        {/* Zone legend overlay — bottom-left */}
+        {zones.length > 0 && (
+          <div className="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-line bg-paper/90 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+            <div className="flex flex-col gap-1.5">
+              {Array.from(new Set(zones.map(z => z.type))).map(type => {
+                const cfg = ZONE_CONFIGS[type];
+                return (
+                  <div key={type} className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-3 w-3 shrink-0 rounded-sm border"
+                      style={{ background: cfg.fill, borderColor: cfg.stroke }}
+                    />
+                    <span className="text-xs text-muted">{cfg.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile sidebar toggle */}
+        <button
+          className="absolute bottom-4 right-14 flex h-8 w-8 items-center justify-center rounded border border-line bg-paper shadow-sm hover:bg-mist md:hidden"
+          onClick={() => setSidebarOpen(v => !v)}
+          title="Toggle panel"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <rect x="1" y="1" width="12" height="12" rx="2" />
+            <line x1="9" y1="1" x2="9" y2="13" />
+          </svg>
+        </button>
 
         <div className="absolute bottom-4 right-4 flex flex-col gap-1">
           <button onClick={() => zoomBy(1.3)}
@@ -833,6 +964,29 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         </div>
       </div>
 
+      {/* Bounding box resize handles for selected zone */}
+      {selectedZone && !editingZoneVertices && !editingBoundary && (() => {
+        const absVerts = selectedZone.vertices.map(([vx, vy]) => [vx + selectedZone.offset[0], vy + selectedZone.offset[1]] as Vertex);
+        const bb = boundingBox(absVerts);
+        const corners: Vertex[] = [
+          [bb.minX, bb.minY], [bb.maxX, bb.minY],
+          [bb.maxX, bb.maxY], [bb.minX, bb.maxY],
+        ];
+        return (
+          <svg style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }} width={canvasSize.width} height={canvasSize.height}>
+            {corners.map((corner, ci) => {
+              const [cpx, cpy] = worldToPixel(corner, view);
+              return (
+                <rect key={ci} x={cpx - 5} y={cpy - 5} width={10} height={10}
+                  fill="white" stroke="#234a2e" strokeWidth={1.5} rx={1}
+                  style={{ pointerEvents: "auto", cursor: RESIZE_CURSORS[ci] }}
+                />
+              );
+            })}
+          </svg>
+        );
+      })()}
+
       <GardenSidebar
         boundary={boundary}
         zones={zones}
@@ -843,6 +997,8 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         editingBoundary={editingBoundary}
         projectName={projectName}
         onBack={onBack}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
         onSelectZone={id => { setSelectedZoneId(id); setSelectedObjectId(null); }}
         onSelectObject={id => { setSelectedObjectId(id); setSelectedZoneId(null); }}
         onAddZone={addZone}
@@ -854,6 +1010,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         onAddObject={(type, size) => addObject(type, size)}
         onDeleteObject={deleteObject}
         onUpdateObjectLabel={updateObjectLabel}
+        onUpdateObjectSize={updateObjectSize}
         onGenerateImage={onGenerateImage ? handleGenerateImage : undefined}
       />
 
