@@ -4,9 +4,8 @@ WORKDIR /app
 COPY bloomy-packages/planner/package.json bloomy-packages/planner/
 COPY bloomy-frontend/package*.json bloomy-frontend/
 
-# Install planner's own deps so webpack can resolve them during frontend build.
-# node_modules resolution walks UP from the source file, so the planner needs
-# its own node_modules — it can't reach bloomy-frontend/node_modules (sibling).
+# Install planner's own deps so webpack can resolve them from the planner's
+# own node_modules — webpack walks UP from the source file, not across siblings.
 WORKDIR /app/bloomy-packages/planner
 RUN npm install
 
@@ -19,10 +18,13 @@ WORKDIR /app
 ARG BACKEND_INTERNAL_URL=http://backend:3000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 
-COPY --from=deps /app/bloomy-packages/planner/node_modules bloomy-packages/planner/node_modules
-COPY --from=deps /app/bloomy-frontend/node_modules bloomy-frontend/node_modules
+# Copy source first, then overlay clean node_modules from the deps stage.
+# Keeping this order ensures deps-stage node_modules always win, even if
+# node_modules somehow slips through the .dockerignore.
 COPY bloomy-packages/planner bloomy-packages/planner
 COPY bloomy-frontend bloomy-frontend
+COPY --from=deps /app/bloomy-packages/planner/node_modules bloomy-packages/planner/node_modules
+COPY --from=deps /app/bloomy-frontend/node_modules bloomy-frontend/node_modules
 
 WORKDIR /app/bloomy-frontend
 RUN npm run build
