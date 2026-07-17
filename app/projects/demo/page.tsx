@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GardenPlannerCore } from "@bloomy/bloomy-planner";
@@ -15,31 +15,26 @@ const EMPTY_PLAN: GardenPlan = {
   view: { scale: 60, x: 80, y: 60 },
 };
 
+function loadInitialPlan(): GardenPlan {
+  try {
+    const raw = sessionStorage.getItem("bloomy_draft_plan");
+    if (raw) {
+      const { vertices } = JSON.parse(raw) as { vertices: Vertex[]; name: string };
+      return {
+        ...EMPTY_PLAN,
+        exportedAt: new Date().toISOString(),
+        gardenBoundary: { vertices, offset: [0, 0] },
+      };
+    }
+  } catch {
+    // fall through
+  }
+  return EMPTY_PLAN;
+}
+
 export default function DemoPlannerPage() {
   const router = useRouter();
-  const [plan, setPlan] = useState<GardenPlan | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("bloomy_draft_plan");
-      if (raw) {
-        const { vertices, name } = JSON.parse(raw) as { vertices: Vertex[]; name: string };
-        setPlan({
-          ...EMPTY_PLAN,
-          exportedAt: new Date().toISOString(),
-          gardenBoundary: { vertices, offset: [0, 0] },
-        });
-        // keep a user-visible name if the planner ever shows it
-        void name;
-      } else {
-        setPlan(EMPTY_PLAN);
-      }
-    } catch {
-      setPlan(EMPTY_PLAN);
-    }
-  }, []);
-
-  if (!plan) return null;
+  const plan = useMemo(() => loadInitialPlan(), []);
 
   return (
     <div className="flex h-full flex-col">

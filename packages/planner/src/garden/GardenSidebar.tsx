@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { polygonArea } from "../lib/geometry";
 import type { GardenBoundary, GardenZone, GardenObject, ZoneType, ObjectType } from "./types";
 import { ZONE_CONFIGS, OBJECT_CONFIGS, ZONE_TYPES, OBJECT_TYPES } from "./zone-configs";
@@ -129,6 +129,52 @@ function ObjectTypePicker({ onPick, onClose }: { onPick: (t: ObjectType, size?: 
   );
 }
 
+// ─── Object size inputs (own component so key= remount resets state) ──────────
+
+function ObjectSizeInputs({
+  objectId,
+  initialSize,
+  onUpdate,
+}: {
+  objectId: string;
+  initialSize: [number, number];
+  onUpdate: (id: string, size: [number, number]) => void;
+}) {
+  const [w, setW] = useState(String(initialSize[0]));
+  const [h, setH] = useState(String(initialSize[1]));
+
+  function commit() {
+    const wv = parseFloat(w);
+    const hv = parseFloat(h);
+    if (wv > 0 && hv > 0) onUpdate(objectId, [wv, hv]);
+  }
+
+  return (
+    <div>
+      <label className="mb-1 block text-hint text-muted">Size (m)</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="number" min="0.1" step="0.1"
+          value={w}
+          onChange={e => setW(e.target.value)}
+          onBlur={commit}
+          className="w-full rounded-lg border border-line bg-canvas px-2 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
+          placeholder="W"
+        />
+        <span className="shrink-0 text-hint text-muted">×</span>
+        <input
+          type="number" min="0.1" step="0.1"
+          value={h}
+          onChange={e => setH(e.target.value)}
+          onBlur={commit}
+          className="w-full rounded-lg border border-line bg-canvas px-2 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
+          placeholder="D"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -170,15 +216,8 @@ export function GardenSidebar({
 }: Props) {
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [showObjectPicker, setShowObjectPicker] = useState(false);
-  const [objW, setObjW] = useState("");
-  const [objH, setObjH] = useState("");
 
   const boundaryArea = boundary ? polygonArea(boundary.vertices) : 0;
-
-  useEffect(() => {
-    setObjW(selectedObject?.size ? String(selectedObject.size[0]) : "");
-    setObjH(selectedObject?.size ? String(selectedObject.size[1]) : "");
-  }, [selectedObject?.id]);
 
   return (
     <>
@@ -459,36 +498,12 @@ export function GardenSidebar({
               </div>
 
               {selectedObject.size && (
-                <div>
-                  <label className="mb-1 block text-hint text-muted">Size (m)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number" min="0.1" step="0.1"
-                      value={objW}
-                      onChange={e => setObjW(e.target.value)}
-                      onBlur={() => {
-                        const w = parseFloat(objW);
-                        const h = parseFloat(objH);
-                        if (w > 0 && h > 0) onUpdateObjectSize(selectedObject.id, [w, h]);
-                      }}
-                      className="w-full rounded-lg border border-line bg-canvas px-2 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
-                      placeholder="W"
-                    />
-                    <span className="shrink-0 text-hint text-muted">×</span>
-                    <input
-                      type="number" min="0.1" step="0.1"
-                      value={objH}
-                      onChange={e => setObjH(e.target.value)}
-                      onBlur={() => {
-                        const w = parseFloat(objW);
-                        const h = parseFloat(objH);
-                        if (w > 0 && h > 0) onUpdateObjectSize(selectedObject.id, [w, h]);
-                      }}
-                      className="w-full rounded-lg border border-line bg-canvas px-2 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
-                      placeholder="D"
-                    />
-                  </div>
-                </div>
+                <ObjectSizeInputs
+                  key={selectedObject.id}
+                  objectId={selectedObject.id}
+                  initialSize={selectedObject.size}
+                  onUpdate={onUpdateObjectSize}
+                />
               )}
 
               <PlannerButton onClick={() => onDeleteObject(selectedObject.id)} variant="danger" fullWidth>

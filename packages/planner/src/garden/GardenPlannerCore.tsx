@@ -189,7 +189,6 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zones, objects, boundary]);
 
   // ─── Image generation ─────────────────────────────────────────────────────
@@ -1127,6 +1126,7 @@ function GardenImageModal({
                 <div key={i} className="flex flex-1 flex-col gap-1.5 overflow-hidden">
                   <p className="text-hint text-muted">{labels[i] ?? `View ${i + 1}`}</p>
                   <div className="overflow-hidden rounded-xl border border-line bg-canvas">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
                       alt={labels[i] ?? `Garden view ${i + 1}`}

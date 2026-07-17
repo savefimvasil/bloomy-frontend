@@ -24,7 +24,7 @@ export function GardenPlannerPromo() {
             </h2>
             <p className="mt-5 max-w-md text-body text-paper/72">
               Design your entire garden layout — boundaries, zones, and objects — in a
-              purpose-built visual editor. Start for free, save when you're ready.
+              purpose-built visual editor. Start for free, save when you&apos;re ready.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href="/projects/new" variant="light">
