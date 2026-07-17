@@ -134,6 +134,17 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
     if (!onSave) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
+      // Never persist a state where zones overlap
+      const hasInvalidOverlap = zones.some((a, i) =>
+        zones.slice(i + 1).some(b =>
+          polygonsOverlap(
+            a.vertices.map(([vx, vy]) => [vx + a.offset[0], vy + a.offset[1]] as Vertex),
+            b.vertices.map(([vx, vy]) => [vx + b.offset[0], vy + b.offset[1]] as Vertex),
+          )
+        )
+      );
+      if (hasInvalidOverlap) return;
+
       const updated: GardenPlan = {
         ...plan, gardenBoundary: boundary, zones, objects, view,
         exportedAt: new Date().toISOString(),
@@ -426,11 +437,19 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
       if (boundary && !inBoundary(wx, wy, boundary)) {
         [wx, wy] = clampToBoundary(wx, wy, boundary);
       }
-      setZones(prev => prev.map(z => z.id === drag.zoneId ? {
-        ...z,
-        vertices: z.vertices.map((v, i) =>
-          i === drag.vertexIndex ? [wx - z.offset[0], wy - z.offset[1]] as Vertex : v),
-      } : z));
+      const zone = zones.find(z => z.id === drag.zoneId);
+      if (zone) {
+        const newRelVert: Vertex = [wx - zone.offset[0], wy - zone.offset[1]];
+        const testVerts = zone.vertices.map((v, i) => i === drag.vertexIndex ? newRelVert : v);
+        const testAbs = testVerts.map(([vx, vy]) => [vx + zone.offset[0], vy + zone.offset[1]] as Vertex);
+        const overlaps = zones.some(other =>
+          other.id !== drag.zoneId &&
+          polygonsOverlap(testAbs, other.vertices.map(([vx, vy]) => [vx + other.offset[0], vy + other.offset[1]] as Vertex))
+        );
+        if (!overlaps) {
+          setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: testVerts } : z));
+        }
+      }
     } else if (drag.mode === "zone" && drag.zoneId) {
       const dx = (px - drag.startPx[0]) / vt.scale;
       const dy = (py - drag.startPx[1]) / vt.scale;
@@ -486,7 +505,14 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
         anchor[0] + (vx - anchor[0]) * sx - off[0],
         anchor[1] + (vy - anchor[1]) * sy - off[1],
       ] as Vertex);
-      setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: newVerts } : z));
+      const newAbs = newVerts.map(([vx, vy]) => [vx + off[0], vy + off[1]] as Vertex);
+      const overlaps = zones.some(other =>
+        other.id !== drag.zoneId &&
+        polygonsOverlap(newAbs, other.vertices.map(([vx, vy]) => [vx + other.offset[0], vy + other.offset[1]] as Vertex))
+      );
+      if (!overlaps) {
+        setZones(prev => prev.map(z => z.id === drag.zoneId ? { ...z, vertices: newVerts } : z));
+      }
     } else if (drag.mode === "object" && drag.objectId) {
       const dx = (px - drag.startPx[0]) / vt.scale;
       const dy = (py - drag.startPx[1]) / vt.scale;
@@ -627,6 +653,7 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
 
   const cursor = drag.mode === "pan" ? "grabbing"
     : drag.mode === "zone-vertex" || drag.mode === "boundary-vertex" || drag.mode === "zone" || drag.mode === "object" ? "move"
+    : drag.mode === "zone-resize" ? (RESIZE_CURSORS[drag.resizeCornerIdx] ?? "move")
     : "default";
 
   const outsideOverlayPath = boundary
@@ -867,6 +894,25 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
               />
             );
           })}
+
+          {/* Bounding-box resize handles — inside SVG so worldToPixel coords align */}
+          {selectedZone && !editingZoneVertices && !editingBoundary && (() => {
+            const absVerts = selectedZone.vertices.map(([vx, vy]) => [vx + selectedZone.offset[0], vy + selectedZone.offset[1]] as Vertex);
+            const bb = boundingBox(absVerts);
+            const corners: Vertex[] = [
+              [bb.minX, bb.minY], [bb.maxX, bb.minY],
+              [bb.maxX, bb.maxY], [bb.minX, bb.maxY],
+            ];
+            return corners.map((corner, ci) => {
+              const [cpx, cpy] = worldToPixel(corner, view);
+              return (
+                <rect key={`resize-${ci}`} x={cpx - 5} y={cpy - 5} width={10} height={10}
+                  fill="white" stroke="#234a2e" strokeWidth={1.5} rx={1}
+                  style={{ cursor: RESIZE_CURSORS[ci] }}
+                />
+              );
+            });
+          })()}
         </svg>
 
         {/* Floating zone action bar */}
@@ -963,29 +1009,6 @@ export function GardenPlannerCore({ plan, onSave, onGenerateImage, projectName, 
           </button>
         </div>
       </div>
-
-      {/* Bounding box resize handles for selected zone */}
-      {selectedZone && !editingZoneVertices && !editingBoundary && (() => {
-        const absVerts = selectedZone.vertices.map(([vx, vy]) => [vx + selectedZone.offset[0], vy + selectedZone.offset[1]] as Vertex);
-        const bb = boundingBox(absVerts);
-        const corners: Vertex[] = [
-          [bb.minX, bb.minY], [bb.maxX, bb.minY],
-          [bb.maxX, bb.maxY], [bb.minX, bb.maxY],
-        ];
-        return (
-          <svg style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }} width={canvasSize.width} height={canvasSize.height}>
-            {corners.map((corner, ci) => {
-              const [cpx, cpy] = worldToPixel(corner, view);
-              return (
-                <rect key={ci} x={cpx - 5} y={cpy - 5} width={10} height={10}
-                  fill="white" stroke="#234a2e" strokeWidth={1.5} rx={1}
-                  style={{ pointerEvents: "auto", cursor: RESIZE_CURSORS[ci] }}
-                />
-              );
-            })}
-          </svg>
-        );
-      })()}
 
       <GardenSidebar
         boundary={boundary}
