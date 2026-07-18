@@ -7,7 +7,7 @@ COPY bloomy-frontend/package*.json bloomy-frontend/
 # Install planner's own deps so webpack can resolve them from the planner's
 # own node_modules — webpack walks UP from the source file, not across siblings.
 WORKDIR /app/bloomy-packages/planner
-RUN npm install
+RUN npm install --omit=peer
 
 WORKDIR /app/bloomy-frontend
 RUN npm ci
