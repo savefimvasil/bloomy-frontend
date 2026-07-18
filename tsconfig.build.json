@@ -3,11 +3,7 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@bloomy/bloomy-planner": ["../bloomy-packages/planner/dist/index"],
-      "react": ["./node_modules/@types/react"],
-      "react/jsx-runtime": ["./node_modules/@types/react/jsx-runtime"],
-      "react-dom": ["./node_modules/@types/react-dom"],
-      "react-dom/client": ["./node_modules/@types/react-dom/client"]
+      "@bloomy/bloomy-planner": ["../bloomy-packages/planner/dist/index"]
     }
   }
 }
