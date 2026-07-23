@@ -16,9 +16,26 @@ const nextConfig: NextConfig = {
     : {
         transpilePackages: ["@bloomy/bloomy-planner"],
         webpack(config) {
+          const plannerSrc = path.resolve(__dirname, "../bloomy-packages/planner/src");
+          // Planner-internal @/X imports must come BEFORE Next.js's generic @/ alias
+          // (webpack first-match wins). The planner uses five @/ namespaces:
+          //   @/canvas, @/garden, @/sidebar, @/ui  — not used by the frontend at all
+          //   @/lib/*  — some sub-paths overlap with frontend's lib/, so alias only
+          //              the specific files the planner needs, not the whole @/lib.
           config.resolve.alias = {
+            "@/canvas":            path.resolve(plannerSrc, "canvas"),
+            "@/garden":            path.resolve(plannerSrc, "garden"),
+            "@/sidebar":           path.resolve(plannerSrc, "sidebar"),
+            "@/ui":                path.resolve(plannerSrc, "ui"),
+            "@/lib/constants":     path.resolve(plannerSrc, "lib/constants"),
+            "@/lib/types":         path.resolve(plannerSrc, "lib/types"),
+            "@/lib/geometry":      path.resolve(plannerSrc, "lib/geometry"),
+            "@/lib/labels":        path.resolve(plannerSrc, "lib/labels"),
+            "@/lib/hooks":         path.resolve(plannerSrc, "lib/hooks"),
+            "@/lib/optimal-patterns": path.resolve(plannerSrc, "lib/optimal-patterns"),
+            "@/lib/config":        path.resolve(plannerSrc, "lib/config"),
             ...config.resolve.alias,
-            react: path.resolve(__dirname, "node_modules/react"),
+            react:    path.resolve(__dirname, "node_modules/react"),
             "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
           };
           return config;

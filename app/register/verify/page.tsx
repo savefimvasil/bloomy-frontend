@@ -33,10 +33,11 @@ function RegisterVerifyPageComponent() {
       const payload = (await response.json()) as { verified?: boolean; message?: string };
 
       if (!response.ok) {
-        throw new Error(payload.message ?? "Invalid code.");
+        setError(payload.message ?? "Invalid code.");
+        return;
       }
 
-      router.push(`/register/password?email=${encodeURIComponent(email)}`);
+      router.push(`/register/role?email=${encodeURIComponent(email)}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unknown error.");
     } finally {
@@ -58,7 +59,8 @@ function RegisterVerifyPageComponent() {
       const payload = (await response.json()) as { message?: string };
 
       if (!response.ok) {
-        throw new Error(payload.message ?? "Failed to resend code.");
+        setError(payload.message ?? "Failed to resend code.");
+        return;
       }
 
       setResendMessage("A new code has been sent to your email.");

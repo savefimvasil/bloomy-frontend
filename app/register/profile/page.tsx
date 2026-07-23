@@ -10,7 +10,7 @@ import { setAuth } from "@/lib/auth";
 
 type LoginResponse = {
   accessToken: string;
-  user: { id: string; name: string; surname: string; email: string };
+  user: { id: string; name: string; surname: string; email: string; role: "homeowner" | "contractor" };
 };
 
 function RegisterProfilePageComponent() {
@@ -39,6 +39,8 @@ function RegisterProfilePageComponent() {
       return;
     }
 
+    const role = (sessionStorage.getItem("bloomy_reg_role") ?? "homeowner") as "homeowner" | "contractor";
+
     setIsSubmitting(true);
 
     try {
@@ -49,6 +51,7 @@ function RegisterProfilePageComponent() {
           password,
           name: name.trim(),
           surname: surname.trim(),
+          role,
           reason: reason.trim() || undefined,
           acceptPromo,
         },
@@ -57,10 +60,12 @@ function RegisterProfilePageComponent() {
       const payload = (await response.json()) as { message?: string };
 
       if (!response.ok) {
-        throw new Error(payload.message ?? "Registration failed.");
+        setError(payload.message ?? "Registration failed.");
+        return;
       }
 
       sessionStorage.removeItem("bloomy_reg_password");
+      sessionStorage.removeItem("bloomy_reg_role");
 
       const loginResponse = await apiFetch("/auth/login", {
         method: "POST",
@@ -71,7 +76,7 @@ function RegisterProfilePageComponent() {
 
       if (loginResponse.ok) {
         const loginData = loginPayload as LoginResponse;
-        setAuth(loginData.accessToken, loginData.user.email);
+        setAuth(loginData.accessToken, loginData.user.email, loginData.user.role ?? "homeowner");
       }
 
       router.push("/cabinet");

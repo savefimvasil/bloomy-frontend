@@ -19,6 +19,18 @@
       }
     ],
     "paths": {
+      "@/canvas/*": ["../bloomy-packages/planner/src/canvas/*"],
+      "@/garden/*": ["../bloomy-packages/planner/src/garden/*"],
+      "@/sidebar/*": ["../bloomy-packages/planner/src/sidebar/*"],
+      "@/ui/*": ["../bloomy-packages/planner/src/ui/*"],
+      "@/lib/constants": ["../bloomy-packages/planner/src/lib/constants"],
+      "@/lib/types": ["../bloomy-packages/planner/src/lib/types"],
+      "@/lib/geometry": ["../bloomy-packages/planner/src/lib/geometry"],
+      "@/lib/labels": ["../bloomy-packages/planner/src/lib/labels"],
+      "@/lib/hooks": ["../bloomy-packages/planner/src/lib/hooks"],
+      "@/lib/optimal-patterns": ["../bloomy-packages/planner/src/lib/optimal-patterns"],
+      "@/lib/config": ["../bloomy-packages/planner/src/lib/config"],
+      "@/lib/config/*": ["../bloomy-packages/planner/src/lib/config/*"],
       "@/*": ["./*"],
       "@bloomy/bloomy-planner": ["../bloomy-packages/planner/src/index.ts"]
     }

@@ -16,6 +16,7 @@ type LoginResponse = {
     name: string;
     surname: string;
     email: string;
+    role: "homeowner" | "contractor";
   };
 };
 
@@ -40,11 +41,12 @@ export default function LoginPage() {
       const payload = (await response.json()) as LoginResponse | { message?: string };
 
       if (!response.ok) {
-        throw new Error("message" in payload && payload.message ? payload.message : "Login failed.");
+        setError("message" in payload && payload.message ? payload.message : "Login failed.");
+        return;
       }
 
       const data = payload as LoginResponse;
-      setAuth(data.accessToken, data.user.email);
+      setAuth(data.accessToken, data.user.email, data.user.role ?? "homeowner");
       router.push("/cabinet");
       router.refresh();
     } catch (submitError) {

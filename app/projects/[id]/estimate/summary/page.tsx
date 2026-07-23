@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useEstimate } from "../estimateContext";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import type { MaterialItem, ZoneMaterialList, CalculationResult, ToolRentalItem } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
+import { getAuthRole } from "@/lib/auth";
 import { fmtGBP } from "@/lib/currency";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable, type TableColumn } from "@/components/ui/DataTable";
@@ -115,6 +116,17 @@ export default function SummaryPage() {
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Request contractor quotes inline form
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [reqPostcode, setReqPostcode] = useState("");
+  const [reqStartBy, setReqStartBy] = useState("");
+  const [reqSubmitting, setReqSubmitting] = useState(false);
+  const [reqError, setReqError] = useState<string | null>(null);
+  const [reqSuccess, setReqSuccess] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const isHomeowner = getAuthRole() === "homeowner";
+
   useEffect(() => {
     let cancelled = false;
     apiFetch(`/garden-projects/${id}/calculate`, { method: "POST" })
@@ -180,6 +192,37 @@ export default function SummaryPage() {
     }
   }
 
+  async function handleRequestSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setReqError(null);
+    setReqSubmitting(true);
+    try {
+      const res = await apiFetch("/quote-requests", {
+        method: "POST",
+        body: {
+          gardenProjectId: id,
+          postcode: reqPostcode.trim(),
+          startBy: reqStartBy || undefined,
+        },
+      });
+      const payload = (await res.json()) as { message?: string };
+      if (!res.ok) {
+        setReqError(payload.message ?? "Failed to send request");
+        return;
+      }
+      setReqSuccess(true);
+    } catch (err) {
+      setReqError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setReqSubmitting(false);
+    }
+  }
+
+  function handleOpenForm() {
+    setShowRequestForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-5 py-10">
       {/* Header */}
@@ -218,11 +261,95 @@ export default function SummaryPage() {
         <span className="text-display-sm font-bold text-forest">{fmtGBP(result.grandTotal)}</span>
       </div>
 
-      {/* CTA placeholder */}
-      <div className="mt-6 rounded-2xl border border-dashed border-line p-5 text-center">
-        <p className="text-body font-medium text-ink">Looking for a contractor?</p>
-        <p className="mt-1 text-hint text-muted">Contractor directory coming soon.</p>
-      </div>
+      {/* Request contractor quotes */}
+      {isHomeowner && (
+        <div ref={formRef} className="mt-6 rounded-2xl border border-forest/20 bg-forest/3 p-6">
+          {reqSuccess ? (
+            <div className="text-center">
+              <p className="text-body font-semibold text-forest">Request sent to contractors</p>
+              <p className="mt-1 text-hint text-muted">
+                Local contractors will see this project and send you proposals.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/cabinet/quote-requests")}
+                className="mt-4 text-sm text-forest underline underline-offset-4"
+              >
+                View my requests →
+              </button>
+            </div>
+          ) : !showRequestForm ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-body font-semibold text-ink">Want a contractor to do this?</p>
+                <p className="text-hint text-muted">
+                  Send this plan to local contractors and receive proposals with pricing.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenForm}
+                className="shrink-0 rounded-xl bg-forest px-6 py-3 text-sm font-medium text-paper transition hover:bg-moss"
+              >
+                Request contractor quotes
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4">
+              <p className="text-body font-semibold text-ink">Request contractor quotes</p>
+              <p className="text-hint text-muted">
+                Your project plan and material list will be shared with local contractors. Tell them where the work is and when you would like to start.
+              </p>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-hint text-muted">Postcode of the work</label>
+                  <input
+                    type="text"
+                    value={reqPostcode}
+                    onChange={(e) => setReqPostcode(e.target.value)}
+                    placeholder="e.g. SW1A 1AA"
+                    required
+                    className="rounded-lg border border-line bg-paper px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-hint text-muted">
+                    Preferred start date <span className="text-muted/60">(optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={reqStartBy}
+                    onChange={(e) => setReqStartBy(e.target.value)}
+                    className="rounded-lg border border-line bg-paper px-3 py-2 text-body text-ink focus:border-forest/40 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {reqError && (
+                <p className="text-sm text-danger">{reqError}</p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={reqSubmitting}
+                  className="rounded-xl bg-forest px-6 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:opacity-50"
+                >
+                  {reqSubmitting ? "Sending…" : "Send request"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRequestForm(false)}
+                  className="rounded-xl border border-line px-5 py-3 text-sm font-medium text-muted transition hover:text-ink"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* Navigation */}
       <StepNav
