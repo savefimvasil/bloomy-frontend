@@ -8,8 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
 import type { TilePlan } from "@/types/models";
 
@@ -134,7 +133,9 @@ function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) =>
           <span className="text-body font-semibold text-ink">
             {plan.name ?? "Untitled plan"}
           </span>
-          <Badge dot color={plan.planType === "garden" ? "green" : "sage"}>{plan.planType}</Badge>
+          <Badge dot color={plan.planType === "garden" ? "green" : "sage"}>
+            {plan.planType === "garden" ? "Garden" : "Indoor"}
+          </Badge>
         </div>
         <p className="text-hint text-muted">
           {plan.planType === "garden" ? "Garden" : "Indoor"} plan
@@ -177,7 +178,6 @@ export default function TilePlansPage() {
   const [creating, setCreating] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  useRequireAuth();
 
   useEffect(() => {
     if (!getAuthToken()) return;

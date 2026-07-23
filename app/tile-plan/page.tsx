@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
-import { useIsLoggedIn, getAuthToken } from "@/lib/auth";
+import { useAuthStore, getAuthToken } from "@/store/auth";
 
 type Plan = {
   id: string;
@@ -71,7 +71,7 @@ function PlanListRow({ plan, onClick }: { plan: Plan; onClick: () => void }) {
 
 export default function PlanSelectionPage() {
   const router = useRouter();
-  const isLoggedIn = useIsLoggedIn();
+  const isLoggedIn = useAuthStore((s) => s.token !== null);
   const [showExisting, setShowExisting] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);

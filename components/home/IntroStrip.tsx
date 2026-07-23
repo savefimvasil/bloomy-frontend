@@ -4,17 +4,17 @@ const FEATURES = [
   {
     num: "01",
     title: "Tile Planner",
-    body: "Lay out tiles in any shape. Accurate cut piece counts, patterns, and grout gaps — all computed in real time.",
+    body: "Draw any floor or patio shape and get accurate tile counts, cut-piece sizes, and grout gaps — computed in real time.",
   },
   {
     num: "02",
-    title: "Save & Revisit",
-    body: "Create a free account and every plan is saved automatically. Open from any device and continue exactly where you left off.",
+    title: "Garden Planner",
+    body: "Design your full garden layout: draw boundaries, add zones, place objects, and run a materials estimate.",
   },
   {
     num: "03",
-    title: "Projects (coming soon)",
-    body: "Full garden design projects with materials, drawings, and timelines — a wider workspace for larger commissions.",
+    title: "Contractor Marketplace",
+    body: "Post your project and receive proposals from verified local contractors — or find nearby jobs if you offer the service.",
   },
 ];
 

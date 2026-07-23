@@ -5,8 +5,10 @@ import {Suspense, useEffect, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { RegisterSteps } from "@/components/ui/register-steps";
 import { apiFetch } from "@/lib/api";
-import { setAuth } from "@/lib/auth";
+import { setAuth } from "@/store/auth";
+import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
 
 type LoginResponse = {
   accessToken: string;
@@ -15,6 +17,7 @@ type LoginResponse = {
 
 function RegisterProfilePageComponent() {
   const router = useRouter();
+  const ready = useRedirectIfAuthenticated();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
 
@@ -88,6 +91,8 @@ function RegisterProfilePageComponent() {
     }
   }
 
+  if (!ready) return null;
+
   return (
     <SplitHighlight
       title="Almost there"
@@ -97,6 +102,7 @@ function RegisterProfilePageComponent() {
       aside={
         <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
+            <RegisterSteps current={5} total={5} />
             <h2 className="text-display-sm text-forest">
               Complete your profile
             </h2>

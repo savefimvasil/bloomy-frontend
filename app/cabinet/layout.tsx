@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { clearAuth, useAuthEmail, useAuthRole } from "@/lib/auth";
+import { useAuthStore, clearAuth } from "@/store/auth";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -115,8 +116,17 @@ const CONTRACTOR_NAV = [
 export default function CabinetLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const email = useAuthEmail() ?? "";
-  const role = useAuthRole();
+  const token = useAuthStore((s) => s.token);
+  const email = useAuthStore((s) => s.email) ?? "";
+  const role = useAuthStore((s) => s.role);
+
+  useEffect(() => {
+    if (!token) {
+      void router.replace("/login");
+    }
+  }, [token, router]);
+
+  if (!token) return null;
 
   const nav = role === "contractor" ? CONTRACTOR_NAV : HOMEOWNER_NAV;
 

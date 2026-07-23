@@ -4,10 +4,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
-import { useRequireAuth } from "@/lib/useRequireAuth";
 import { useApiFetch } from "@/lib/useApiFetch";
 import { relativeTime } from "@/lib/dateUtils";
-import { proposalStatusColor, requestStatusColor } from "@/lib/statusColors";
+import { proposalStatusColor, requestStatusColor, proposalStatusLabel, requestStatusLabel } from "@/lib/statusColors";
 import type { MyProposal } from "@/types/models";
 
 function EmptyState() {
@@ -31,7 +30,6 @@ function EmptyState() {
 }
 
 export default function MyProposalsPage() {
-  useRequireAuth();
   const { data, loading, error } = useApiFetch<MyProposal[]>("/quote-requests/my-proposals");
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;
@@ -59,7 +57,7 @@ export default function MyProposalsPage() {
                   {p.request.title}
                 </Link>
                 <Badge dot color={requestStatusColor(p.request.status)}>
-                  {p.request.status}
+                  {requestStatusLabel(p.request.status)}
                 </Badge>
                 <span className="text-hint text-muted">{p.request.postcode}</span>
               </div>
@@ -67,7 +65,7 @@ export default function MyProposalsPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <Badge dot color={proposalStatusColor(p.status)}>
-                Proposal {p.status}
+                Proposal {proposalStatusLabel(p.status)}
               </Badge>
               {p.priceNote && (
                 <span className="text-body font-medium text-forest">{p.priceNote}</span>

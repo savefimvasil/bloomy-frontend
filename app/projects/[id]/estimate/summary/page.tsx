@@ -6,7 +6,7 @@ import { useEstimate } from "../estimateContext";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import type { MaterialItem, ZoneMaterialList, CalculationResult, ToolRentalItem } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
-import { getAuthRole } from "@/lib/auth";
+import { getAuthRole } from "@/store/auth";
 import { fmtGBP } from "@/lib/currency";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable, type TableColumn } from "@/components/ui/DataTable";

@@ -1,4 +1,4 @@
-import { getAuthToken } from "./auth";
+import { getAuthToken } from "@/store/auth";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 

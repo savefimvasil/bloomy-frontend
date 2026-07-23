@@ -8,7 +8,7 @@ import type { PlanType } from "@bloomy/bloomy-planner";
 import type { PlanExport, ExportKind } from "@bloomy/bloomy-planner";
 import { PlanExportSchema } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "@/store/auth";
 import { ExportModal } from "./ExportModal";
 import { UploadFloorplanButton } from "./UploadFloorplanButton";
 

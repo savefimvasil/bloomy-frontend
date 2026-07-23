@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { RegisterSteps } from "@/components/ui/register-steps";
+import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
 
 function HomeownerIcon() {
   return (
@@ -28,6 +30,7 @@ type Role = "homeowner" | "contractor";
 
 function RegisterRolePageComponent() {
   const router = useRouter();
+  const ready = useRedirectIfAuthenticated();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
   const [selected, setSelected] = useState<Role | null>(null);
@@ -57,6 +60,8 @@ function RegisterRolePageComponent() {
     },
   ];
 
+  if (!ready) return null;
+
   return (
     <SplitHighlight
       title="Tell us who you are"
@@ -66,6 +71,7 @@ function RegisterRolePageComponent() {
       aside={
         <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
+            <RegisterSteps current={3} total={5} />
             <h2 className="text-display-sm text-forest">
               How will you use Bloomy?
             </h2>

@@ -7,17 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
 import { generateGardenPdf } from "@/lib/generateGardenPdf";
-import type { NearbyRequestDetail, ProposalStatus } from "@/types/models";
-
-function proposalColor(s: ProposalStatus): "green" | "sage" | "danger" {
-  if (s === "accepted") return "green";
-  if (s === "pending") return "sage";
-  return "danger";
-}
+import { proposalStatusColor, requestStatusColor, proposalStatusLabel, requestStatusLabel } from "@/lib/statusColors";
+import { BackButton } from "@/components/ui/back-button";
+import type { NearbyRequestDetail } from "@/types/models";
 
 export default function NearbyRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +26,6 @@ export default function NearbyRequestDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  useRequireAuth();
 
   function loadRequest() {
     if (!getAuthToken()) return;
@@ -81,21 +75,13 @@ export default function NearbyRequestDetailPage() {
 
   return (
     <div className="max-w-2xl">
-      <button
-        type="button"
-        onClick={() => router.push("/cabinet/nearby-requests")}
-        className="mb-6 flex items-center gap-1.5 text-hint text-muted transition hover:text-ink"
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M9 2L4 7L9 12" />
-        </svg>
-        Back
-      </button>
+      <BackButton href="/cabinet/nearby-requests" label="All requests" />
 
       {/* Request details */}
       <div className="border-b border-line pb-6 mb-8">
         <h1 className="text-display-sm text-forest">{req.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-3">
+          <Badge dot color={requestStatusColor(req.status)}>{requestStatusLabel(req.status)}</Badge>
           <span className="text-hint text-muted">{req.postcode}</span>
           {req.startBy && <span className="text-hint text-muted">Start by {req.startBy}</span>}
           <span className="text-hint text-muted">{relativeTime(req.createdAt)}</span>
@@ -153,8 +139,8 @@ export default function NearbyRequestDetailPage() {
           </h2>
           <div className="rounded-xl border border-forest/30 bg-forest/3 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <Badge dot color={proposalColor(req.myProposal.status)}>
-                {req.myProposal.status}
+              <Badge dot color={proposalStatusColor(req.myProposal.status)}>
+                {proposalStatusLabel(req.myProposal.status)}
               </Badge>
               <div className="text-right">
                 {req.myProposal.priceNote && (

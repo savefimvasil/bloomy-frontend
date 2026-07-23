@@ -7,8 +7,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
 import type { GardenProject } from "@/types/models";
 
@@ -150,7 +149,6 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  useRequireAuth();
 
   useEffect(() => {
     if (!getAuthToken()) return;

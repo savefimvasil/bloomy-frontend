@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
-import { useRequireAuth } from "@/lib/useRequireAuth";
 import { useApiFetch } from "@/lib/useApiFetch";
 import { relativeTime } from "@/lib/dateUtils";
 import type { NearbyRequest } from "@/types/models";
@@ -26,7 +25,6 @@ function EmptyState() {
 }
 
 export default function NearbyRequestsPage() {
-  useRequireAuth();
   const { data, loading, error } = useApiFetch<NearbyRequest[]>("/quote-requests/nearby");
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;

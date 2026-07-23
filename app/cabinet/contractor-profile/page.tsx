@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { ContractorProfile } from "@/types/models";
 
@@ -25,7 +24,6 @@ export default function ContractorProfilePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  useRequireAuth();
 
   useEffect(() => {
     if (!getAuthToken()) return;

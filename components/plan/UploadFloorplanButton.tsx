@@ -6,14 +6,14 @@ import {
   extractShapeFromFloorplan,
   FLOORPLAN_ACCEPT,
 } from "@/lib/floorplan-import";
-import { useIsLoggedIn } from "@/lib/auth";
+import { useAuthStore } from "@/store/auth";
 
 interface Props {
   dispatch: React.Dispatch<PlannerAction>;
 }
 
 export function UploadFloorplanButton({ dispatch }: Props) {
-  const isLoggedIn = useIsLoggedIn();
+  const isLoggedIn = useAuthStore((s) => s.token !== null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

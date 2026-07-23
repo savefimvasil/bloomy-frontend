@@ -5,9 +5,12 @@ import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { RegisterSteps } from "@/components/ui/register-steps";
+import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
 
 function RegisterPasswordPageComponent() {
   const router = useRouter();
+  const ready = useRedirectIfAuthenticated();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
 
@@ -33,6 +36,8 @@ function RegisterPasswordPageComponent() {
     router.push(`/register/profile?email=${encodeURIComponent(email)}`);
   }
 
+  if (!ready) return null;
+
   return (
     <Suspense>
       <SplitHighlight
@@ -43,6 +48,7 @@ function RegisterPasswordPageComponent() {
           aside={
             <div className="container py-12 md:py-28">
               <div className="mx-auto w-full max-w-md">
+                <RegisterSteps current={4} total={5} />
                 <h2 className="text-display-sm text-forest">
                   Set your password
                 </h2>

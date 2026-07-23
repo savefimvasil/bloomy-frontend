@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "@/store/auth";
 import { Spinner } from "@/components/ui/spinner";
 import { GardenPlannerCore } from "@bloomy/bloomy-planner";
 import type { GardenPlan } from "@bloomy/bloomy-planner";

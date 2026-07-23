@@ -6,10 +6,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { RegisterSteps } from "@/components/ui/register-steps";
 import { apiFetch } from "@/lib/api";
+import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const ready = useRedirectIfAuthenticated();
   const [email, setEmail] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +38,8 @@ export default function RegisterPage() {
       const payload = (await response.json()) as { message?: string };
 
       if (!response.ok) {
-        throw new Error(payload.message ?? "Request failed.");
+        setError(payload.message ?? "Request failed.");
+        return;
       }
 
       router.push(`/register/verify?email=${encodeURIComponent(email.trim())}`);
@@ -46,6 +50,8 @@ export default function RegisterPage() {
     }
   }
 
+  if (!ready) return null;
+
   return (
     <SplitHighlight
       title="Create a fresh Bloomy account"
@@ -55,6 +61,7 @@ export default function RegisterPage() {
       aside={
         <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
+            <RegisterSteps current={1} total={5} />
             <h2 className="text-display-sm text-forest">
               Create a Bloomy account
             </h2>

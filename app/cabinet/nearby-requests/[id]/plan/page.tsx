@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { GardenPlannerCore } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import type { GardenPlan } from "@bloomy/bloomy-planner";
 import type { NearbyRequestDetail } from "@/types/models";
 
@@ -17,7 +16,6 @@ export default function NearbyRequestPlanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useRequireAuth();
 
   useEffect(() => {
     if (!getAuthToken()) return;
@@ -58,7 +56,7 @@ export default function NearbyRequestPlanPage() {
 
   return (
     // Break out of the cabinet layout's padding so the planner fills the viewport.
-    <div className="-m-6 md:-m-8 overflow-hidden" style={{ height: "calc(100dvh - 2.5rem)" }}>
+    <div className="-m-6 md:-m-8 overflow-hidden h-[calc(100dvh-2.5rem)]">
       <GardenPlannerCore
         plan={plan}
         projectName={req.title}

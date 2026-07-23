@@ -7,10 +7,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
-import { requestStatusColor } from "@/lib/statusColors";
+import { requestStatusColor, requestStatusLabel } from "@/lib/statusColors";
 import type { QuoteRequestSummary } from "@/types/models";
 
 function EmptyState() {
@@ -42,7 +41,7 @@ function RequestRow({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-body font-semibold text-ink">{req.title}</span>
-          <Badge dot color={requestStatusColor(req.status)}>{req.status}</Badge>
+          <Badge dot color={requestStatusColor(req.status)}>{requestStatusLabel(req.status)}</Badge>
         </div>
         <p className="text-hint text-muted">
           {req.postcode}
@@ -76,7 +75,6 @@ export default function QuoteRequestsPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  useRequireAuth();
 
   useEffect(() => {
     if (!getAuthToken()) return;

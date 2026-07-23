@@ -1,3 +1,4 @@
+import { ContractorMarketplaceSection } from "@/components/home/ContractorMarketplaceSection";
 import { FinalCta } from "@/components/home/FinalCta";
 import { GardenPlannerPromo } from "@/components/home/GardenPlannerPromo";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -10,21 +11,22 @@ export default function HomePage() {
     <div className="overflow-x-hidden">
       <HeroSection
         backgroundGradient="linear-gradient(160deg, #152e1a 0%, #234a2e 45%, #2e6040 100%)"
-        tagline="For designers & contractors"
+        tagline="For homeowners & contractors"
         headline={
           <>
-            EARLY LIGHT.<br />
+            YOUR SPACE.<br />
             <span className="text-lime">EXACT COUNTS.</span>
           </>
         }
-        description="Plan the patio before the sun's fully up. Share the count with the yard before they open."
-        primaryCta={{ label: "Start planning", href: "/projects/new" }}
+        description="Bloomy gives you a visual garden planner, a precise tile calculator, and a contractor marketplace — design your project, count your materials, then connect with local professionals."
+        primaryCta={{ label: "Start a project", href: "/projects/new" }}
         secondaryCta={{ label: "Open Tile Planner →", href: "/tile-plan" }}
         scrollHint
       />
       <IntroStrip />
       <GardenPlannerPromo />
       <TilePlannerSpotlight />
+      <ContractorMarketplaceSection />
       <HowItWorks />
       <FinalCta />
     </div>

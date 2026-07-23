@@ -6,10 +6,13 @@ import {Suspense, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
+import { RegisterSteps } from "@/components/ui/register-steps";
 import { apiFetch } from "@/lib/api";
+import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
 
 function RegisterVerifyPageComponent() {
   const router = useRouter();
+  const ready = useRedirectIfAuthenticated();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
 
@@ -71,6 +74,8 @@ function RegisterVerifyPageComponent() {
     }
   }
 
+  if (!ready) return null;
+
   return (
     <SplitHighlight
       title="Check your inbox"
@@ -80,6 +85,7 @@ function RegisterVerifyPageComponent() {
       aside={
         <div className="container py-12 md:py-28">
           <div className="mx-auto w-full max-w-md">
+            <RegisterSteps current={2} total={5} />
             <h2 className="text-display-sm text-forest">
               Enter verification code
             </h2>

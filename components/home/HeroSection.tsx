@@ -62,11 +62,8 @@ export function HeroSection(props: HeroSectionProps) {
 
   return (
     <section
-      className={`relative -mt-[68px] ${minH} overflow-hidden`}
-      style={{
-        background,
-        ...(backgroundImage ? { backgroundSize: "cover", backgroundPosition: "center" } : {}),
-      }}
+      className={`relative -mt-[68px] ${minH} overflow-hidden${backgroundImage ? " bg-cover bg-center" : ""}`}
+      style={{ background }}
     >
       {watermark && <TileGridWatermark />}
 

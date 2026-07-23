@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { apiFetch } from "@/lib/api";
-import { setAuth } from "@/lib/auth";
+import { setAuth } from "@/store/auth";
+import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
 
 type LoginResponse = {
   accessToken: string;
@@ -22,6 +23,7 @@ type LoginResponse = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const ready = useRedirectIfAuthenticated();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +58,8 @@ export default function LoginPage() {
     }
   }
 
+  if (!ready) return null;
+
   return (
     <SplitHighlight
       title="Login to your Bloomy account"
@@ -70,32 +74,39 @@ export default function LoginPage() {
             </h2>
             <p className="mt-3 text-sm text-muted">One account for all Bloomy products</p>
 
-            <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit}>
+            <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
               <Input
                 label="Email"
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Your email"
+                placeholder="your@email.com"
                 autoComplete="email"
                 required
               />
-              <Input
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Your password"
-                autoComplete="current-password"
-                required
-              />
+              <div className="flex flex-col gap-1">
+                <Input
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Your password"
+                  autoComplete="current-password"
+                  required
+                />
+                <div className="flex justify-end">
+                  <Link href="/forgot-password" className="text-hint text-muted underline underline-offset-4 hover:text-forest">
+                    Forgot password?
+                  </Link>
+                </div>
+              </div>
 
-              <Button type="submit" disabled={isSubmitting} className="mt-4 w-full">
-                {isSubmitting ? "Signing in..." : "Submit"}
+              {error ? <div className="bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
+
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </form>
-
-            {error ? <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
             <p className="mt-8 text-sm text-muted">
               Need an account?{" "}

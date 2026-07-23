@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { useApiFetch } from "@/lib/useApiFetch";
 import { relativeTime } from "@/lib/dateUtils";
 import type { GardenProject } from "@/types/models";
 
@@ -128,23 +125,7 @@ function EstimateRow({ project }: { project: GardenProject }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EstimatesPage() {
-  const [projects, setProjects] = useState<GardenProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useRequireAuth();
-
-  useEffect(() => {
-    if (!getAuthToken()) return;
-    void apiFetch("/garden-projects")
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to load projects");
-        return res.json() as Promise<GardenProject[]>;
-      })
-      .then(data => setProjects(data.filter(p => p.hasEstimate)))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, loading, error } = useApiFetch<GardenProject[]>("/garden-projects");
 
   if (loading) return (
     <div className="flex justify-center py-12">
@@ -154,6 +135,7 @@ export default function EstimatesPage() {
 
   if (error) return <p className="text-body text-danger">{error}</p>;
 
+  const projects = (data ?? []).filter(p => p.hasEstimate);
   if (projects.length === 0) return <EmptyState />;
 
   return (

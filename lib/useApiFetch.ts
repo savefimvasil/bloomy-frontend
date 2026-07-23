@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "@/store/auth";
 
 type State<T> =
   | { data: null; loading: true; error: null }

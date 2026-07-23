@@ -3,18 +3,18 @@ import { SectionLabel } from "@/components/ui/section-label";
 const STEPS = [
   {
     step: "1",
-    title: "Draw your space",
-    body: "Click to add vertices and shape any polygon — a rectangular patio, an L-shaped hallway, or a complex pool surround.",
+    title: "Plan your space",
+    body: "Draw your garden layout or tile shape. Add zones, place objects, configure tile sizes and patterns — all in a live visual editor.",
   },
   {
     step: "2",
-    title: "Choose tile & pattern",
-    body: "Pick a size, select straight, brick, or diagonal, set the grout gap, and preview instantly at any zoom.",
+    title: "Get your materials estimate",
+    body: "Run the build estimate to see exact tile counts, offcut sizes, and a full materials list ready to share or download as a PDF.",
   },
   {
     step: "3",
-    title: "Export or save",
-    body: "Download a print-ready PDF with tile counts, export PNG for sharing, or save the plan to your account to revisit later.",
+    title: "Connect with professionals",
+    body: "Post your project and receive proposals from verified local contractors. Compare, accept, and get the job booked.",
   },
 ];
 
@@ -22,9 +22,9 @@ export function HowItWorks() {
   return (
     <section className="bg-paper">
       <div className="container py-20 md:py-28">
-        <SectionLabel>Process</SectionLabel>
+        <SectionLabel>How it works</SectionLabel>
         <h2 className="mt-4 max-w-md text-display-lg text-forest normal-case tracking-normal leading-tight">
-          From blank canvas<br />to bill of materials
+          From blank canvas<br />to booked contractor
         </h2>
 
         <div className="mt-14 grid gap-0 md:grid-cols-3">

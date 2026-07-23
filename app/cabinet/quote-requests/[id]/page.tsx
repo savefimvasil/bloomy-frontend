@@ -1,18 +1,18 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
 import { generateGardenPdf } from "@/lib/generateGardenPdf";
-import { proposalStatusColor, requestStatusColor } from "@/lib/statusColors";
+import { proposalStatusColor, requestStatusColor, proposalStatusLabel, requestStatusLabel } from "@/lib/statusColors";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { BackButton } from "@/components/ui/back-button";
 import type { ProposalInRequest, QuoteRequestDetail, RequestStatus } from "@/types/models";
 
 function ProposalCard({
@@ -37,7 +37,7 @@ function ProposalCard({
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <Badge dot color={proposalStatusColor(proposal.status)}>
-              {proposal.status}
+              {proposalStatusLabel(proposal.status)}
             </Badge>
             {proposal.contractor.verified && <VerifiedBadge compact />}
           </div>
@@ -95,13 +95,11 @@ function ProposalCard({
 
 export default function QuoteRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const [req, setReq] = useState<QuoteRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
-  useRequireAuth();
 
   function load() {
     if (!getAuthToken()) return;
@@ -140,23 +138,14 @@ export default function QuoteRequestDetailPage() {
         message="All other proposals will be declined. The contractor's contact details will be revealed."
       />
 
-      <button
-        type="button"
-        onClick={() => router.push("/cabinet/quote-requests")}
-        className="mb-6 flex items-center gap-1.5 text-hint text-muted transition hover:text-ink"
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M9 2L4 7L9 12" />
-        </svg>
-        Back to requests
-      </button>
+      <BackButton href="/cabinet/quote-requests" label="All requests" />
 
       <div className="border-b border-line pb-6 mb-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-display-sm text-forest">{req.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <Badge dot color={requestStatusColor(req.status)}>{req.status}</Badge>
+              <Badge dot color={requestStatusColor(req.status)}>{requestStatusLabel(req.status)}</Badge>
               <span className="text-hint text-muted">{req.postcode}</span>
               {req.startBy && (
                 <span className="text-hint text-muted">Start by {req.startBy}</span>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "@/store/auth";
 import { BoundaryEditor, boundaryArea } from "@bloomy/bloomy-planner";
 import type { GardenPlan, Vertex } from "@bloomy/bloomy-planner";
 
@@ -41,7 +41,11 @@ export default function NewProjectPage() {
         method: "POST",
         body: { name: name.trim() },
       });
-      if (!createRes.ok) throw new Error("Failed to create project");
+      if (!createRes.ok) {
+        setError("Failed to create project");
+        setCreating(false);
+        return;
+      }
       const project = (await createRes.json()) as { id: string };
 
       const plan: GardenPlan = {

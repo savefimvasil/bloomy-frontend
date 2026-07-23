@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthRole } from "@/lib/auth";
+import { getAuthRole } from "@/store/auth";
 
 export default function CabinetRoot() {
   const router = useRouter();

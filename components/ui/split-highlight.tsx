@@ -19,12 +19,10 @@ export function SplitHighlight({
     <section className="grid bg-paper lg:grid-cols-[1fr_1fr]">
       <div className="bg-forest">
         <div
-          className="relative flex min-h-[calc(100vh-68px)] flex-col justify-end overflow-hidden bg-moss"
+          className="relative flex min-h-[calc(100vh-68px)] flex-col justify-end overflow-hidden bg-cover bg-center bg-moss"
           aria-label={imageAlt}
           style={{
             backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${imageUrl}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
           }}
         >
           <div className="container text-paper py-6 pt-24 lg:pt-0">

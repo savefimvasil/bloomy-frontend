@@ -19,7 +19,7 @@ import type {
 } from "@bloomy/bloomy-planner";
 import { DEFAULT_PARAMS, defaultExistingStructure } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "@/store/auth";
 import { Spinner } from "@/components/ui/spinner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

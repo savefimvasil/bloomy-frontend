@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BloomyLogo } from "@/components/ui/bloomy-logo";
 import { Dropdown } from "@/components/ui/dropdown";
 import { IconButton } from "@/components/ui/icon-button";
-import { useIsLoggedIn } from "@/lib/auth";
+import { useAuthStore } from "@/store/auth";
 
 function CabinetIcon() {
   return (
@@ -24,7 +24,7 @@ const PRODUCTS = [
 ];
 
 export function SiteHeader() {
-  const isLoggedIn = useIsLoggedIn();
+  const isLoggedIn = useAuthStore((s) => s.token !== null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
