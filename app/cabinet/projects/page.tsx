@@ -7,8 +7,8 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
+import { useProjects } from "@/store/cabinet";
 import type { GardenProject } from "@/types/models";
 
 // ─── Project thumbnail ────────────────────────────────────────────────────────
@@ -144,32 +144,18 @@ function ProjectRow({ project, onDelete }: { project: GardenProject; onDelete: (
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<GardenProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { items: projects, loading, error, fetch: fetchProjects, remove: removeProject } = useProjects();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-
-  useEffect(() => {
-    if (!getAuthToken()) return;
-    void apiFetch("/garden-projects")
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to load projects");
-        return res.json() as Promise<GardenProject[]>;
-      })
-      .then(data => setProjects(data))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { void fetchProjects(); }, [fetchProjects]);
 
   function handleCreate() {
     router.push("/projects/new");
   }
 
   async function handleDelete(id: string) {
-    if (!getAuthToken()) return;
     await apiFetch(`/garden-projects/${id}`, { method: "DELETE" });
-    setProjects(prev => prev.filter(p => p.id !== id));
+    removeProject(id);
   }
 
   if (loading) return (

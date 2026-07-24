@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import {Suspense, useEffect, useState} from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
@@ -21,10 +21,19 @@ function RegisterProfilePageComponent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
 
+  const [role] = useState<"homeowner" | "contractor">(() =>
+    typeof window === "undefined"
+      ? "homeowner"
+      : ((sessionStorage.getItem("bloomy_reg_role") ?? "homeowner") as "homeowner" | "contractor")
+  );
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [reason, setReason] = useState("");
   const [acceptPromo, setAcceptPromo] = useState(false);
+  const [postcode, setPostcode] = useState("");
+  const [radiusMiles, setRadiusMiles] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,22 +51,30 @@ function RegisterProfilePageComponent() {
       return;
     }
 
-    const role = (sessionStorage.getItem("bloomy_reg_role") ?? "homeowner") as "homeowner" | "contractor";
-
     setIsSubmitting(true);
 
     try {
+      const body: Record<string, unknown> = {
+        email,
+        password,
+        name: name.trim(),
+        surname: surname.trim(),
+        role,
+        acceptPromo,
+      };
+
+      if (role === "contractor") {
+        body.postcode = postcode.trim();
+        body.radiusMiles = Number(radiusMiles);
+        if (businessName.trim()) body.businessName = businessName.trim();
+        if (phone.trim()) body.phone = phone.trim();
+      } else {
+        body.reason = reason.trim() || undefined;
+      }
+
       const response = await apiFetch("/users/register/complete", {
         method: "POST",
-        body: {
-          email,
-          password,
-          name: name.trim(),
-          surname: surname.trim(),
-          role,
-          reason: reason.trim() || undefined,
-          acceptPromo,
-        },
+        body,
       });
 
       const payload = (await response.json()) as { message?: string };
@@ -128,19 +145,58 @@ function RegisterProfilePageComponent() {
                 autoComplete="family-name"
                 required
               />
-              <div className="flex flex-col gap-1">
-                <label className="text-hint text-muted">
-                  Why are you using Bloomy?{" "}
-                  <span className="text-muted/70">(optional)</span>
-                </label>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="e.g. planning a garden renovation, interior flooring project..."
-                  rows={3}
-                  className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
-                />
-              </div>
+
+              {role === "contractor" ? (
+                <>
+                  <Input
+                    label="Postcode"
+                    value={postcode}
+                    onChange={(e) => setPostcode(e.target.value)}
+                    placeholder="e.g. SW1A 1AA"
+                    autoComplete="postal-code"
+                    required
+                  />
+                  <Input
+                    label="Service radius (miles)"
+                    type="number"
+                    value={radiusMiles}
+                    onChange={(e) => setRadiusMiles(e.target.value)}
+                    placeholder="e.g. 25"
+                    min="1"
+                    max="200"
+                    required
+                  />
+                  <Input
+                    label="Business name (optional)"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Your trading name"
+                    autoComplete="organization"
+                  />
+                  <Input
+                    label="Phone (optional)"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="e.g. 07700 900123"
+                    autoComplete="tel"
+                  />
+                </>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <label className="text-hint text-muted">
+                    Why are you using Bloomy?{" "}
+                    <span className="text-muted/70">(optional)</span>
+                  </label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="e.g. planning a garden renovation, interior flooring project..."
+                    rows={3}
+                    className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
+                  />
+                </div>
+              )}
 
               <label className="flex cursor-pointer items-start gap-3 pt-1">
                 <input
@@ -171,8 +227,8 @@ function RegisterProfilePageComponent() {
 
 export default function RegisterProfilePage() {
   return (
-      <Suspense>
-        <RegisterProfilePageComponent />
-      </Suspense>
-  )
-};
+    <Suspense>
+      <RegisterProfilePageComponent />
+    </Suspense>
+  );
+}

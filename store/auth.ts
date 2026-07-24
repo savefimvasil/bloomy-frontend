@@ -9,8 +9,10 @@ interface AuthState {
   token: string | null;
   email: string | null;
   role: UserRole;
+  _hasHydrated: boolean;
   setAuth: (token: string, email: string, role: UserRole) => void;
   clearAuth: () => void;
+  setHasHydrated: (v: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,10 +21,24 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       email: null,
       role: "homeowner",
+      _hasHydrated: false,
       setAuth: (token, email, role) => set({ token, email, role }),
       clearAuth: () => set({ token: null, email: null, role: "homeowner" }),
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
     }),
-    { name: "bloomy-auth" }
+    {
+      name: "bloomy-auth",
+      // Don't read localStorage synchronously on module load — that would cause
+      // a hydration mismatch (server has no token, client immediately has one).
+      // We call persist.rehydrate() manually after mount instead.
+      skipHydration: true,
+      // Only persist the auth fields, not the runtime _hasHydrated flag.
+      partialize: (s) => ({ token: s.token, email: s.email, role: s.role }),
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) console.error("[auth] rehydration error:", error);
+        useAuthStore.setState({ _hasHydrated: true });
+      },
+    }
   )
 );
 

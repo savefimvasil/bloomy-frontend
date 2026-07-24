@@ -3,31 +3,15 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
 import { requestStatusColor, requestStatusLabel } from "@/lib/statusColors";
+import { useQuoteRequests } from "@/store/cabinet";
 import type { QuoteRequestSummary } from "@/types/models";
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col gap-5 py-10">
-      <p className="text-eyebrow text-muted">Quote Requests</p>
-      <h2 className="text-display-xl text-ink">NO REQUESTS<br />YET.</h2>
-      <p className="max-w-sm text-body text-muted">
-        Open a garden project, run the estimate, then click <strong>Request contractor quotes</strong> to invite local contractors to send you proposals.
-      </p>
-      <div>
-        <Button href="/cabinet/projects" variant="secondary">
-          Go to projects
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 function RequestRow({
   req,
@@ -70,32 +54,26 @@ function RequestRow({
 }
 
 export default function QuoteRequestsPage() {
-  const [requests, setRequests] = useState<QuoteRequestSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { items: requests, loading, error, fetch: fetchQuoteRequests, remove: removeQuoteRequest } = useQuoteRequests();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-
-  useEffect(() => {
-    if (!getAuthToken()) return;
-    void apiFetch("/quote-requests/mine")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load requests");
-        return res.json() as Promise<QuoteRequestSummary[]>;
-      })
-      .then(setRequests)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { void fetchQuoteRequests(); }, [fetchQuoteRequests]);
 
   async function handleDelete(id: string) {
     await apiFetch(`/quote-requests/mine/${id}`, { method: "DELETE" });
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+    removeQuoteRequest(id);
   }
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading requests…" /></div>;
   if (error) return <p className="text-body text-danger">{error}</p>;
-  if (requests.length === 0) return <EmptyState />;
+  if (requests.length === 0) return (
+    <CabinetEmptyState
+      eyebrow="Quote Requests"
+      title={<>NO REQUESTS<br />YET.</>}
+      description={<>Open a garden project, run the estimate, then click <strong>Request contractor quotes</strong> to invite local contractors to send you proposals.</>}
+      action={<Button href="/cabinet/projects" variant="secondary">Go to projects</Button>}
+    />
+  );
 
   return (
     <div>

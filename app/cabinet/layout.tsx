@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuthStore, clearAuth } from "@/store/auth";
+import { useCabinetStore } from "@/store/cabinet";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -117,21 +118,23 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const email = useAuthStore((s) => s.email) ?? "";
   const role = useAuthStore((s) => s.role);
 
   useEffect(() => {
-    if (!token) {
+    if (hasHydrated && !token) {
       void router.replace("/login");
     }
-  }, [token, router]);
+  }, [hasHydrated, token, router]);
 
-  if (!token) return null;
+  if (!hasHydrated || !token) return null;
 
   const nav = role === "contractor" ? CONTRACTOR_NAV : HOMEOWNER_NAV;
 
   function handleLogout() {
     clearAuth();
+    useCabinetStore.getState().clearAll();
     router.push("/login");
     router.refresh();
   }

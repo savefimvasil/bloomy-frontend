@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
-import { Badge } from "@/components/ui/badge";
 import { useApiFetch } from "@/lib/useApiFetch";
 import { relativeTime } from "@/lib/dateUtils";
 import type { GardenProject } from "@/types/models";
@@ -24,30 +26,6 @@ function EstimateThumbnail() {
       <rect x="44" y="37" width="8" height="5" rx="2" fill="#d1c9be" />
       <rect x="32" y="48" width="8" height="5" rx="2" fill="#d1c9be" />
     </svg>
-  );
-}
-
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center gap-12 py-10 md:flex-row md:items-center md:gap-16">
-      <div className="flex flex-col gap-5">
-        <p className="text-eyebrow text-muted">Estimates</p>
-        <h2 className="text-display-xl text-ink">
-          NO ESTIMATES<br />YET.
-        </h2>
-        <p className="max-w-sm text-body text-muted">
-          Open a garden project, use the Build Estimate wizard to configure each zone, and save — your material list will appear here.
-        </p>
-        <Link
-          href="/cabinet/projects"
-          className="inline-flex items-center gap-2 rounded-xl bg-forest px-7 py-3.5 text-sm font-medium text-paper transition hover:bg-moss"
-        >
-          Go to Projects
-        </Link>
-      </div>
-    </div>
   );
 }
 
@@ -136,7 +114,14 @@ export default function EstimatesPage() {
   if (error) return <p className="text-body text-danger">{error}</p>;
 
   const projects = (data ?? []).filter(p => p.hasEstimate);
-  if (projects.length === 0) return <EmptyState />;
+  if (projects.length === 0) return (
+    <CabinetEmptyState
+      eyebrow="Estimates"
+      title={<>NO ESTIMATES<br />YET.</>}
+      description="Open a garden project, use the Build Estimate wizard to configure each zone, and save — your material list will appear here."
+      action={<Button href="/cabinet/projects">Go to projects</Button>}
+    />
+  );
 
   return (
     <div>

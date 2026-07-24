@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
+import { AuthHydration } from "@/components/auth-hydration";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className="h-full overflow-hidden bg-canvas text-ink" suppressHydrationWarning>
         <div className="flex h-full flex-col">
+          <AuthHydration />
           <ScrollToTop />
           <SiteHeader />
           <main className="flex-1 overflow-y-auto pt-[68px]">

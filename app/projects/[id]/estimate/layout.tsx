@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
-import { EstimateProvider, useEstimate } from "./estimateContext";
+import { Spinner } from "@/components/ui/spinner";
+import { useEstimateStore, useEstimate } from "@/store/estimate";
 
 function EstimateLayoutInner({ children }: { children: React.ReactNode }) {
   const { id } = useParams() as { id: string };
@@ -66,9 +68,20 @@ function EstimateLayoutInner({ children }: { children: React.ReactNode }) {
 }
 
 export default function EstimateLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <EstimateProvider>
-      <EstimateLayoutInner>{children}</EstimateLayoutInner>
-    </EstimateProvider>
-  );
+  const { id } = useParams() as { id: string };
+  const init = useEstimateStore(s => s.init);
+  const reset = useEstimateStore(s => s.reset);
+  const loading = useEstimateStore(s => s.loading);
+  const ready = useEstimateStore(s => s.project !== null);
+
+  useEffect(() => {
+    void init(id);
+    return () => reset();
+  }, [id, init, reset]);
+
+  if (loading || !ready) {
+    return <div className="flex h-full items-center justify-center bg-canvas"><Spinner /></div>;
+  }
+
+  return <EstimateLayoutInner>{children}</EstimateLayoutInner>;
 }

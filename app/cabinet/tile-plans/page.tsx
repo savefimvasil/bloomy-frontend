@@ -8,8 +8,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api";
-import { getAuthToken } from "@/store/auth";
 import { relativeTime } from "@/lib/dateUtils";
+import { useTilePlans } from "@/store/cabinet";
 import type { TilePlan } from "@/types/models";
 
 // ─── Tile thumbnail SVG ──────────────────────────────────────────────────────
@@ -172,27 +172,13 @@ function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) =>
 
 export default function TilePlansPage() {
   const router = useRouter();
-  const [plans, setPlans] = useState<TilePlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { items: plans, loading, error, fetch: fetchTilePlans, remove: removeTilePlan } = useTilePlans();
   const [creating, setCreating] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-
-  useEffect(() => {
-    if (!getAuthToken()) return;
-    void apiFetch("/tile-plans")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load plans");
-        return res.json() as Promise<TilePlan[]>;
-      })
-      .then((data) => setPlans(data))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Unknown error"))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { void fetchTilePlans(); }, [fetchTilePlans]);
 
   async function handleCreate() {
-    if (!getAuthToken()) return;
     setCreating(true);
     try {
       const res = await apiFetch("/tile-plans", {
@@ -207,9 +193,8 @@ export default function TilePlansPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!getAuthToken()) return;
     await apiFetch(`/tile-plans/${id}`, { method: "DELETE" });
-    setPlans((prev) => prev.filter((p) => p.id !== id));
+    removeTilePlan(id);
   }
 
   if (loading) return (

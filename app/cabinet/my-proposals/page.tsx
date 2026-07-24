@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { useApiFetch } from "@/lib/useApiFetch";
@@ -9,33 +11,20 @@ import { relativeTime } from "@/lib/dateUtils";
 import { proposalStatusColor, requestStatusColor, proposalStatusLabel, requestStatusLabel } from "@/lib/statusColors";
 import type { MyProposal } from "@/types/models";
 
-function EmptyState() {
-  return (
-    <div className="flex flex-col gap-5 py-10">
-      <p className="text-eyebrow text-muted">My Proposals</p>
-      <h2 className="text-display-xl text-ink">NO PROPOSALS<br />YET.</h2>
-      <p className="max-w-sm text-body text-muted">
-        Browse homeowner requests near you and send your first proposal.
-      </p>
-      <div>
-        <Link
-          href="/cabinet/nearby-requests"
-          className="inline-block rounded-xl bg-forest px-7 py-3.5 text-sm font-medium text-paper transition hover:bg-moss"
-        >
-          Browse requests
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 export default function MyProposalsPage() {
   const { data, loading, error } = useApiFetch<MyProposal[]>("/quote-requests/my-proposals");
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;
   if (error) return <p className="text-body text-danger">{error}</p>;
   const proposals = data ?? [];
-  if (proposals.length === 0) return <EmptyState />;
+  if (proposals.length === 0) return (
+    <CabinetEmptyState
+      eyebrow="My Proposals"
+      title={<>NO PROPOSALS<br />YET.</>}
+      description="Browse homeowner requests near you and send your first proposal."
+      action={<Button href="/cabinet/nearby-requests">Browse requests</Button>}
+    />
+  );
 
   return (
     <div>

@@ -24,7 +24,9 @@ const PRODUCTS = [
 ];
 
 export function SiteHeader() {
-  const isLoggedIn = useAuthStore((s) => s.token !== null);
+  const token = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const isLoggedIn = hasHydrated && token !== null;
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
