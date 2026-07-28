@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CabinetRow } from "@/components/ui/cabinet-row";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -121,50 +122,31 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 function PlanRow({ plan, onDelete }: { plan: TilePlan; onDelete: (id: string) => void }) {
   return (
-    <div className="group relative flex items-center gap-5 py-6">
-      {/* Thumbnail */}
-      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg">
-        <TileThumbnail />
-      </div>
-
-      {/* Info */}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-body font-semibold text-ink">
-            {plan.name ?? "Untitled plan"}
-          </span>
-          <Badge dot color={plan.planType === "garden" ? "green" : "sage"}>
-            {plan.planType === "garden" ? "Garden" : "Indoor"}
-          </Badge>
-        </div>
-        <p className="text-hint text-muted">
-          {plan.planType === "garden" ? "Garden" : "Indoor"} plan
-        </p>
-      </div>
-
-      {/* Date — hidden on hover */}
-      <p className="shrink-0 text-hint text-muted transition-opacity group-hover:opacity-0">
-        {relativeTime(plan.updatedAt, "Edited")}
-      </p>
-
-      {/* Actions — shown on hover */}
-      <div className="absolute right-0 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button
-          href={`/tile-plan/edit?id=${plan.id}&type=${plan.planType}`}
-          variant="secondary"
-          size="sm"
-        >
-          Open
-        </Button>
-        <Button
-          onClick={() => onDelete(plan.id)}
-          variant="danger"
-          size="sm"
-        >
-          Delete
-        </Button>
-      </div>
-    </div>
+    <CabinetRow
+      thumbnail={<TileThumbnail />}
+      info={
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-body font-semibold text-ink">
+              {plan.name ?? "Untitled plan"}
+            </span>
+            <Badge dot color={plan.planType === "garden" ? "green" : "sage"}>
+              {plan.planType === "garden" ? "Garden" : "Indoor"}
+            </Badge>
+          </div>
+          <p className="text-hint text-muted">
+            {plan.planType === "garden" ? "Garden" : "Indoor"} plan
+          </p>
+        </>
+      }
+      meta={relativeTime(plan.updatedAt, "Edited")}
+      actions={
+        <>
+          <Button href={`/tile-plan/edit?id=${plan.id}&type=${plan.planType}`} variant="secondary" size="sm">Open</Button>
+          <Button onClick={() => onDelete(plan.id)} variant="danger" size="sm">Delete</Button>
+        </>
+      }
+    />
   );
 }
 

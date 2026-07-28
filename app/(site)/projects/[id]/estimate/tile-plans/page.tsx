@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEstimate } from "../estimateContext";
+import { useEstimate } from "@/store/estimate";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import type { TilePlan } from "@/types/models";
+import { Button } from "@/components/ui/button";
 import { ZoneDot } from "@/components/estimate/ZoneDot";
 import { StepNav } from "@/components/estimate/StepNav";
 
@@ -130,21 +131,20 @@ export default function TilePlansStepPage() {
                   >
                     Open ↗
                   </a>
-                  <button
-                    onClick={() => updateTilePlanAssignment(zone.id, null)}
-                    className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-hint text-muted hover:border-red-400 hover:text-red-600"
-                  >
+                  <Button variant="danger" size="sm" onClick={() => updateTilePlanAssignment(zone.id, null)}>
                     Remove
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => void handleCreateForZone(zone.id, zone.label)}
                   disabled={creating === zone.id}
-                  className="w-full rounded-lg border border-dashed border-forest/40 bg-forest/5 py-2 text-hint font-medium text-forest hover:bg-forest/10 disabled:opacity-50"
+                  className="w-full border-dashed border-forest/40 bg-forest/5 text-forest hover:bg-forest/10"
                 >
                   {creating === zone.id ? "Creating…" : "+ Create tile plan"}
-                </button>
+                </Button>
               )}
             </div>
           );

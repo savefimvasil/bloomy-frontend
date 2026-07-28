@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
+import { CabinetRow } from "@/components/ui/cabinet-row";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,7 +13,17 @@ import { apiFetch } from "@/lib/api";
 import { relativeTime } from "@/lib/dateUtils";
 import { requestStatusColor, requestStatusLabel } from "@/lib/statusColors";
 import { useQuoteRequests } from "@/store/cabinet";
-import type { QuoteRequestSummary } from "@/types/models";
+import { useChatStore } from "@/store/chat";
+import type { QuoteRequestSummary, RequestStatus } from "@/types/models";
+
+type Filter = "all" | RequestStatus;
+
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: "all",     label: "All" },
+  { key: "open",    label: "Open" },
+  { key: "awarded", label: "Awarded" },
+  { key: "closed",  label: "Closed" },
+];
 
 function RequestRow({
   req,
@@ -20,44 +32,60 @@ function RequestRow({
   req: QuoteRequestSummary;
   onDelete: (id: string) => void;
 }) {
+  const chatUnread = useChatStore((s) => {
+    const room = s.rooms.find((r) => r.jobId === req.id);
+    return room ? (s.unread[room.id] ?? 0) : 0;
+  });
+
   return (
-    <div className="group relative flex items-center gap-5 py-6">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-body font-semibold text-ink">{req.title}</span>
-          <Badge dot color={requestStatusColor(req.status)}>{requestStatusLabel(req.status)}</Badge>
-        </div>
-        <p className="text-hint text-muted">
-          {req.postcode}
-          {req.startBy ? ` · Start by ${req.startBy}` : ""}
-          {" · "}
-          {req.proposalCount} {req.proposalCount === 1 ? "proposal" : "proposals"}
-        </p>
-      </div>
-
-      <p className="shrink-0 text-hint text-muted transition-opacity group-hover:opacity-0">
-        {relativeTime(req.createdAt)}
-      </p>
-
-      <div className="absolute right-0 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button href={`/cabinet/quote-requests/${req.id}`} variant="secondary" size="sm">
-          View
-        </Button>
-        {req.status !== "awarded" && (
-          <Button onClick={() => onDelete(req.id)} variant="danger" size="sm">
-            Delete
+    <CabinetRow
+      info={
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-body font-semibold text-ink">{req.title}</span>
+            <Badge dot color={requestStatusColor(req.status)}>
+              {requestStatusLabel(req.status)}
+            </Badge>
+            {chatUnread > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-hint font-semibold text-paper">
+                {chatUnread} new
+              </span>
+            )}
+          </div>
+          <p className="text-hint text-muted">
+            {req.postcode}
+            {req.startBy ? ` · Start by ${req.startBy}` : ""}
+            {" · "}
+            {req.proposalCount} {req.proposalCount === 1 ? "proposal" : "proposals"}
+          </p>
+        </>
+      }
+      meta={relativeTime(req.createdAt)}
+      actions={
+        <>
+          <Button href={`/cabinet/quote-requests/${req.id}`} variant="secondary" size="sm">
+            {req.status === "awarded" && chatUnread > 0 ? "View & chat" : "View"}
           </Button>
-        )}
-      </div>
-    </div>
+          {req.status !== "awarded" && (
+            <Button onClick={() => onDelete(req.id)} variant="danger" size="sm">Delete</Button>
+          )}
+        </>
+      }
+    />
   );
 }
 
 export default function QuoteRequestsPage() {
   const { items: requests, loading, error, fetch: fetchQuoteRequests, remove: removeQuoteRequest } = useQuoteRequests();
+  const fetchRooms = useChatStore((s) => s.fetchRooms);
+  const roomsLoaded = useChatStore((s) => s.roomsLoaded);
+  const [filter, setFilter] = useState<Filter>("all");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   useEffect(() => { void fetchQuoteRequests(); }, [fetchQuoteRequests]);
+
+  // Load rooms so per-row unread dots can be computed
+  useEffect(() => { if (!roomsLoaded) void fetchRooms(); }, [roomsLoaded, fetchRooms]);
 
   async function handleDelete(id: string) {
     await apiFetch(`/quote-requests/mine/${id}`, { method: "DELETE" });
@@ -66,6 +94,7 @@ export default function QuoteRequestsPage() {
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading requests…" /></div>;
   if (error) return <p className="text-body text-danger">{error}</p>;
+
   if (requests.length === 0) return (
     <CabinetEmptyState
       eyebrow="Quote Requests"
@@ -74,6 +103,15 @@ export default function QuoteRequestsPage() {
       action={<Button href="/cabinet/projects" variant="secondary">Go to projects</Button>}
     />
   );
+
+  const counts: Record<Filter, number> = {
+    all:     requests.length,
+    open:    requests.filter((r) => r.status === "open").length,
+    awarded: requests.filter((r) => r.status === "awarded").length,
+    closed:  requests.filter((r) => r.status === "closed").length,
+  };
+
+  const visible = filter === "all" ? requests : requests.filter((r) => r.status === filter);
 
   return (
     <div>
@@ -95,12 +133,24 @@ export default function QuoteRequestsPage() {
         count={requests.length}
         unit={["request", "requests"]}
       />
-      <div className="border-t border-line" />
-      <div className="divide-y divide-line">
-        {requests.map((req) => (
-          <RequestRow key={req.id} req={req} onDelete={setPendingDeleteId} />
-        ))}
-      </div>
+
+      <FilterBar
+        filters={FILTERS.map(({ key, label }) => ({ key, label, count: counts[key] }))}
+        active={filter}
+        onChange={setFilter}
+      />
+
+      {visible.length === 0 ? (
+        <p className="py-10 text-center text-body text-muted">
+          No {filter} requests.
+        </p>
+      ) : (
+        <div className="divide-y divide-line">
+          {visible.map((req) => (
+            <RequestRow key={req.id} req={req} onDelete={setPendingDeleteId} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

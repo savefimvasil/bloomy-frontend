@@ -6,6 +6,7 @@ import {
   extractShapeFromFloorplan,
   FLOORPLAN_ACCEPT,
 } from "@/lib/floorplan-import";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth";
 
 interface Props {
@@ -21,13 +22,9 @@ export function UploadFloorplanButton({ dispatch }: Props) {
   if (!isLoggedIn) {
     return (
       <div>
-        <button
-          type="button"
-          disabled
-          className="w-full rounded border border-line bg-paper px-3 py-1.5 text-xs font-medium text-muted disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button variant="secondary" size="sm" disabled className="w-full">
           Upload floor plan
-        </button>
+        </Button>
         <p className="mt-1 text-[11px] text-muted">
           <a href="/login" className="underline hover:text-forest">
             Sign in
@@ -66,18 +63,19 @@ export function UploadFloorplanButton({ dispatch }: Props) {
         className="hidden"
         onChange={handleChange}
       />
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="sm"
         disabled={status === "loading"}
         onClick={() => {
           setStatus("idle");
           setErrorMsg(null);
           inputRef.current?.click();
         }}
-        className="w-full rounded border border-line bg-paper px-3 py-1.5 text-xs font-medium text-muted transition hover:border-leaf/50 hover:text-forest disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full"
       >
         {status === "loading" ? "Analysing…" : "Upload floor plan"}
-      </button>
+      </Button>
       {status === "error" && errorMsg && (
         <p className="mt-1 text-[11px] text-danger">{errorMsg}</p>
       )}

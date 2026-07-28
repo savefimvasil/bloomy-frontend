@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { RegisterSteps } from "@/components/ui/register-steps";
 import { apiFetch } from "@/lib/api";
@@ -183,19 +184,13 @@ function RegisterProfilePageComponent() {
                   />
                 </>
               ) : (
-                <div className="flex flex-col gap-1">
-                  <label className="text-hint text-muted">
-                    Why are you using Bloomy?{" "}
-                    <span className="text-muted/70">(optional)</span>
-                  </label>
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="e.g. planning a garden renovation, interior flooring project..."
-                    rows={3}
-                    className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
-                  />
-                </div>
+                <Textarea
+                  label="Why are you using Bloomy? (optional)"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="e.g. planning a garden renovation, interior flooring project..."
+                  rows={3}
+                />
               )}
 
               <label className="flex cursor-pointer items-start gap-3 pt-1">

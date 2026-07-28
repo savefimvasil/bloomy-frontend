@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEstimate } from "../estimateContext";
+import { useEstimate } from "@/store/estimate";
 import { apiFetch } from "@/lib/api";
 import { fmtGBP0 } from "@/lib/currency";
+import { IconButton } from "@/components/ui/icon-button";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { StepNav } from "@/components/estimate/StepNav";
@@ -99,20 +100,13 @@ export default function ToolsPage() {
 
                 {checked && (
                   <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => setDays(tool.id, days - 1)}
-                      disabled={days <= 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-canvas text-ink hover:border-muted disabled:opacity-30"
-                    >
+                    <IconButton size="sm" onClick={() => setDays(tool.id, days - 1)} disabled={days <= 1} aria-label="Decrease days">
                       −
-                    </button>
+                    </IconButton>
                     <span className="w-8 text-center text-body font-medium text-ink">{days}</span>
-                    <button
-                      onClick={() => setDays(tool.id, days + 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-canvas text-ink hover:border-muted"
-                    >
+                    <IconButton size="sm" onClick={() => setDays(tool.id, days + 1)} aria-label="Increase days">
                       +
-                    </button>
+                    </IconButton>
                     <span className="ml-1 w-16 text-right text-hint text-forest">
                       {fmtGBP0(lineCost ?? 0)}
                     </span>

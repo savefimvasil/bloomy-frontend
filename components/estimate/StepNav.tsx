@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 interface StepNavProps {
   onBack?: () => void;
   backLabel?: string;
@@ -24,25 +26,23 @@ export function StepNav({
 }: StepNavProps) {
   return (
     <div className="mt-8 flex items-center justify-between">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={onBack}
         disabled={backDisabled || !onBack}
-        className="flex items-center gap-1 text-hint text-muted hover:text-ink disabled:opacity-30"
+        className="gap-1 text-muted hover:text-ink"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
           <path d="M8 10L3 6l5-4" />
         </svg>
         {backLabel}
-      </button>
+      </Button>
 
       {rightSlot ?? (onNext && (
-        <button
-          onClick={() => void onNext()}
-          disabled={nextDisabled}
-          className="rounded-xl bg-forest px-7 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:opacity-50"
-        >
+        <Button onClick={() => void onNext()} disabled={nextDisabled}>
           {nextLoading ? nextLoadingLabel : nextLabel}
-        </button>
+        </Button>
       ))}
     </div>
   );

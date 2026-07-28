@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { CardButton } from "@/components/ui/card-button";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore, getAuthToken } from "@/store/auth";
 
@@ -29,27 +30,25 @@ function OptionCard({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <CardButton
       onClick={onClick}
       disabled={disabled}
-      className="group flex flex-col items-start gap-3 rounded-lg border border-line bg-paper p-6 text-left transition cursor-pointer hover:border-leaf hover:shadow-soft disabled:opacity-50"
+      className="group flex flex-col items-start gap-3 rounded-lg border border-line bg-paper p-6 hover:border-leaf hover:shadow-soft disabled:opacity-50"
     >
       <span className="text-3xl">{icon}</span>
       <div>
         <p className="font-semibold text-ink">{title}</p>
         <p className="mt-0.5 text-xs text-muted">{description}</p>
       </div>
-    </button>
+    </CardButton>
   );
 }
 
 function PlanListRow({ plan, onClick }: { plan: Plan; onClick: () => void }) {
   return (
-    <button
-      type="button"
+    <CardButton
       onClick={onClick}
-      className="flex items-center justify-between rounded-lg border border-line bg-paper px-5 py-4 text-left transition hover:border-leaf hover:shadow-soft"
+      className="flex items-center justify-between rounded-lg border border-line bg-paper px-5 py-4 hover:border-leaf hover:shadow-soft"
     >
       <div>
         <p className="font-medium text-ink">{plan.name ?? "Untitled plan"}</p>
@@ -63,7 +62,7 @@ function PlanListRow({ plan, onClick }: { plan: Plan; onClick: () => void }) {
         </p>
       </div>
       <span className="text-sm text-forest">Open →</span>
-    </button>
+    </CardButton>
   );
 }
 

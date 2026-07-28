@@ -14,7 +14,7 @@ type SharedProps = {
 type ButtonProps = SharedProps &
   React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: never };
 
-type ButtonLinkProps = SharedProps & { href: string };
+type ButtonLinkProps = SharedProps & { href: string; target?: string; rel?: string };
 
 function getVariantClasses(variant: ButtonVariant) {
   switch (variant) {
@@ -60,7 +60,7 @@ export function Button(props: ButtonProps | ButtonLinkProps) {
 
   if ("href" in props && typeof props.href === "string") {
     return (
-      <Link href={props.href} className={getBaseClasses(variant, size, props.className)}>
+      <Link href={props.href} target={props.target} rel={props.rel} className={getBaseClasses(variant, size, props.className)}>
         {props.children}
       </Link>
     );

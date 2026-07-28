@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
 import { BoundaryEditor, boundaryArea } from "@bloomy/bloomy-planner";
@@ -122,16 +123,13 @@ export default function NewProjectPage() {
           <div className="border-t border-line" />
 
           {/* Name */}
-          <div>
-            <label className="mb-1.5 block text-hint text-muted">Project name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Back garden redesign"
-              className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted/50 focus:border-forest/40 focus:outline-none"
-            />
-          </div>
+          <Input
+            label="Project name"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Back garden redesign"
+          />
 
           {error && <p className="text-hint text-danger">{error}</p>}
 

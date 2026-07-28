@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { PlanExportSchema } from "@bloomy/bloomy-planner";
 
 export default function ImportPlanPage() {
@@ -91,13 +92,13 @@ export default function ImportPlanPage() {
             )}
           </div>
 
-          {/* Textarea */}
-          <textarea
+          <Textarea
+            label="Paste JSON"
             value={text}
             onChange={(e) => { setText(e.target.value); setError(null); }}
-            placeholder='Paste JSON here — {"version":1,"planType":"garden",...}'
+            placeholder='{"version":1,"planType":"garden",...}'
             rows={10}
-            className="w-full rounded border border-line bg-paper px-3 py-2 font-mono text-xs text-ink outline-none focus:border-leaf"
+            className="font-mono text-xs"
           />
 
           {/* Error */}

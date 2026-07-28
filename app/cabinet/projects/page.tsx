@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CabinetRow } from "@/components/ui/cabinet-row";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -108,35 +109,24 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 function ProjectRow({ project, onDelete }: { project: GardenProject; onDelete: (id: string) => void; }) {
   return (
-    <div className="group relative flex items-center gap-5 py-6">
-      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg">
-        <ProjectThumbnail />
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-body font-semibold text-ink">
-          {project.name ?? "Untitled project"}
-        </span>
-        <p className="text-hint text-muted">Garden project</p>
-      </div>
-
-      <p className="shrink-0 text-hint text-muted transition-opacity group-hover:opacity-0">
-        {relativeTime(project.updatedAt)}
-      </p>
-
-      <div className="absolute right-0 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button
-          href={`/projects/${project.id}/plan`}
-          variant="secondary"
-          size="sm"
-        >
-          Open
-        </Button>
-        <Button onClick={() => onDelete(project.id)} variant="danger" size="sm">
-          Delete
-        </Button>
-      </div>
-    </div>
+    <CabinetRow
+      thumbnail={<ProjectThumbnail />}
+      info={
+        <>
+          <span className="text-body font-semibold text-ink">
+            {project.name ?? "Untitled project"}
+          </span>
+          <p className="text-hint text-muted">Garden project</p>
+        </>
+      }
+      meta={relativeTime(project.updatedAt)}
+      actions={
+        <>
+          <Button href={`/projects/${project.id}/plan`} variant="secondary" size="sm">Open</Button>
+          <Button onClick={() => onDelete(project.id)} variant="danger" size="sm">Delete</Button>
+        </>
+      }
+    />
   );
 }
 

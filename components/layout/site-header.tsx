@@ -23,14 +23,16 @@ const PRODUCTS = [
   { href: "/tile-plan", label: "Tile Planner" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ fixed = true }: { fixed?: boolean }) {
   const token = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const isLoggedIn = hasHydrated && token !== null;
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 z-40 w-full border-b border-line/60 bg-paper/95 backdrop-blur-md">
+    <header
+      className={`${fixed ? "fixed top-0 w-full" : "sticky top-0"} z-40 border-b border-line/60 bg-paper/95 backdrop-blur-md`}
+    >
       <div className="container flex h-[68px] items-center justify-between">
 
         {/* Logo */}

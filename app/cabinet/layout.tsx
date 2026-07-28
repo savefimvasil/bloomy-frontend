@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 import { useAuthStore, clearAuth } from "@/store/auth";
 import { useCabinetStore } from "@/store/cabinet";
+import { useChatStore, selectTotalUnread } from "@/store/chat";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -88,6 +91,7 @@ function LogoutIcon() {
   );
 }
 
+
 function UserIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden>
@@ -99,17 +103,19 @@ function UserIcon() {
 
 // ─── Nav config ─────────────────────────────────────────────────────────────
 
+// Chat unread badge is shown on the nav item that leads to chat context:
+// homeowners → Quote Requests, contractors → My Proposals
 const HOMEOWNER_NAV = [
-  { href: "/cabinet/projects",        label: "Projects",         Icon: ProjectsIcon,  soon: false },
-  { href: "/cabinet/tile-plans",      label: "Tile Plans",       Icon: TilePlansIcon, soon: false },
-  { href: "/cabinet/estimates",       label: "Estimates",        Icon: EstimatesIcon, soon: false },
-  { href: "/cabinet/quote-requests",  label: "Quote Requests",   Icon: JobsIcon,      soon: false },
+  { href: "/cabinet/projects",        label: "Projects",       Icon: ProjectsIcon,  soon: false, chatBadge: false },
+  { href: "/cabinet/tile-plans",      label: "Tile Plans",     Icon: TilePlansIcon, soon: false, chatBadge: false },
+  { href: "/cabinet/estimates",       label: "Estimates",      Icon: EstimatesIcon, soon: false, chatBadge: false },
+  { href: "/cabinet/quote-requests",  label: "Quote Requests", Icon: JobsIcon,      soon: false, chatBadge: true  },
 ];
 
 const CONTRACTOR_NAV = [
-  { href: "/cabinet/nearby-requests",     label: "Requests Near Me", Icon: BrowseIcon,   soon: false },
-  { href: "/cabinet/my-proposals",        label: "My Proposals",     Icon: QuotesIcon,   soon: false },
-  { href: "/cabinet/contractor-profile",  label: "My Profile",       Icon: ProfileIcon,  soon: false },
+  { href: "/cabinet/nearby-requests",    label: "Requests Near Me", Icon: BrowseIcon,  soon: false, chatBadge: false },
+  { href: "/cabinet/my-proposals",       label: "My Proposals",     Icon: QuotesIcon,  soon: false, chatBadge: true  },
+  { href: "/cabinet/contractor-profile", label: "My Profile",       Icon: ProfileIcon, soon: false, chatBadge: false },
 ];
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
@@ -121,12 +127,23 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const email = useAuthStore((s) => s.email) ?? "";
   const role = useAuthStore((s) => s.role);
+  const totalUnread = useChatStore(selectTotalUnread);
+  const connectChat = useChatStore((s) => s.connect);
+  const fetchRooms = useChatStore((s) => s.fetchRooms);
 
   useEffect(() => {
     if (hasHydrated && !token) {
       void router.replace("/login");
     }
   }, [hasHydrated, token, router]);
+
+  // Connect socket and load rooms (for unread counts) once cabinet mounts
+  useEffect(() => {
+    if (hasHydrated && token) {
+      connectChat();
+      void fetchRooms();
+    }
+  }, [hasHydrated, token, connectChat, fetchRooms]);
 
   if (!hasHydrated || !token) return null;
 
@@ -135,12 +152,13 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
   function handleLogout() {
     clearAuth();
     useCabinetStore.getState().clearAll();
+    useChatStore.getState().disconnect();
     router.push("/login");
     router.refresh();
   }
 
   return (
-    <div className="flex min-h-full bg-canvas">
+    <div className="flex flex-1 overflow-hidden bg-canvas">
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-paper md:flex">
@@ -157,7 +175,7 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
 
         {/* Nav items */}
         <nav className="mt-2 flex flex-col gap-0.5 px-3">
-          {nav.map(({ href, label, Icon, soon }) => {
+          {nav.map(({ href, label, Icon, soon, chatBadge }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
@@ -176,6 +194,11 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
                 {soon && (
                   <span className="rounded bg-mist px-1.5 py-0.5 text-hint text-muted">
                     soon
+                  </span>
+                )}
+                {chatBadge && totalUnread > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-hint font-semibold text-paper">
+                    {totalUnread}
                   </span>
                 )}
               </Link>
@@ -208,9 +231,11 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
       {/* ── Main area ───────────────────────────────────────────────────── */}
       <div className="flex w-full min-w-0 flex-col">
 
+        <SiteHeader fixed={false} />
+
         {/* Mobile top tab bar */}
-        <div className="flex items-center gap-1 border-b border-line bg-paper px-4 py-2 md:hidden">
-          {nav.map(({ href, label, soon }) => {
+        <div className="z-10 flex items-center gap-1 border-b border-line bg-paper px-4 py-2 md:hidden">
+          {nav.map(({ href, label, soon, chatBadge }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
@@ -221,8 +246,11 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
                 }`}
               >
                 {label}
-                {soon && (
-                  <span className="text-hint opacity-70">·</span>
+                {soon && <span className="text-hint opacity-70">·</span>}
+                {chatBadge && totalUnread > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[10px] font-bold text-paper leading-none">
+                    {totalUnread}
+                  </span>
                 )}
               </Link>
             );
@@ -238,7 +266,10 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
           </Button>
         </div>
 
-        <div className="p-6 md:p-8">{children}</div>
+        <div className="flex flex-1 flex-col overflow-y-auto">
+          <div className="flex-1 p-6 md:p-8">{children}</div>
+          <SiteFooter />
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useEstimate, useEstimateZone } from "../../estimateContext";
+import { useEstimate, useEstimateZone } from "@/store/estimate";
 import type {
   ZoneSpec,
   PatioParams,
@@ -17,6 +17,8 @@ import type {
 } from "@bloomy/bloomy-planner";
 import { ZONE_CONFIGS, polygonArea, BASEMENT_FOR_SURFACE } from "@bloomy/bloomy-planner";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { Input } from "@/components/ui/input";
+import { ToggleButton } from "@/components/ui/toggle-button";
 import { ZoneDot } from "@/components/estimate/ZoneDot";
 import { StepNav } from "@/components/estimate/StepNav";
 
@@ -57,17 +59,13 @@ function Toggle<T extends string>({
       <FieldLabel>{label}</FieldLabel>
       <div className="flex gap-1">
         {options.map(o => (
-          <button
+          <ToggleButton
             key={o.value}
+            active={value === o.value}
             onClick={() => onChange(o.value)}
-            className={`flex-1 rounded-lg border px-3 py-1.5 text-hint font-medium transition ${
-              value === o.value
-                ? "border-forest bg-forest/10 text-forest"
-                : "border-line bg-paper text-muted hover:border-muted"
-            }`}
           >
             {o.label}
-          </button>
+          </ToggleButton>
         ))}
       </div>
     </div>
@@ -78,14 +76,13 @@ function NumberInput({ label, value, min = 0, onChange }: {
   label: string; value: number; min?: number; onChange: (v: number) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <FieldLabel>{label}</FieldLabel>
-      <input
-        type="number" min={min} value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        className="w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-body text-ink focus:border-forest/40 focus:outline-none"
-      />
-    </div>
+    <Input
+      label={label}
+      type="number"
+      min={min}
+      value={value}
+      onChange={e => onChange(Number(e.target.value))}
+    />
   );
 }
 

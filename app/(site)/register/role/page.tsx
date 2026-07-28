@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CardButton } from "@/components/ui/card-button";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { RegisterSteps } from "@/components/ui/register-steps";
 import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
@@ -84,11 +85,10 @@ function RegisterRolePageComponent() {
               {options.map(({ role, title, description, Icon }) => {
                 const active = selected === role;
                 return (
-                  <button
+                  <CardButton
                     key={role}
-                    type="button"
                     onClick={() => setSelected(role)}
-                    className={`flex items-start gap-5 rounded-xl border-2 p-5 text-left transition ${
+                    className={`flex items-start gap-5 rounded-xl border-2 p-5 ${
                       active
                         ? "border-forest bg-forest/5"
                         : "border-line bg-paper hover:border-forest/30 hover:bg-canvas"
@@ -114,7 +114,7 @@ function RegisterRolePageComponent() {
                         </svg>
                       )}
                     </span>
-                  </button>
+                  </CardButton>
                 );
               })}
             </div>

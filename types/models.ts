@@ -100,6 +100,26 @@ export type MyProposal = {
   request: { id: string; title: string; postcode: string; status: RequestStatus } | null;
 };
 
+export type ChatRoomSummary = {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  otherPartyId: string;
+  otherPartyName: string;
+  lastMessageAt: string;
+  createdAt: string;
+  unreadCount: number;
+};
+
+export type ChatMessage = {
+  id: string;
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  createdAt: string;
+};
+
 export type ContractorProfile = {
   id: string;
   userId: string;

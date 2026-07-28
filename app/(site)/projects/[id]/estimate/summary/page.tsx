@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useEstimate } from "../estimateContext";
+import { useEstimate } from "@/store/estimate";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import type { MaterialItem, ZoneMaterialList, CalculationResult, ToolRentalItem } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthRole } from "@/store/auth";
 import { fmtGBP } from "@/lib/currency";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable, type TableColumn } from "@/components/ui/DataTable";
 import { CollapsibleCard } from "@/components/estimate/CollapsibleCard";
@@ -155,9 +157,9 @@ export default function SummaryPage() {
     return (
       <div className="mx-auto max-w-xl px-5 py-16 text-center">
         <p className="mb-4 text-body text-danger">{error}</p>
-        <button onClick={recalculate} className="text-hint text-forest underline">
+        <Button variant="ghost" size="sm" onClick={recalculate} className="text-forest underline underline-offset-4">
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -167,9 +169,9 @@ export default function SummaryPage() {
       <div className="mx-auto max-w-xl px-5 py-16 text-center">
         <p className="text-body text-muted">
           No zones have construction parameters yet.{" "}
-          <button onClick={() => router.push(steps[0]?.href ?? "")} className="text-forest underline">
+          <Button variant="ghost" size="sm" onClick={() => router.push(steps[0]?.href ?? "")} className="text-forest underline underline-offset-4">
             Go back and set them up.
-          </button>
+          </Button>
         </p>
       </div>
     );
@@ -270,13 +272,9 @@ export default function SummaryPage() {
               <p className="mt-1 text-hint text-muted">
                 Local contractors will see this project and send you proposals.
               </p>
-              <button
-                type="button"
-                onClick={() => router.push("/cabinet/quote-requests")}
-                className="mt-4 text-sm text-forest underline underline-offset-4"
-              >
+              <Button variant="ghost" size="sm" onClick={() => router.push("/cabinet/quote-requests")} className="mt-4 text-forest underline underline-offset-4">
                 View my requests →
-              </button>
+              </Button>
             </div>
           ) : !showRequestForm ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -286,13 +284,9 @@ export default function SummaryPage() {
                   Send this plan to local contractors and receive proposals with pricing.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleOpenForm}
-                className="shrink-0 rounded-xl bg-forest px-6 py-3 text-sm font-medium text-paper transition hover:bg-moss"
-              >
+              <Button type="button" onClick={handleOpenForm} className="shrink-0">
                 Request contractor quotes
-              </button>
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4">
@@ -302,28 +296,20 @@ export default function SummaryPage() {
               </p>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-hint text-muted">Postcode of the work</label>
-                  <input
-                    type="text"
-                    value={reqPostcode}
-                    onChange={(e) => setReqPostcode(e.target.value)}
-                    placeholder="e.g. SW1A 1AA"
-                    required
-                    className="rounded-lg border border-line bg-paper px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-hint text-muted">
-                    Preferred start date <span className="text-muted/60">(optional)</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={reqStartBy}
-                    onChange={(e) => setReqStartBy(e.target.value)}
-                    className="rounded-lg border border-line bg-paper px-3 py-2 text-body text-ink focus:border-forest/40 focus:outline-none"
-                  />
-                </div>
+                <Input
+                  label="Postcode of the work"
+                  type="text"
+                  value={reqPostcode}
+                  onChange={(e) => setReqPostcode(e.target.value)}
+                  placeholder="e.g. SW1A 1AA"
+                  required
+                />
+                <Input
+                  label="Preferred start date (optional)"
+                  type="date"
+                  value={reqStartBy}
+                  onChange={(e) => setReqStartBy(e.target.value)}
+                />
               </div>
 
               {reqError && (
@@ -331,20 +317,12 @@ export default function SummaryPage() {
               )}
 
               <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={reqSubmitting}
-                  className="rounded-xl bg-forest px-6 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:opacity-50"
-                >
+                <Button type="submit" disabled={reqSubmitting}>
                   {reqSubmitting ? "Sending…" : "Send request"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowRequestForm(false)}
-                  className="rounded-xl border border-line px-5 py-3 text-sm font-medium text-muted transition hover:text-ink"
-                >
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setShowRequestForm(false)}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -357,20 +335,12 @@ export default function SummaryPage() {
         backLabel="Back"
         rightSlot={
           <div className="flex items-center gap-3">
-            <button
-              onClick={recalculate}
-              disabled={loading}
-              className="rounded-xl border border-line px-5 py-3 text-sm font-medium text-ink transition hover:border-forest/40 disabled:opacity-50"
-            >
+            <Button variant="secondary" onClick={recalculate} disabled={loading}>
               Recalculate
-            </button>
-            <button
-              onClick={() => void handleDone()}
-              disabled={saving}
-              className="rounded-xl bg-forest px-7 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:opacity-50"
-            >
+            </Button>
+            <Button onClick={() => void handleDone()} disabled={saving}>
               {saving ? "Saving…" : "Done →"}
-            </button>
+            </Button>
           </div>
         }
       />

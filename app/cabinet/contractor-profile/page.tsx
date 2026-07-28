@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
@@ -106,18 +107,13 @@ export default function ContractorProfilePage() {
           required
         />
 
-        <div className="flex flex-col gap-1">
-          <label className="text-hint text-muted">
-            About your business <span className="text-muted/70">(optional)</span>
-          </label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Your experience, qualifications, specialities — what a homeowner should know about you before choosing you."
-            rows={4}
-            className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted/60 focus:border-forest/40 focus:outline-none"
-          />
-        </div>
+        <Textarea
+          label="About your business (optional)"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="Your experience, qualifications, specialities — what a homeowner should know about you before choosing you."
+          rows={4}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Input

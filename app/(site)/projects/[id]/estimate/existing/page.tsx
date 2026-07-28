@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useEstimate } from "../estimateContext";
+import { useEstimate } from "@/store/estimate";
 import { ZONE_CONFIGS, defaultExistingStructure } from "@bloomy/bloomy-planner";
 import type { ExistingStructure, CalculationResult } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
+import { InlineInput } from "@/components/ui/inline-input";
+import { ToggleButton } from "@/components/ui/toggle-button";
 import { ZoneDot } from "@/components/estimate/ZoneDot";
 import { StepNav } from "@/components/estimate/StepNav";
 
@@ -89,17 +91,13 @@ export default function ExistingStructuresPage() {
 
               <div className="mb-4 flex gap-2">
                 {([false, true] as const).map(v => (
-                  <button
+                  <ToggleButton
                     key={String(v)}
+                    active={structure.hasExisting === v}
                     onClick={() => toggleHasExisting(zone.id, v)}
-                    className={`flex-1 rounded-lg border px-3 py-1.5 text-hint font-medium transition ${
-                      structure.hasExisting === v
-                        ? "border-forest bg-forest/10 text-forest"
-                        : "border-line bg-canvas text-muted hover:border-muted"
-                    }`}
                   >
                     {v ? "I have materials on site" : "Nothing on site"}
-                  </button>
+                  </ToggleButton>
                 ))}
               </div>
 
@@ -124,13 +122,13 @@ export default function ExistingStructuresPage() {
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
                           <span className="text-hint text-muted">I have:</span>
-                          <input
+                          <InlineInput
                             type="number"
                             min={0}
                             step={mat.unit === "bag" || mat.unit === "unit" || mat.unit === "lm" ? 1 : 0.1}
                             value={structure.quantities[mat.id] ?? 0}
                             onChange={e => updateQty(zone.id, mat.id, Number(e.target.value))}
-                            className="w-20 rounded-lg border border-line bg-canvas px-2 py-1 text-right text-body text-ink focus:border-forest/40 focus:outline-none"
+                            className="w-20 text-right"
                           />
                           <span className="w-7 text-hint text-muted">{mat.unit}</span>
                         </div>

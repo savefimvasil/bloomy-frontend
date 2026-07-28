@@ -16,6 +16,12 @@ WORKDIR /app
 
 ARG BACKEND_INTERNAL_URL=http://backend:3000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
+
+# NEXT_PUBLIC_* vars are baked into the JS bundle at build time.
+# Pass the public backend URL so the browser can open a WebSocket connection.
+ARG NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
+ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
+
 ENV DOCKER_BUILD=1
 
 # Copy source first, then overlay clean node_modules from the deps stage.

@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { GardenPlannerCore } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
@@ -41,13 +42,15 @@ export default function NearbyRequestPlanPage() {
     return (
       <div className="py-16 text-center">
         <p className="text-body text-danger">{error ?? "No plan available for this request."}</p>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => router.back()}
-          className="mt-4 text-sm text-forest underline underline-offset-4"
+          className="mt-4 text-forest underline underline-offset-4"
         >
           Go back
-        </button>
+        </Button>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { CardButton } from "@/components/ui/card-button";
 
 interface CollapsibleCardProps {
   left: ReactNode;
@@ -27,16 +28,16 @@ export function CollapsibleCard({ left, amount, children, defaultOpen = true }: 
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-paper">
-      <button
+      <CardButton
         onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
+        className="flex items-center justify-between px-5 py-4"
       >
         <div className="flex items-center gap-2.5">{left}</div>
         <div className="flex items-center gap-4">
           <span className="text-body font-semibold text-ink">{amount}</span>
           <Chevron open={open} />
         </div>
-      </button>
+      </CardButton>
 
       {open && (
         <div className="border-t border-line px-5 pb-4 pt-2">
