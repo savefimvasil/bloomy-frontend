@@ -106,7 +106,7 @@ export function ChatWindow({ roomId }: { roomId: string }) {
       {/* Message list */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto rounded-xl border border-line bg-canvas p-4"
+        className="flex-1 overflow-y-auto rounded-xl border border-line bg-paper/95 p-4"
         style={{ minHeight: "320px", maxHeight: "calc(100vh - 340px)" }}
       >
         {messages.length === 0 ? (
