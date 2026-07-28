@@ -2,6 +2,8 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,7 @@ import { generateGardenPdf } from "@/lib/generateGardenPdf";
 import { proposalStatusColor, requestStatusColor, proposalStatusLabel, requestStatusLabel } from "@/lib/statusColors";
 import { BackButton } from "@/components/ui/back-button";
 import { useChatStore } from "@/store/chat";
+import { proposalSchema, type ProposalFormValues } from "@/lib/schemas";
 import type { NearbyRequestDetail } from "@/types/models";
 
 type DetailTab = "details" | "chat";
@@ -28,15 +31,16 @@ export default function NearbyRequestDetailPage() {
   const [req, setReq] = useState<NearbyRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
-  const [priceNote, setPriceNote] = useState("");
-  const [timelineDays, setTimelineDays] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>(
     searchParams.get("tab") === "chat" ? "chat" : "details",
   );
   const [chatRoomId, setChatRoomId] = useState<string | null>(null);
+
+  const { register, handleSubmit, formState: { errors } } = useForm<ProposalFormValues>({
+    resolver: zodResolver(proposalSchema),
+  });
 
   const chatUnread = useChatStore((s) => {
     const room = s.rooms.find((r) => r.jobId === id);
@@ -55,7 +59,7 @@ export default function NearbyRequestDetailPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { loadRequest(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadRequest(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resolve chat room when chat tab is open and proposal is accepted
   useEffect(() => {
@@ -66,17 +70,16 @@ export default function NearbyRequestDetailPage() {
       .catch(() => null);
   }, [activeTab, req, chatRoomId]);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const onSubmit = handleSubmit(async (values: ProposalFormValues) => {
     setSubmitError(null);
     setSubmitting(true);
     try {
       const res = await apiFetch(`/quote-requests/nearby/${id}/propose`, {
         method: "POST",
         body: {
-          message: message.trim(),
-          priceNote: priceNote.trim() || undefined,
-          timelineDays: timelineDays ? parseInt(timelineDays, 10) : undefined,
+          message: values.message.trim(),
+          priceNote: values.priceNote?.trim() || undefined,
+          timelineDays: values.timelineDays ? Number(values.timelineDays) : undefined,
         },
       });
       const payload = (await res.json()) as { message?: string };
@@ -91,7 +94,7 @@ export default function NearbyRequestDetailPage() {
     } finally {
       setSubmitting(false);
     }
-  }
+  });
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;
   if (error || !req) return <p className="text-body text-danger">{error ?? "Not found"}</p>;
@@ -178,7 +181,7 @@ export default function NearbyRequestDetailPage() {
             {/* Proposal section */}
             {req.myProposal ? (
               <div>
-                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink">
+                <h2 className="mb-4 text-hint font-semibold uppercase tracking-wide text-ink">
                   Your proposal
                 </h2>
                 <div className="rounded-xl border border-forest/30 bg-forest/3 p-5">
@@ -198,7 +201,7 @@ export default function NearbyRequestDetailPage() {
                   <p className="text-body text-muted leading-relaxed">{req.myProposal.message}</p>
                   {proposalAccepted && (
                     <div className="mt-4 pt-4 border-t border-forest/20 flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-forest">
+                      <p className="text-hint font-medium text-forest">
                         Accepted — chat with the homeowner to coordinate.
                       </p>
                       <Button
@@ -218,36 +221,34 @@ export default function NearbyRequestDetailPage() {
               <p className="text-body text-muted">This request is no longer accepting proposals.</p>
             ) : (
               <div>
-                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink">
+                <h2 className="mb-4 text-hint font-semibold uppercase tracking-wide text-ink">
                   Send your proposal
                 </h2>
-                <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                <form className="flex flex-col gap-5" onSubmit={onSubmit}>
                   <Textarea
                     label="Your message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
                     placeholder="Describe your experience, your approach to this type of project, and why you're the right person for it…"
                     rows={5}
-                    required
-                    minLength={10}
+                    error={errors.message?.message}
+                    {...register("message")}
                   />
                   <Input
                     label="Price indication (optional)"
-                    value={priceNote}
-                    onChange={(e) => setPriceNote(e.target.value)}
                     placeholder="e.g. £2,400–£3,000 depending on materials"
+                    error={errors.priceNote?.message}
+                    {...register("priceNote")}
                   />
                   <Input
                     label="Estimated duration in days (optional)"
                     type="number"
                     min="1"
                     max="3650"
-                    value={timelineDays}
-                    onChange={(e) => setTimelineDays(e.target.value)}
                     placeholder="e.g. 5"
+                    error={errors.timelineDays?.message}
+                    {...register("timelineDays")}
                   />
                   {submitError && (
-                    <div className="bg-danger/10 px-4 py-3 text-sm text-danger">{submitError}</div>
+                    <div className="rounded-lg bg-danger/10 px-4 py-3 text-hint text-danger">{submitError}</div>
                   )}
                   <div className="flex gap-3">
                     <Button type="submit" disabled={submitting} className="px-8">

@@ -130,7 +130,7 @@ export default function QuoteRequestDetailPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resolve chat room when the chat tab is opened for an awarded job
   useEffect(() => {

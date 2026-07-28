@@ -11,9 +11,9 @@ export function Toast({ type, message }: ToastProps) {
     <div
       role="alert"
       className={[
-        "flex max-w-xs items-start gap-2.5 rounded-lg px-4 py-3 text-sm font-medium shadow-lg",
+        "flex max-w-xs items-start gap-2.5 rounded-lg px-4 py-3 text-hint font-medium shadow-lg",
         isError
-          ? "border border-red-700/20 bg-red-600 text-white"
+          ? "border border-danger/20 bg-danger text-paper"
           : "border border-amber-400 bg-amber-50 text-amber-900",
       ].join(" ")}
     >

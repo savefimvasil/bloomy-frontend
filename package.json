@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@bloomy/bloomy-planner": "file:../bloomy-packages/planner",
+    "@hookform/resolvers": "^5.5.7",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "konva": "^10.3.0",
@@ -25,6 +26,7 @@
     "polygon-clipping": "^0.15.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-hook-form": "^7.83.0",
     "react-konva": "^19.2.5",
     "socket.io-client": "^4.8.3",
     "zod": "^4.4.3",

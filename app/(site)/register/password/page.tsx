@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { RegisterSteps } from "@/components/ui/register-steps";
 import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
+import { registerPasswordSchema, type RegisterPasswordFormValues } from "@/lib/schemas";
 
 function RegisterPasswordPageComponent() {
   const router = useRouter();
@@ -14,91 +17,70 @@ function RegisterPasswordPageComponent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterPasswordFormValues>({ resolver: zodResolver(registerPasswordSchema) });
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    sessionStorage.setItem("bloomy_reg_password", password);
+  const onSubmit = handleSubmit((values) => {
+    sessionStorage.setItem("bloomy_reg_password", values.password);
     router.push(`/register/profile?email=${encodeURIComponent(email)}`);
-  }
+  });
 
   if (!ready) return null;
 
   return (
-    <Suspense>
-      <SplitHighlight
-          title="Set your password"
-          description="Choose a strong password to protect your Bloomy account."
-          imageAlt="Botanical signup visual"
-          imageUrl="https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1400&q=80"
-          aside={
-            <div className="container py-12 md:py-28">
-              <div className="mx-auto w-full max-w-md">
-                <RegisterSteps current={4} total={5} />
-                <h2 className="text-display-sm text-forest">
-                  Set your password
-                </h2>
-                <p className="mt-3 text-sm text-muted">
-                  For{" "}
-                  <span className="font-medium text-forest">{email || "your account"}</span>
-                </p>
+    <SplitHighlight
+      title="Set your password"
+      description="Choose a strong password to protect your Bloomy account."
+      imageAlt="Botanical signup visual"
+      imageUrl="https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1400&q=80"
+      aside={
+        <div className="container py-12 md:py-28">
+          <div className="mx-auto w-full max-w-md">
+            <RegisterSteps current={4} total={5} />
+            <h2 className="text-display-sm text-forest">
+              Set your password
+            </h2>
+            <p className="mt-3 text-hint text-muted">
+              For{" "}
+              <span className="font-medium text-forest">{email || "your account"}</span>
+            </p>
 
-                <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
-                  <Input
-                      label="Password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                      autoComplete="new-password"
-                      minLength={8}
-                      required
-                  />
-                  <Input
-                      label="Confirm password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repeat password"
-                      autoComplete="new-password"
-                      minLength={8}
-                      required
-                  />
+            <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit}>
+              <Input
+                label="Password"
+                type="password"
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                error={errors.password?.message}
+                {...register("password")}
+              />
+              <Input
+                label="Confirm password"
+                type="password"
+                placeholder="Repeat password"
+                autoComplete="new-password"
+                error={errors.confirmPassword?.message}
+                {...register("confirmPassword")}
+              />
 
-                  <Button type="submit" className="mt-2 w-full">
-                    Continue
-                  </Button>
-                </form>
-
-                {error ? (
-                    <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
-                ) : null}
-              </div>
-            </div>
-          }
-      />
-    </Suspense>
+              <Button type="submit" className="mt-2 w-full">
+                Continue
+              </Button>
+            </form>
+          </div>
+        </div>
+      }
+    />
   );
 }
 
 export default function RegisterPasswordPage() {
   return (
-      <Suspense>
-        <RegisterPasswordPageComponent />
-      </Suspense>
-  )
-};
+    <Suspense>
+      <RegisterPasswordPageComponent />
+    </Suspense>
+  );
+}

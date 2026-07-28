@@ -113,7 +113,7 @@ function PatioForm({ params, onChange }: { params: PatioParams; onChange: (p: Pa
     <>
       <Toggle label="Surface material" value={surfaceMaterial} options={SURFACE_OPTIONS} onChange={handleSurface} />
       {surfaceMaterial === "porcelain" && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-hint text-amber-900">
+        <div className="rounded-lg border border-amber-300/60 bg-amber-50/70 px-3 py-2 text-hint text-amber-900/80">
           Porcelain requires a concrete bed + flexible tile adhesive for a lasting bond.
         </div>
       )}

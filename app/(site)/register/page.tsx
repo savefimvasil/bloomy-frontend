@@ -2,53 +2,45 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { RegisterSteps } from "@/components/ui/register-steps";
 import { apiFetch } from "@/lib/api";
 import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
+import { registerInitSchema, type RegisterInitFormValues } from "@/lib/schemas";
 
 export default function RegisterPage() {
   const router = useRouter();
   const ready = useRedirectIfAuthenticated();
-  const [email, setEmail] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterInitFormValues>({
+    resolver: zodResolver(registerInitSchema),
+    defaultValues: { acceptTerms: undefined },
+  });
 
-    if (!acceptTerms) {
-      setError("You must accept the terms to continue.");
+  const onSubmit = handleSubmit(async (values) => {
+    const response = await apiFetch("/users/register/init", {
+      method: "POST",
+      body: { email: values.email.trim(), acceptTerms: true },
+    });
+
+    const payload = (await response.json()) as { message?: string };
+
+    if (!response.ok) {
+      setError("root", { message: payload.message ?? "Request failed." });
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      const response = await apiFetch("/users/register/init", {
-        method: "POST",
-        body: { email: email.trim(), acceptTerms: true },
-      });
-
-      const payload = (await response.json()) as { message?: string };
-
-      if (!response.ok) {
-        setError(payload.message ?? "Request failed.");
-        return;
-      }
-
-      router.push(`/register/verify?email=${encodeURIComponent(email.trim())}`);
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unknown error.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    router.push(`/register/verify?email=${encodeURIComponent(values.email.trim())}`);
+  });
 
   if (!ready) return null;
 
@@ -65,30 +57,27 @@ export default function RegisterPage() {
             <h2 className="text-display-sm text-forest">
               Create a Bloomy account
             </h2>
-            <p className="mt-3 text-sm text-muted">
+            <p className="mt-3 text-hint text-muted">
               Enter your email and we&apos;ll send you a verification code.
             </p>
 
-            <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
+            <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit}>
               <Input
                 label="Email"
                 type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
                 placeholder="your@email.com"
                 autoComplete="email"
-                required
+                error={errors.email?.message}
+                {...register("email")}
               />
 
               <label className="flex cursor-pointer items-start gap-3">
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  required
+                  {...register("acceptTerms")}
                 />
-                <span className="text-sm text-muted leading-snug">
+                <span className="text-hint text-muted leading-snug">
                   I agree to the{" "}
                   <Link href="/terms" className="font-medium text-forest underline underline-offset-4">
                     Terms of Service
@@ -99,17 +88,20 @@ export default function RegisterPage() {
                   </Link>
                 </span>
               </label>
+              {errors.acceptTerms && (
+                <p className="text-hint text-danger">{errors.acceptTerms.message}</p>
+              )}
 
               <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
                 {isSubmitting ? "Sending code..." : "Continue"}
               </Button>
             </form>
 
-            {error ? (
-              <div className="mt-5 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
-            ) : null}
+            {errors.root && (
+              <div className="mt-5 rounded-lg bg-danger/10 px-4 py-3 text-hint text-danger">{errors.root.message}</div>
+            )}
 
-            <p className="mt-8 text-sm text-muted">
+            <p className="mt-8 text-hint text-muted">
               Already have an account?{" "}
               <Link href="/login" className="font-medium text-forest underline underline-offset-4">
                 Login here.

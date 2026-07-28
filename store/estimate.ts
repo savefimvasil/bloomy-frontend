@@ -42,6 +42,7 @@ const EMPTY_PLAN: GardenPlan = {
 function emptyConstructionData(zones: GardenZone[]): ConstructionData {
   const zoneSpecs: Record<string, ZoneSpec> = {};
   for (const zone of zones) {
+    if (zone.type.startsWith("utility-")) continue;
     zoneSpecs[zone.id] = {
       zoneId: zone.id,
       type: zone.type as ZoneType,
@@ -56,6 +57,7 @@ function parseConstructionData(raw: Record<string, unknown> | null, zones: Garde
   const cd = raw as unknown as ConstructionData;
   if (!cd.toolRentals) cd.toolRentals = {};
   for (const zone of zones) {
+    if (zone.type.startsWith("utility-")) continue;
     if (!cd.zoneSpecs[zone.id]) {
       cd.zoneSpecs[zone.id] = {
         zoneId: zone.id,
@@ -78,6 +80,7 @@ function parseConstructionData(raw: Record<string, unknown> | null, zones: Garde
 function buildWizardSteps(id: string, plan: GardenPlan): WizardStep[] {
   const steps: WizardStep[] = [];
   plan.zones.forEach((zone, i) => {
+    if (zone.type.startsWith("utility-")) return;
     steps.push({ kind: "zone", label: zone.label, href: `/projects/${id}/estimate/zones/${i}`, zoneIndex: i });
   });
   if (plan.zones.some(z => z.type === "tile-patio")) {

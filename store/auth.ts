@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>()(
       // Only persist the auth fields, not the runtime _hasHydrated flag.
       partialize: (s) => ({ token: s.token, email: s.email, role: s.role }),
       onRehydrateStorage: () => (_state, error) => {
-        if (error) console.error("[auth] rehydration error:", error);
+        if (error) { /* swallow — localStorage may be unavailable in private browsing */ }
         useAuthStore.setState({ _hasHydrated: true });
       },
     }

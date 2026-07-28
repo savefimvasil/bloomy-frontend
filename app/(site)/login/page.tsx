@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SplitHighlight } from "@/components/ui/split-highlight";
 import { apiFetch } from "@/lib/api";
 import { setAuth } from "@/store/auth";
 import { useRedirectIfAuthenticated } from "@/lib/useRedirectIfAuthenticated";
+import { loginSchema, type LoginFormValues } from "@/lib/schemas";
 
 type LoginResponse = {
   accessToken: string;
@@ -24,39 +26,34 @@ type LoginResponse = {
 export default function LoginPage() {
   const router = useRouter();
   const ready = useRedirectIfAuthenticated();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
-    try {
-      const response = await apiFetch("/auth/login", {
-        method: "POST",
-        body: { email, password },
+  const onSubmit = handleSubmit(async (values) => {
+    const response = await apiFetch("/auth/login", {
+      method: "POST",
+      body: { email: values.email, password: values.password },
+    });
+
+    const payload = (await response.json()) as LoginResponse | { message?: string };
+
+    if (!response.ok) {
+      setError("root", {
+        message: "message" in payload && payload.message ? payload.message : "Login failed.",
       });
-
-      const payload = (await response.json()) as LoginResponse | { message?: string };
-
-      if (!response.ok) {
-        setError("message" in payload && payload.message ? payload.message : "Login failed.");
-        return;
-      }
-
-      const data = payload as LoginResponse;
-      setAuth(data.accessToken, data.user.email, data.user.role ?? "homeowner");
-      router.push("/cabinet");
-      router.refresh();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unknown error.");
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
-  }
+
+    const data = payload as LoginResponse;
+    setAuth(data.accessToken, data.user.email, data.user.role ?? "homeowner");
+    router.push("/cabinet");
+    router.refresh();
+  });
 
   if (!ready) return null;
 
@@ -72,27 +69,25 @@ export default function LoginPage() {
             <h2 className="text-display-sm text-forest">
               Login to your Bloomy account
             </h2>
-            <p className="mt-3 text-sm text-muted">One account for all Bloomy products</p>
+            <p className="mt-3 text-hint text-muted">One account for all Bloomy products</p>
 
-            <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
+            <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit}>
               <Input
                 label="Email"
                 type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
                 placeholder="your@email.com"
                 autoComplete="email"
-                required
+                error={errors.email?.message}
+                {...register("email")}
               />
               <div className="flex flex-col gap-1">
                 <Input
                   label="Password"
                   type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Your password"
                   autoComplete="current-password"
-                  required
+                  error={errors.password?.message}
+                  {...register("password")}
                 />
                 <div className="flex justify-end">
                   <Link href="/forgot-password" className="text-hint text-muted underline underline-offset-4 hover:text-forest">
@@ -101,14 +96,16 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {error ? <div className="bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
+              {errors.root && (
+                <div className="rounded-lg bg-danger/10 px-4 py-3 text-hint text-danger">{errors.root.message}</div>
+              )}
 
               <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </form>
 
-            <p className="mt-8 text-sm text-muted">
+            <p className="mt-8 text-hint text-muted">
               Need an account?{" "}
               <Link href="/register" className="font-medium text-forest underline underline-offset-4">
                 Create one here.

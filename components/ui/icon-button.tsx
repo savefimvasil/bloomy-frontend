@@ -36,7 +36,7 @@ export function IconButton({
 }: IconButtonProps) {
   const base =
     "inline-flex shrink-0 items-center justify-center font-medium transition disabled:opacity-30 disabled:cursor-not-allowed";
-  const radius = variant === "round" ? "" : "rounded";
+  const radius = variant === "round" ? "" : "rounded-lg";
   return (
     <button
       {...props}

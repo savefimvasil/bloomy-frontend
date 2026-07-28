@@ -2,12 +2,15 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEstimate } from "@/store/estimate";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import type { MaterialItem, ZoneMaterialList, CalculationResult, ToolRentalItem } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthRole } from "@/store/auth";
 import { fmtGBP } from "@/lib/currency";
+import { quoteRequestSchema, type QuoteRequestFormValues } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -118,16 +121,17 @@ export default function SummaryPage() {
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Request contractor quotes inline form
   const [showRequestForm, setShowRequestForm] = useState(false);
-  const [reqPostcode, setReqPostcode] = useState("");
-  const [reqStartBy, setReqStartBy] = useState("");
   const [reqSubmitting, setReqSubmitting] = useState(false);
   const [reqError, setReqError] = useState<string | null>(null);
   const [reqSuccess, setReqSuccess] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   const isHomeowner = getAuthRole() === "homeowner";
+
+  const { register, handleSubmit, formState: { errors } } = useForm<QuoteRequestFormValues>({
+    resolver: zodResolver(quoteRequestSchema),
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -194,8 +198,7 @@ export default function SummaryPage() {
     }
   }
 
-  async function handleRequestSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const onRequestSubmit = handleSubmit(async (values: QuoteRequestFormValues) => {
     setReqError(null);
     setReqSubmitting(true);
     try {
@@ -203,8 +206,8 @@ export default function SummaryPage() {
         method: "POST",
         body: {
           gardenProjectId: id,
-          postcode: reqPostcode.trim(),
-          startBy: reqStartBy || undefined,
+          postcode: values.postcode.trim(),
+          startBy: values.startBy || undefined,
         },
       });
       const payload = (await res.json()) as { message?: string };
@@ -218,7 +221,7 @@ export default function SummaryPage() {
     } finally {
       setReqSubmitting(false);
     }
-  }
+  });
 
   function handleOpenForm() {
     setShowRequestForm(true);
@@ -243,7 +246,7 @@ export default function SummaryPage() {
       </div>
 
       {/* Notice */}
-      <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+      <div className="mb-6 rounded-xl border border-amber-300/60 bg-amber-50/70 px-4 py-3">
         <p className="text-hint text-amber-900/80">
           Prices are indicative estimates based on typical UK market rates. Always get quotes from local suppliers.
         </p>
@@ -289,7 +292,7 @@ export default function SummaryPage() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4">
+            <form onSubmit={onRequestSubmit} className="flex flex-col gap-4">
               <p className="text-body font-semibold text-ink">Request contractor quotes</p>
               <p className="text-hint text-muted">
                 Your project plan and material list will be shared with local contractors. Tell them where the work is and when you would like to start.
@@ -299,21 +302,19 @@ export default function SummaryPage() {
                 <Input
                   label="Postcode of the work"
                   type="text"
-                  value={reqPostcode}
-                  onChange={(e) => setReqPostcode(e.target.value)}
                   placeholder="e.g. SW1A 1AA"
-                  required
+                  error={errors.postcode?.message}
+                  {...register("postcode")}
                 />
                 <Input
                   label="Preferred start date (optional)"
                   type="date"
-                  value={reqStartBy}
-                  onChange={(e) => setReqStartBy(e.target.value)}
+                  {...register("startBy")}
                 />
               </div>
 
               {reqError && (
-                <p className="text-sm text-danger">{reqError}</p>
+                <p className="text-hint text-danger">{reqError}</p>
               )}
 
               <div className="flex gap-3">

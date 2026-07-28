@@ -3,6 +3,7 @@ interface EditorProps {
   className?: string;
 }
 
+// html prop must come from trusted static sources only — never from user input or unsanitised API responses.
 export function Editor({ html, className = "" }: EditorProps) {
   return (
     <div
