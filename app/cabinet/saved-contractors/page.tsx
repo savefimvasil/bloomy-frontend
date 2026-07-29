@@ -52,6 +52,17 @@ export default function SavedContractorsPage() {
     }
   }
 
+  if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
+
+  if (contractors.length === 0) return (
+    <CabinetEmptyState
+      eyebrow="Your shortlist"
+      title="No saved contractors"
+      description="Browse contractors and save the ones you'd like to work with. They'll appear here for quick access."
+      action={<Button href="/contractors">Browse contractors</Button>}
+    />
+  );
+
   return (
     <div className="max-w-2xl">
       <PageHeading
@@ -60,22 +71,8 @@ export default function SavedContractorsPage() {
         unit={["contractor", "contractors"]}
       />
 
-      {loading && (
-        <div className="flex justify-center py-16"><Spinner /></div>
-      )}
-
-      {!loading && contractors.length === 0 && (
-        <CabinetEmptyState
-          eyebrow="Your shortlist"
-          title="No saved contractors"
-          description="Browse contractors and save the ones you'd like to work with. They'll appear here for quick access."
-          action={<Button href="/contractors">Browse contractors</Button>}
-        />
-      )}
-
-      {!loading && contractors.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {contractors.map((c) => (
+      <div className="flex flex-col gap-3">
+        {contractors.map((c) => (
             <div
               key={c.id}
               className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-line bg-paper px-5 py-4"
@@ -116,8 +113,7 @@ export default function SavedContractorsPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
