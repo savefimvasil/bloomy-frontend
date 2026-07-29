@@ -128,10 +128,10 @@ export const useEstimateStore = create<EstimateState>()((set, get) => ({
 
   reset: () => set({ projectId: null, project: null, constructionData: null, loading: false, saving: false }),
 
-  updateZoneSpec: (spec) => set(s => s.constructionData
-    ? { constructionData: { ...s.constructionData, zoneSpecs: { ...s.constructionData.zoneSpecs, [spec.zoneId]: spec } } }
-    : {}
-  ),
+  updateZoneSpec: (spec) => set(s => {
+    if (!s.constructionData) { console.warn("[estimate] updateZoneSpec called before constructionData loaded"); return {}; }
+    return { constructionData: { ...s.constructionData, zoneSpecs: { ...s.constructionData.zoneSpecs, [spec.zoneId]: spec } } };
+  }),
 
   updateTilePlanAssignment: (zoneId, tilePlanId) => set(s => {
     if (!s.constructionData) return {};
@@ -141,10 +141,10 @@ export const useEstimateStore = create<EstimateState>()((set, get) => ({
     return { constructionData: { ...s.constructionData, tilePlanAssignments: assignments } };
   }),
 
-  updateExistingStructure: (structure) => set(s => s.constructionData
-    ? { constructionData: { ...s.constructionData, existingStructures: { ...s.constructionData.existingStructures, [structure.zoneId]: structure } } }
-    : {}
-  ),
+  updateExistingStructure: (structure) => set(s => {
+    if (!s.constructionData) { console.warn("[estimate] updateExistingStructure called before constructionData loaded"); return {}; }
+    return { constructionData: { ...s.constructionData, existingStructures: { ...s.constructionData.existingStructures, [structure.zoneId]: structure } } };
+  }),
 
   updateToolRentals: (toolId, days) => set(s => {
     if (!s.constructionData) return {};

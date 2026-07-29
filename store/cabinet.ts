@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { apiFetch } from "@/lib/api";
+import { API } from "@/lib/endpoints";
 import type { GardenProject, TilePlan, QuoteRequestSummary } from "@/types/models";
 
 interface Slice<T> {
@@ -42,12 +43,13 @@ export const useCabinetStore = create<CabinetState>()((set, get) => ({
     if (get().projects.loaded) return;
     set(s => ({ projects: { ...s.projects, loading: true, error: null } }));
     try {
-      const res = await apiFetch("/garden-projects");
+      const res = await apiFetch(API.gardenProjects.list);
       if (!res.ok) {
         set(s => ({ projects: { ...s.projects, loading: false, error: "Failed to load projects" } }));
         return;
       }
-      set({ projects: { items: (await res.json()) as GardenProject[], loading: false, error: null, loaded: true } });
+      const projects = (await res.json()) as GardenProject[];
+      set(s => ({ projects: { ...s.projects, items: projects, loading: false, error: null, loaded: true } }));
     } catch (e) {
       set(s => ({ projects: { ...s.projects, loading: false, error: e instanceof Error ? e.message : "Unknown error" } }));
     }
@@ -57,12 +59,13 @@ export const useCabinetStore = create<CabinetState>()((set, get) => ({
     if (get().tilePlans.loaded) return;
     set(s => ({ tilePlans: { ...s.tilePlans, loading: true, error: null } }));
     try {
-      const res = await apiFetch("/tile-plans");
+      const res = await apiFetch(API.tilePlans.list);
       if (!res.ok) {
         set(s => ({ tilePlans: { ...s.tilePlans, loading: false, error: "Failed to load plans" } }));
         return;
       }
-      set({ tilePlans: { items: (await res.json()) as TilePlan[], loading: false, error: null, loaded: true } });
+      const tilePlans = (await res.json()) as TilePlan[];
+      set(s => ({ tilePlans: { ...s.tilePlans, items: tilePlans, loading: false, error: null, loaded: true } }));
     } catch (e) {
       set(s => ({ tilePlans: { ...s.tilePlans, loading: false, error: e instanceof Error ? e.message : "Unknown error" } }));
     }
@@ -72,12 +75,13 @@ export const useCabinetStore = create<CabinetState>()((set, get) => ({
     if (get().quoteRequests.loaded) return;
     set(s => ({ quoteRequests: { ...s.quoteRequests, loading: true, error: null } }));
     try {
-      const res = await apiFetch("/quote-requests/mine");
+      const res = await apiFetch(API.quoteRequests.mine);
       if (!res.ok) {
         set(s => ({ quoteRequests: { ...s.quoteRequests, loading: false, error: "Failed to load requests" } }));
         return;
       }
-      set({ quoteRequests: { items: (await res.json()) as QuoteRequestSummary[], loading: false, error: null, loaded: true } });
+      const quoteRequests = (await res.json()) as QuoteRequestSummary[];
+      set(s => ({ quoteRequests: { ...s.quoteRequests, items: quoteRequests, loading: false, error: null, loaded: true } }));
     } catch (e) {
       set(s => ({ quoteRequests: { ...s.quoteRequests, loading: false, error: e instanceof Error ? e.message : "Unknown error" } }));
     }

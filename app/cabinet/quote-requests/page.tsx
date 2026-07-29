@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
+import { API } from "@/lib/endpoints";
 import { relativeTime } from "@/lib/dateUtils";
 import { requestStatusColor, requestStatusLabel } from "@/lib/statusColors";
 import { useQuoteRequests } from "@/store/cabinet";
@@ -27,6 +28,8 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "closed",      label: "Closed" },
 ];
 
+const NON_DELETABLE: RequestStatus[] = ["awarded", "in_progress", "completed"];
+
 function RequestRow({
   req,
   onDelete,
@@ -38,6 +41,8 @@ function RequestRow({
     const room = s.rooms.find((r) => r.jobId === req.id);
     return room ? (s.unread[room.id] ?? 0) : 0;
   });
+
+  const canDelete = !NON_DELETABLE.includes(req.status);
 
   return (
     <CabinetRow
@@ -71,7 +76,7 @@ function RequestRow({
           <Button href={`/cabinet/quote-requests/${req.id}`} variant="secondary" size="sm">
             {req.status === "awarded" && chatUnread > 0 ? "View & chat" : "View"}
           </Button>
-          {req.status !== "awarded" && (
+          {canDelete && (
             <Button onClick={() => onDelete(req.id)} variant="danger" size="sm">Delete</Button>
           )}
         </>
@@ -86,16 +91,36 @@ export default function QuoteRequestsPage() {
   const roomsLoaded = useChatStore((s) => s.roomsLoaded);
   const [filter, setFilter] = useState<Filter>("all");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => { void fetchQuoteRequests(); }, [fetchQuoteRequests]);
-
-  // Load rooms so per-row unread dots can be computed
   useEffect(() => { if (!roomsLoaded) void fetchRooms(); }, [roomsLoaded, fetchRooms]);
 
   async function handleDelete(id: string) {
-    await apiFetch(`/quote-requests/mine/${id}`, { method: "DELETE" });
+    setDeleteError(null);
+    const res = await apiFetch(API.quoteRequests.detail(id), { method: "DELETE" });
+    if (!res.ok) {
+      setDeleteError("Failed to delete the request. Please try again.");
+      return;
+    }
     removeQuoteRequest(id);
   }
+
+  const counts = useMemo<Record<Filter, number>>(() => ({
+    all:         requests.length,
+    open:        requests.filter((r) => r.status === "open").length,
+    awarded:     requests.filter((r) => r.status === "awarded").length,
+    in_progress: requests.filter((r) => r.status === "in_progress").length,
+    completed:   requests.filter((r) => r.status === "completed").length,
+    closed:      requests.filter((r) => r.status === "closed").length,
+  }), [requests]);
+
+  const visible = useMemo(
+    () => filter === "all" ? requests : requests.filter((r) => r.status === filter),
+    [filter, requests],
+  );
+
+  const pendingReq = pendingDeleteId ? requests.find((r) => r.id === pendingDeleteId) : null;
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading requests…" /></div>;
   if (error) return <p className="text-body text-danger">{error}</p>;
@@ -109,22 +134,11 @@ export default function QuoteRequestsPage() {
     />
   );
 
-  const counts: Record<Filter, number> = {
-    all:         requests.length,
-    open:        requests.filter((r) => r.status === "open").length,
-    awarded:     requests.filter((r) => r.status === "awarded").length,
-    in_progress: requests.filter((r) => r.status === "in_progress").length,
-    completed:   requests.filter((r) => r.status === "completed").length,
-    closed:      requests.filter((r) => r.status === "closed").length,
-  };
-
-  const visible = filter === "all" ? requests : requests.filter((r) => r.status === filter);
-
   return (
     <div>
       <ConfirmDialog
         open={!!pendingDeleteId}
-        onCancel={() => setPendingDeleteId(null)}
+        onCancel={() => { setPendingDeleteId(null); setDeleteError(null); }}
         onConfirm={() => {
           if (pendingDeleteId) {
             void handleDelete(pendingDeleteId);
@@ -132,8 +146,18 @@ export default function QuoteRequestsPage() {
           }
         }}
         title="Delete this request?"
-        message="This will delete the request and all proposals you received."
+        message={
+          pendingReq && pendingReq.proposalCount > 0
+            ? `This will permanently delete the request along with ${pendingReq.proposalCount} proposal${pendingReq.proposalCount === 1 ? "" : "s"} already received.`
+            : "This will permanently delete the request."
+        }
       />
+
+      {deleteError && (
+        <p className="mb-4 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-hint text-danger">
+          {deleteError}
+        </p>
+      )}
 
       <PageHeading
         title={<>QUOTE REQUESTS</>}

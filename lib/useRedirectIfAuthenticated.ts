@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 
-export function useRedirectIfAuthenticated(to = "/cabinet"): boolean {
+export function useRedirectIfAuthenticated(to = "/cabinet"): { isReady: boolean; isAuthenticated: boolean } {
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
@@ -15,7 +15,5 @@ export function useRedirectIfAuthenticated(to = "/cabinet"): boolean {
     }
   }, [hasHydrated, token, router, to]);
 
-  // Before hydration, treat as "not authenticated" so login/register pages render
-  // consistently with the server render (server also has no token).
-  return !hasHydrated || token === null;
+  return { isReady: hasHydrated, isAuthenticated: token !== null };
 }

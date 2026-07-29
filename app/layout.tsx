@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthHydration } from "@/components/auth-hydration";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthHydration />
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
       </body>
     </html>
   );

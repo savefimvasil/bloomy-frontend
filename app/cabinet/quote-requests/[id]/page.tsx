@@ -173,7 +173,7 @@ function PhotoGrid({
   }
 
   async function handleDelete(url: string) {
-    const res = await apiFetch(`/quote-requests/mine/${jobId}/photos`, { method: "DELETE", body: { url } });
+    const res = await apiFetch(`/quote-requests/mine/${jobId}/photos?url=${encodeURIComponent(url)}`, { method: "DELETE" });
     if (res.ok) {
       const d = await res.json() as { photoUrls: string[] };
       onPhotosChange(d.photoUrls);

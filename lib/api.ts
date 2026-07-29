@@ -1,4 +1,4 @@
-import { getAuthToken } from "@/store/auth";
+import { getAuthToken, clearAuth } from "@/store/auth";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
@@ -11,7 +11,7 @@ type Options = Omit<RequestInit, "body"> & { body?: unknown };
 
 export async function apiFetch(path: string, { body, headers, ...rest }: Options = {}): Promise<Response> {
   const isFormData = body instanceof FormData;
-  return fetch(`${BASE}${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     ...rest,
     headers: {
       ...(!isFormData && body !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -20,4 +20,11 @@ export async function apiFetch(path: string, { body, headers, ...rest }: Options
     },
     ...(body !== undefined ? { body: isFormData ? body : JSON.stringify(body) } : {}),
   });
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    clearAuth();
+    window.location.href = "/login";
+  }
+
+  return res;
 }

@@ -10,7 +10,7 @@ export default function HomePage() {
   return (
     <div className="overflow-x-hidden">
       <HeroSection
-        backgroundGradient="linear-gradient(160deg, #152e1a 0%, #234a2e 45%, #2e6040 100%)"
+        backgroundGradient="var(--gradient-hero)"
         tagline="For homeowners & contractors"
         headline={
           <>

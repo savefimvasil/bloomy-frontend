@@ -19,6 +19,8 @@
   --color-muted:   #6d6a60;
   --color-line:    rgba(34, 32, 27, 0.13);
   --color-danger:  #a14537;
+  /* Gradients */
+  --gradient-hero: linear-gradient(160deg, #152e1a 0%, #234a2e 45%, #2e6040 100%);
 }
 
 @theme inline {

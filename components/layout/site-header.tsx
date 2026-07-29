@@ -5,23 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { BloomyLogo } from "@/components/ui/bloomy-logo";
 import { Dropdown } from "@/components/ui/dropdown";
 import { IconButton } from "@/components/ui/icon-button";
+import { CabinetIcon, BellIcon } from "@/components/ui/icons";
 import { apiFetch } from "@/lib/api";
+import { API } from "@/lib/endpoints";
 import { useAuthStore } from "@/store/auth";
 import { useChatStore, selectTotalUnread } from "@/store/chat";
 import { useNotificationsStore, type AppNotification } from "@/store/notifications";
-
-// ─── Icons ───────────────────────────────────────────────────────────────────
-
-function CabinetIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
-      <rect x="0" y="0" width="5" height="5" rx="1.5" />
-      <rect x="7" y="0" width="5" height="5" rx="1.5" />
-      <rect x="0" y="7" width="5" height="5" rx="1.5" />
-      <rect x="7" y="7" width="5" height="5" rx="1.5" />
-    </svg>
-  );
-}
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -29,14 +18,6 @@ const TOOLS = [
   { href: "/projects/new", label: "Garden Planner" },
   { href: "/tile-plan",    label: "Tile Planner" },
 ];
-
-function BellIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-      <path d="M8 1a5 5 0 0 0-5 5v2.5L1.5 10v1h13v-1L13 8.5V6a5 5 0 0 0-5-5zm0 14a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2z" />
-    </svg>
-  );
-}
 
 // ─── Notification dropdown ────────────────────────────────────────────────────
 
@@ -86,7 +67,7 @@ function NotificationBell({ token }: { token: string }) {
     let active = true;
     const poll = async () => {
       try {
-        const res = await apiFetch("/notifications/unread-count");
+        const res = await apiFetch(API.notifications.unreadCount);
         if (res.ok && active) {
           const data = await res.json() as { count: number };
           setUnreadCount(data.count);
@@ -102,7 +83,7 @@ function NotificationBell({ token }: { token: string }) {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    apiFetch("/notifications")
+    apiFetch(API.notifications.list)
       .then((r) => r.ok ? r.json() : [])
       .then((items: AppNotification[]) => setNotifications(items))
       .catch(() => {})
@@ -121,13 +102,13 @@ function NotificationBell({ token }: { token: string }) {
 
   const handleRead = async (id: string) => {
     markOneRead(id);
-    await apiFetch(`/notifications/${id}/read`, { method: "POST" }).catch(() => {});
+    await apiFetch(API.notifications.markRead(id), { method: "POST" }).catch(() => {});
   };
 
   const handleReadAll = async () => {
     markAllRead();
     setOpen(false);
-    await apiFetch("/notifications/read-all", { method: "POST" }).catch(() => {});
+    await apiFetch(API.notifications.markAllRead, { method: "POST" }).catch(() => {});
   };
 
   return (
