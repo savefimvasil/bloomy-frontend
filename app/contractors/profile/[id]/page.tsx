@@ -9,6 +9,7 @@ import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { StarDisplay } from "@/components/ui/star-display";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 const UPLOADS_BASE = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL ?? "";
@@ -63,10 +64,15 @@ function ReviewCard({ review }: { review: Review }) {
 
 export default function PublicContractorProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const isHomeowner = useAuthStore((s) => s._hasHydrated && s.token !== null && s.role === "homeowner");
+  const token = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const role = useAuthStore((s) => s.role);
+  const isHomeowner = hasHydrated && token !== null && role === "homeowner";
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [savingState, setSavingState] = useState<"idle" | "saving">("idle");
 
   useEffect(() => {
     fetch(`${API_BASE}/contractor-profiles/public/${id}`)
@@ -77,6 +83,25 @@ export default function PublicContractorProfilePage() {
       .then((data) => { if (data) setProfile(data); })
       .catch(() => setNotFound(true));
   }, [id]);
+
+  useEffect(() => {
+    if (!isHomeowner) return;
+    apiFetch("/contractor-profiles/saved/ids")
+      .then((r) => r.ok ? r.json() : [])
+      .then((ids: string[]) => setSaved(ids.includes(id)))
+      .catch(() => {});
+  }, [id, isHomeowner]);
+
+  async function toggleSave() {
+    setSavingState("saving");
+    try {
+      const method = saved ? "DELETE" : "POST";
+      const res = await apiFetch(`/contractor-profiles/saved/${id}`, { method });
+      if (res.ok) setSaved(!saved);
+    } finally {
+      setSavingState("idle");
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -127,6 +152,15 @@ export default function PublicContractorProfilePage() {
                       <Button variant="secondary" size="sm" href={profile.website} target="_blank" rel="noopener noreferrer">
                         Website ↗
                       </Button>
+                    )}
+                    {isHomeowner && (
+                      <button
+                        onClick={() => void toggleSave()}
+                        disabled={savingState === "saving"}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-hint font-medium transition ${saved ? "border-forest/40 bg-forest/5 text-forest hover:bg-danger/5 hover:border-danger/30 hover:text-danger" : "border-line text-muted hover:border-forest/40 hover:text-forest"}`}
+                      >
+                        {saved ? "♥ Saved" : "♡ Save"}
+                      </button>
                     )}
                     {isHomeowner ? (
                       <Button href={`/cabinet/quote-requests/request?contractorId=${id}`} size="sm">

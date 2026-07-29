@@ -11,7 +11,7 @@ export function CabinetEmptyState({ eyebrow, title, description, action }: Cabin
   return (
     <div className="flex flex-col gap-5">
       <p className="text-eyebrow text-muted">{eyebrow}</p>
-      <h2 className="text-display-xl text-ink">{title}</h2>
+      <h3 className="text-display-lg text-ink">{title}</h3>
       <p className="max-w-sm text-body text-muted">{description}</p>
       {action && <div>{action}</div>}
     </div>

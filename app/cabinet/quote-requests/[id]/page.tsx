@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -223,6 +223,20 @@ function PhotoGrid({
   );
 }
 
+// ─── Contractor initials avatar ──────────────────────────────────────────────
+
+function ContractorAvatar({ name }: { name: string }) {
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.length >= 2
+    ? `${parts[0][0]}${parts[parts.length - 1][0]}`
+    : (parts[0]?.[0] ?? "?");
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest/10 text-hint font-semibold text-forest uppercase">
+      {initials}
+    </div>
+  );
+}
+
 // ─── Nearby contractors panel ──────────────────────────────────────────────────
 
 function NearbyContractorsPanel({ jobId, gardenProjectId }: { jobId: string; gardenProjectId: string }) {
@@ -284,34 +298,40 @@ function ProposalCard({
   requestStatus,
   onAccept,
   onChat,
+  chatUnread,
+  chatOpening,
 }: {
   proposal: ProposalInRequest;
   requestStatus: RequestStatus;
   onAccept: (id: string) => void;
   onChat: () => void;
+  chatUnread: number;
+  chatOpening: boolean;
 }) {
   const isAccepted = proposal.status === "accepted";
+  const contractorName = proposal.contractor.businessName ?? `${proposal.contractor.name} ${proposal.contractor.surname}`;
   return (
     <div className={`rounded-xl border p-5 ${isAccepted ? "border-forest bg-forest/3" : "border-line bg-paper"}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-body font-semibold text-ink">
-            {proposal.contractor.businessName ?? `${proposal.contractor.name} ${proposal.contractor.surname}`}
-          </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <Badge dot color={proposalStatusColor(proposal.status)}>
-              {proposalStatusLabel(proposal.status)}
-            </Badge>
-            {proposal.contractor.verified && <VerifiedBadge compact />}
-            {proposal.contractor.avgRating != null && (
-              <span className="text-hint text-amber-500">
-                ★ {proposal.contractor.avgRating}
-                <span className="text-muted"> ({proposal.contractor.reviewCount})</span>
-              </span>
-            )}
+        <div className="flex items-start gap-3 min-w-0">
+          <ContractorAvatar name={contractorName} />
+          <div className="min-w-0">
+            <p className="text-body font-semibold text-ink">{contractorName}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <Badge dot color={proposalStatusColor(proposal.status)}>
+                {proposalStatusLabel(proposal.status)}
+              </Badge>
+              {proposal.contractor.verified && <VerifiedBadge compact />}
+              {proposal.contractor.avgRating != null && (
+                <span className="text-hint text-amber-500">
+                  ★ {proposal.contractor.avgRating}
+                  <span className="text-muted"> ({proposal.contractor.reviewCount})</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           {proposal.priceNote && (
             <p className="text-body font-semibold text-forest">{formatPriceNote(proposal.priceNote)}</p>
           )}
@@ -346,9 +366,18 @@ function ProposalCard({
       <div className="mt-4 flex items-center justify-between">
         <p className="text-hint text-muted">{relativeTime(proposal.createdAt)}</p>
         <div className="flex items-center gap-2">
-          {isAccepted && (
-            <Button size="sm" variant="secondary" onClick={onChat}>Open chat</Button>
-          )}
+          <button
+            onClick={onChat}
+            disabled={chatOpening}
+            className="relative inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-hint text-muted transition hover:border-forest/60 hover:text-forest disabled:opacity-50"
+          >
+            {chatOpening ? "Opening…" : isAccepted ? "Open chat" : "Chat"}
+            {chatUnread > 0 && (
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[10px] font-bold text-paper leading-none">
+                {chatUnread}
+              </span>
+            )}
+          </button>
           {requestStatus === "open" && proposal.status === "pending" && (
             <Button size="sm" onClick={() => onAccept(proposal.id)}>Accept proposal</Button>
           )}
@@ -362,6 +391,7 @@ function ProposalCard({
 
 export default function QuoteRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [req, setReq] = useState<QuoteRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -371,6 +401,11 @@ export default function QuoteRequestDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [review, setReview] = useState<JobReview | null>(null);
+  const [proposalSort, setProposalSort] = useState<"newest" | "rating" | "price">("newest");
+  const [chatOpeningId, setChatOpeningId] = useState<string | null>(null);
+
+  const chatRooms = useChatStore((s) => s.rooms);
+  const chatUnreadMap = useChatStore((s) => s.unread);
 
   const chatUnread = useChatStore((s) => {
     const room = s.rooms.find((r) => r.jobId === id);
@@ -427,6 +462,19 @@ export default function QuoteRequestDetailPage() {
       }
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function handleOpenChat(contractorId: string) {
+    if (!req) return;
+    setChatOpeningId(contractorId);
+    try {
+      const roomId = await useChatStore.getState().openOrCreateRoom(req.id, contractorId);
+      router.push(`/cabinet/messages/${roomId}`);
+    } catch {
+      // fail silently — user can navigate to messages manually
+    } finally {
+      setChatOpeningId(null);
     }
   }
 
@@ -516,29 +564,32 @@ export default function QuoteRequestDetailPage() {
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
             <div className="flex-1">
               <p className="text-hint font-medium text-ink">
-                {isAwarded && "Proposal accepted — when work begins, mark it as started."}
-                {isInProgress && "Work is in progress — mark as done when the contractor has finished."}
+                {(isAwarded || isInProgress) && "When the contractor has finished, mark the job as complete."}
                 {isCompleted && (
-                  <>
-                    Work completed.{" "}
-                    {review
-                      ? <span className="text-muted">You left a review — <button className="underline underline-offset-2 hover:text-ink" onClick={() => setShowReview(true)}>view it</button>.</span>
-                      : <button className="text-forest underline underline-offset-2 hover:text-forest/80" onClick={() => setShowReview(true)}>Leave a review for this contractor →</button>
-                    }
-                  </>
+                  <>Work completed. </>
                 )}
               </p>
             </div>
-            {isAwarded && (
-              <Button size="sm" disabled={actionLoading} onClick={() => void handleStatusAction("start")}>
-                {actionLoading ? "Saving…" : "Mark as started"}
-              </Button>
-            )}
-            {isInProgress && (
+            {(isAwarded || isInProgress) && (
               <Button size="sm" disabled={actionLoading} onClick={() => void handleStatusAction("complete")}>
                 {actionLoading ? "Saving…" : "Mark work done"}
               </Button>
             )}
+          </div>
+        )}
+
+        {/* Review nudge — prominent card after completion */}
+        {isCompleted && !review && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <p className="text-body font-semibold text-ink mb-1">Leave a review for {acceptedContractorName}</p>
+            <p className="text-hint text-muted mb-3">Reviews help other homeowners choose the right contractor. It only takes a minute.</p>
+            <Button size="sm" onClick={() => setShowReview(true)}>Write a review →</Button>
+          </div>
+        )}
+        {isCompleted && review && (
+          <div className="mt-4 rounded-xl border border-line bg-canvas px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-hint text-muted">You reviewed {acceptedContractorName}.</p>
+            <button className="text-hint text-forest hover:underline" onClick={() => setShowReview(true)}>View review</button>
           </div>
         )}
       </div>
@@ -559,17 +610,52 @@ export default function QuoteRequestDetailPage() {
                 <NearbyContractorsPanel jobId={req.id} gardenProjectId={req.gardenProjectId} />
               </>
             ) : (
-              <div className="flex flex-col gap-4">
-                {req.proposals.map((p) => (
-                  <ProposalCard
-                    key={p.id}
-                    proposal={p}
-                    requestStatus={req.status}
-                    onAccept={setAcceptingId}
-                    onChat={() => setActiveTab("chat")}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Sort controls */}
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="text-hint text-muted shrink-0">Sort by:</span>
+                  {(["newest", "rating", "price"] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setProposalSort(opt)}
+                      className={`rounded-full px-3 py-1 text-hint transition ${proposalSort === opt ? "bg-forest text-paper font-medium" : "border border-line text-muted hover:border-forest/40 hover:text-ink"}`}
+                    >
+                      {opt === "newest" ? "Newest" : opt === "rating" ? "Rating" : "Price"}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {[...req.proposals]
+                    .sort((a, b) => {
+                      if (a.status === "accepted") return -1;
+                      if (b.status === "accepted") return 1;
+                      if (proposalSort === "rating") {
+                        return (b.contractor.avgRating ?? 0) - (a.contractor.avgRating ?? 0);
+                      }
+                      if (proposalSort === "price") {
+                        const pa = parseFloat(a.priceNote?.replace(/[^0-9.]/g, "") ?? "0") || 0;
+                        const pb = parseFloat(b.priceNote?.replace(/[^0-9.]/g, "") ?? "0") || 0;
+                        return pa - pb;
+                      }
+                      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    })
+                    .map((p) => {
+                      const chatRoom = chatRooms.find(r => r.jobId === req.id && r.otherPartyId === p.contractor.id);
+                      const proposalUnread = chatRoom ? (chatUnreadMap[chatRoom.id] ?? 0) : 0;
+                      return (
+                      <ProposalCard
+                        key={p.id}
+                        proposal={p}
+                        requestStatus={req.status}
+                        onAccept={setAcceptingId}
+                        onChat={() => void handleOpenChat(p.contractor.id)}
+                        chatUnread={proposalUnread}
+                        chatOpening={chatOpeningId === p.contractor.id}
+                      />
+                    );
+                    })}
+                </div>
+              </>
             )}
           </>
         )}

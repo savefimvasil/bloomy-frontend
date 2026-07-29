@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { useAuthStore, clearAuth } from "@/store/auth";
 import { useCabinetStore } from "@/store/cabinet";
 import { useChatStore, selectTotalUnread } from "@/store/chat";
+import { useNotificationsStore } from "@/store/notifications";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,22 @@ function ReviewsIcon() {
   );
 }
 
+function SavedIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 12L3 7.5C3 5.5 4.5 4 6.5 4C7.4 4 8 4.5 8 4.5C8 4.5 8.6 4 9.5 4C11.5 4 13 5.5 13 7.5L8 12Z" />
+    </svg>
+  );
+}
+
+function BellNavIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+      <path d="M8 1a5 5 0 0 0-5 5v2.5L1.5 10v1h13v-1L13 8.5V6a5 5 0 0 0-5-5zm0 14a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2z" />
+    </svg>
+  );
+}
+
 function LogoutIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -115,18 +132,21 @@ function UserIcon() {
 // Chat unread badge is shown on the nav item that leads to chat context:
 // homeowners → Quote Requests, contractors → My Proposals
 const HOMEOWNER_NAV = [
-  { href: "/cabinet/projects",        label: "Projects",       Icon: ProjectsIcon,  soon: false, chatBadge: false },
-  { href: "/cabinet/tile-plans",      label: "Tile Plans",     Icon: TilePlansIcon, soon: false, chatBadge: false },
-  { href: "/cabinet/estimates",       label: "Estimates",      Icon: EstimatesIcon, soon: false, chatBadge: false },
-  { href: "/cabinet/quote-requests",  label: "Quote Requests", Icon: JobsIcon,      soon: false, chatBadge: true  },
+  { href: "/cabinet/quote-requests",     label: "Quote Requests",      Icon: JobsIcon,      soon: false, chatBadge: true,  notifBadge: false },
+  { href: "/cabinet/projects",           label: "Projects",            Icon: ProjectsIcon,  soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/tile-plans",         label: "Tile Plans",          Icon: TilePlansIcon, soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/estimates",          label: "Estimates",           Icon: EstimatesIcon, soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/saved-contractors",  label: "Saved Contractors",   Icon: SavedIcon,     soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/notifications",      label: "Notifications",       Icon: BellNavIcon,   soon: false, chatBadge: false, notifBadge: true  },
 ];
 
 const CONTRACTOR_NAV = [
-  { href: "/cabinet/direct-requests",    label: "Direct Requests",  Icon: JobsIcon,    soon: false, chatBadge: false },
-  { href: "/cabinet/nearby-requests",    label: "Browse Jobs",      Icon: BrowseIcon,  soon: false, chatBadge: false },
-  { href: "/cabinet/my-proposals",       label: "My Proposals",     Icon: QuotesIcon,  soon: false, chatBadge: true  },
-  { href: "/cabinet/my-reviews",         label: "My Reviews",       Icon: ReviewsIcon,   soon: false, chatBadge: false },
-  { href: "/cabinet/contractor-profile", label: "My Profile",       Icon: ProfileIcon, soon: false, chatBadge: false },
+  { href: "/cabinet/direct-requests",    label: "Direct Requests",  Icon: JobsIcon,      soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/nearby-requests",    label: "Browse Jobs",      Icon: BrowseIcon,    soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/my-proposals",       label: "My Proposals",     Icon: QuotesIcon,    soon: false, chatBadge: true,  notifBadge: false },
+  { href: "/cabinet/my-reviews",         label: "My Reviews",       Icon: ReviewsIcon,   soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/contractor-profile", label: "My Profile",       Icon: ProfileIcon,   soon: false, chatBadge: false, notifBadge: false },
+  { href: "/cabinet/notifications",      label: "Notifications",    Icon: BellNavIcon,   soon: false, chatBadge: false, notifBadge: true  },
 ];
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
@@ -141,6 +161,7 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
   const totalUnread = useChatStore(selectTotalUnread);
   const connectChat = useChatStore((s) => s.connect);
   const fetchRooms = useChatStore((s) => s.fetchRooms);
+  const notifUnread = useNotificationsStore((s) => s.unreadCount);
 
   useEffect(() => {
     if (hasHydrated && !token) {
@@ -186,8 +207,9 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
 
         {/* Nav items */}
         <nav className="mt-2 flex flex-col gap-0.5 px-3">
-          {nav.map(({ href, label, Icon, soon, chatBadge }) => {
+          {nav.map(({ href, label, Icon, soon, chatBadge, notifBadge }) => {
             const active = pathname.startsWith(href);
+            const badge = chatBadge ? totalUnread : notifBadge ? notifUnread : 0;
             return (
               <Link
                 key={href}
@@ -207,9 +229,9 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
                     soon
                   </span>
                 )}
-                {chatBadge && totalUnread > 0 && (
+                {badge > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-hint font-semibold text-paper">
-                    {totalUnread}
+                    {badge}
                   </span>
                 )}
               </Link>
@@ -245,22 +267,23 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
         <SiteHeader fixed={false} />
 
         {/* Mobile top tab bar */}
-        <div className="z-10 flex items-center gap-1 border-b border-line bg-paper px-4 py-2 md:hidden">
-          {nav.map(({ href, label, soon, chatBadge }) => {
+        <div className="z-10 flex items-center gap-1 overflow-x-auto border-b border-line bg-paper px-4 py-2 md:hidden">
+          {nav.map(({ href, label, soon, chatBadge, notifBadge }) => {
             const active = pathname.startsWith(href);
+            const badge = chatBadge ? totalUnread : notifBadge ? notifUnread : 0;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-body transition ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-body transition ${
                   active ? "bg-forest text-paper" : "text-muted hover:text-ink"
                 }`}
               >
                 {label}
                 {soon && <span className="text-hint opacity-70">·</span>}
-                {chatBadge && totalUnread > 0 && (
+                {badge > 0 && (
                   <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[10px] font-bold text-paper leading-none">
-                    {totalUnread}
+                    {badge}
                   </span>
                 )}
               </Link>

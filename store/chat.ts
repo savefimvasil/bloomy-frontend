@@ -49,8 +49,8 @@ interface ChatState {
   sendMessage: (roomId: string, content: string) => void;
   markRead: (roomId: string) => void;
 
-  // Creates or finds the room for a given jobId, returns roomId
-  openOrCreateRoom: (jobId: string) => Promise<string>;
+  // Creates or finds the room for a given jobId (and optionally a specific contractor), returns roomId
+  openOrCreateRoom: (jobId: string, contractorId?: string) => Promise<string>;
 }
 
 export const useChatStore = create<ChatState>()((set, get) => ({
@@ -168,10 +168,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     set((s) => ({ unread: { ...s.unread, [roomId]: 0 } }));
   },
 
-  openOrCreateRoom: async (jobId) => {
+  openOrCreateRoom: async (jobId, contractorId?) => {
     const res = await apiFetch("/chat/rooms", {
       method: "POST",
-      body: { jobId },
+      body: contractorId ? { jobId, contractorId } : { jobId },
     });
     if (!res.ok) throw new Error("Failed to open chat");
     const room = (await res.json()) as { id: string };

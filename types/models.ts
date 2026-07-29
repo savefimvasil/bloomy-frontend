@@ -164,6 +164,17 @@ export type JobReview = {
   createdAt: string;
 };
 
+export type JobQuestion = {
+  id: string;
+  jobId: string;
+  contractorId: string;
+  contractorName: string;
+  question: string;
+  answer: string | null;
+  answeredAt: string | null;
+  createdAt: string;
+};
+
 export type DocType = "insurance" | "dbs" | "trade-membership" | "id";
 export type DocStatus = "pending" | "approved" | "rejected";
 

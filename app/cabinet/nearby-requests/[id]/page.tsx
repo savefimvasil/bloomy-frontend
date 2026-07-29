@@ -95,7 +95,6 @@ function DirectRequestBanner({ jobId, note, onAccepted }: { jobId: string; note:
       const res = await apiFetch(`/quote-requests/direct/${jobId}/accept`, { method: "POST" });
       if (!res.ok) { setErr("Could not accept. Please try again."); return; }
       onAccepted();
-      window.location.reload();
     } catch {
       setErr("Could not accept. Please try again.");
     } finally {
@@ -133,12 +132,15 @@ export default function NearbyRequestDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>(
     searchParams.get("tab") === "chat" ? "chat" : "details",
   );
   const [chatRoomId, setChatRoomId] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ProposalFormValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalSchema),
   });
 
@@ -161,9 +163,9 @@ export default function NearbyRequestDetailPage() {
 
   useEffect(() => { loadRequest(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Resolve chat room when chat tab is open and proposal is accepted
+  // Open chat room when chat tab is open and contractor has any proposal
   useEffect(() => {
-    if (activeTab !== "chat" || !req || req.myProposal?.status !== "accepted" || chatRoomId) return;
+    if (activeTab !== "chat" || !req || !req.myProposal || chatRoomId) return;
     void useChatStore.getState()
       .openOrCreateRoom(req.id)
       .then(setChatRoomId)
@@ -196,6 +198,42 @@ export default function NearbyRequestDetailPage() {
     }
   });
 
+  const onUpdate = handleSubmit(async (values: ProposalFormValues) => {
+    setEditError(null);
+    setSubmitting(true);
+    try {
+      const res = await apiFetch(`/quote-requests/nearby/${id}/proposal`, {
+        method: "PUT",
+        body: {
+          message: values.message.trim(),
+          priceNote: values.priceNote?.trim() || undefined,
+          timelineDays: values.timelineDays ? Number(values.timelineDays) : undefined,
+        },
+      });
+      const payload = (await res.json()) as { message?: string };
+      if (!res.ok) { setEditError(payload.message ?? "Failed to update proposal"); return; }
+      setEditMode(false);
+      setLoading(true);
+      loadRequest();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSubmitting(false);
+    }
+  });
+
+  async function handleWithdraw() {
+    if (!window.confirm("Withdraw your proposal? This cannot be undone.")) return;
+    setWithdrawing(true);
+    try {
+      await apiFetch(`/quote-requests/nearby/${id}/proposal`, { method: "DELETE" });
+      setLoading(true);
+      loadRequest();
+    } finally {
+      setWithdrawing(false);
+    }
+  }
+
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;
   if (error || !req) return <p className="text-body text-danger">{error ?? "Not found"}</p>;
 
@@ -203,11 +241,13 @@ export default function NearbyRequestDetailPage() {
   const proposalAccepted = req.myProposal?.status === "accepted";
 
   const photoCount = (req.photoUrls?.length ?? 0) + (req.completionPhotoUrls?.length ?? 0);
+  const hasProposal = !!req.myProposal;
   const tabs: { key: DetailTab; label: string; badge?: number }[] = [
     { key: "details", label: "Details" },
     { key: "photos", label: photoCount > 0 ? `Photos (${photoCount})` : "Photos" },
-    ...(proposalAccepted ? [{ key: "chat" as DetailTab, label: "Chat", badge: chatUnread }] : []),
+    ...(hasProposal ? [{ key: "chat" as DetailTab, label: "Chat", badge: chatUnread }] : []),
   ];
+
 
   return (
     <div className="max-w-2xl">
@@ -302,21 +342,83 @@ export default function NearbyRequestDetailPage() {
                       )}
                     </div>
                   </div>
-                  <p className="text-body text-muted leading-relaxed">{req.myProposal.message}</p>
-                  {proposalAccepted && (
-                    <div className="mt-4 pt-4 border-t border-forest/20 flex items-center justify-between gap-3">
-                      <p className="text-hint font-medium text-forest">
-                        Accepted — chat with the homeowner to coordinate.
-                      </p>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setActiveTab("chat")}
-                        className="text-forest underline underline-offset-4 hover:no-underline"
-                      >
-                        Open chat →
-                      </Button>
+                  {!editMode && (
+                    <p className="text-body text-muted leading-relaxed">{req.myProposal.message}</p>
+                  )}
+
+                  {editMode ? (
+                    <form className="mt-4 flex flex-col gap-4" onSubmit={onUpdate}>
+                      <Textarea
+                        label="Your message"
+                        rows={4}
+                        error={errors.message?.message}
+                        defaultValue={req.myProposal.message}
+                        {...register("message")}
+                      />
+                      <Input
+                        label="Price indication (optional)"
+                        error={errors.priceNote?.message}
+                        defaultValue={req.myProposal.priceNote ?? ""}
+                        {...register("priceNote")}
+                      />
+                      <Input
+                        label="Estimated duration in days (optional)"
+                        type="number"
+                        min="1"
+                        max="3650"
+                        defaultValue={req.myProposal.timelineDays ?? ""}
+                        error={errors.timelineDays?.message}
+                        {...register("timelineDays")}
+                      />
+                      {editError && (
+                        <p className="text-hint text-danger">{editError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <Button type="submit" size="sm" disabled={submitting}>{submitting ? "Saving…" : "Save changes"}</Button>
+                        <Button type="button" size="sm" variant="secondary" onClick={() => { setEditMode(false); setEditError(null); reset(); }}>Cancel</Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="mt-4 pt-4 border-t border-forest/20">
+                      {proposalAccepted ? (
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-hint font-medium text-forest">Accepted — coordinate the work in chat.</p>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline">
+                            Open chat →
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline">
+                            Chat with homeowner →
+                          </Button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                reset({
+                                  message: req.myProposal!.message,
+                                  priceNote: req.myProposal!.priceNote ?? "",
+                                  timelineDays: req.myProposal!.timelineDays?.toString() ?? undefined,
+                                });
+                                setEditMode(true);
+                              }}
+                              className="text-hint text-muted hover:text-ink underline underline-offset-4"
+                            >
+                              Edit
+                            </button>
+                            <span className="text-muted/40">·</span>
+                            <button
+                              type="button"
+                              onClick={handleWithdraw}
+                              disabled={withdrawing}
+                              className="text-hint text-danger/70 hover:text-danger underline underline-offset-4 disabled:opacity-50"
+                            >
+                              {withdrawing ? "Withdrawing…" : "Withdraw"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
