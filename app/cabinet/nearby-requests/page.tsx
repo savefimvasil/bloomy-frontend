@@ -51,6 +51,7 @@ export default function NearbyRequestsPage() {
               </div>
               <p className="text-hint text-muted">
                 {req.postcode}
+                {req.distanceMiles != null ? ` · ${req.distanceMiles} mi` : ""}
                 {req.startBy ? ` · Start by ${req.startBy}` : ""}
                 {" · "}
                 {relativeTime(req.createdAt)}

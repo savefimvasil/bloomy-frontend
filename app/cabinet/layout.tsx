@@ -81,6 +81,15 @@ function ProfileIcon() {
   );
 }
 
+
+function ReviewsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 2L9.5 5.5H13.5L10.3 7.7L11.5 11.5L8 9L4.5 11.5L5.7 7.7L2.5 5.5H6.5L8 2Z" />
+    </svg>
+  );
+}
+
 function LogoutIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -113,8 +122,10 @@ const HOMEOWNER_NAV = [
 ];
 
 const CONTRACTOR_NAV = [
-  { href: "/cabinet/nearby-requests",    label: "Requests Near Me", Icon: BrowseIcon,  soon: false, chatBadge: false },
+  { href: "/cabinet/direct-requests",    label: "Direct Requests",  Icon: JobsIcon,    soon: false, chatBadge: false },
+  { href: "/cabinet/nearby-requests",    label: "Browse Jobs",      Icon: BrowseIcon,  soon: false, chatBadge: false },
   { href: "/cabinet/my-proposals",       label: "My Proposals",     Icon: QuotesIcon,  soon: false, chatBadge: true  },
+  { href: "/cabinet/my-reviews",         label: "My Reviews",       Icon: ReviewsIcon,   soon: false, chatBadge: false },
   { href: "/cabinet/contractor-profile", label: "My Profile",       Icon: ProfileIcon, soon: false, chatBadge: false },
 ];
 

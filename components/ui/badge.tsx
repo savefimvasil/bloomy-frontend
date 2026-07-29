@@ -17,6 +17,10 @@ const COLORS = {
     pill: "bg-danger/10 text-danger",
     dot: "bg-danger",
   },
+  amber: {
+    pill: "bg-amber-100 text-amber-800",
+    dot: "bg-amber-500",
+  },
 } as const;
 
 type BadgeProps = {

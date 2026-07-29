@@ -1,18 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useEstimate } from "@/store/estimate";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import type { MaterialItem, ZoneMaterialList, CalculationResult, ToolRentalItem } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthRole } from "@/store/auth";
 import { fmtGBP } from "@/lib/currency";
-import { quoteRequestSchema, type QuoteRequestFormValues } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable, type TableColumn } from "@/components/ui/DataTable";
 import { CollapsibleCard } from "@/components/estimate/CollapsibleCard";
@@ -121,17 +117,7 @@ export default function SummaryPage() {
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const [showRequestForm, setShowRequestForm] = useState(false);
-  const [reqSubmitting, setReqSubmitting] = useState(false);
-  const [reqError, setReqError] = useState<string | null>(null);
-  const [reqSuccess, setReqSuccess] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
-
   const isHomeowner = getAuthRole() === "homeowner";
-
-  const { register, handleSubmit, formState: { errors } } = useForm<QuoteRequestFormValues>({
-    resolver: zodResolver(quoteRequestSchema),
-  });
 
   useEffect(() => {
     let cancelled = false;
@@ -198,36 +184,6 @@ export default function SummaryPage() {
     }
   }
 
-  const onRequestSubmit = handleSubmit(async (values: QuoteRequestFormValues) => {
-    setReqError(null);
-    setReqSubmitting(true);
-    try {
-      const res = await apiFetch("/quote-requests", {
-        method: "POST",
-        body: {
-          gardenProjectId: id,
-          postcode: values.postcode.trim(),
-          startBy: values.startBy || undefined,
-        },
-      });
-      const payload = (await res.json()) as { message?: string };
-      if (!res.ok) {
-        setReqError(payload.message ?? "Failed to send request");
-        return;
-      }
-      setReqSuccess(true);
-    } catch (err) {
-      setReqError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setReqSubmitting(false);
-    }
-  });
-
-  function handleOpenForm() {
-    setShowRequestForm(true);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }
-
   return (
     <div className="mx-auto max-w-2xl px-5 py-10">
       {/* Header */}
@@ -268,65 +224,19 @@ export default function SummaryPage() {
 
       {/* Request contractor quotes */}
       {isHomeowner && (
-        <div ref={formRef} className="mt-6 rounded-2xl border border-forest/20 bg-forest/3 p-6">
-          {reqSuccess ? (
-            <div className="text-center">
-              <p className="text-body font-semibold text-forest">Request sent to contractors</p>
-              <p className="mt-1 text-hint text-muted">
-                Local contractors will see this project and send you proposals.
-              </p>
-              <Button variant="ghost" size="sm" onClick={() => router.push("/cabinet/quote-requests")} className="mt-4 text-forest underline underline-offset-4">
-                View my requests →
-              </Button>
-            </div>
-          ) : !showRequestForm ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-body font-semibold text-ink">Want a contractor to do this?</p>
-                <p className="text-hint text-muted">
-                  Send this plan to local contractors and receive proposals with pricing.
-                </p>
-              </div>
-              <Button type="button" onClick={handleOpenForm} className="shrink-0">
-                Request contractor quotes
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={onRequestSubmit} className="flex flex-col gap-4">
-              <p className="text-body font-semibold text-ink">Request contractor quotes</p>
-              <p className="text-hint text-muted">
-                Your project plan and material list will be shared with local contractors. Tell them where the work is and when you would like to start.
-              </p>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
-                  label="Postcode of the work"
-                  type="text"
-                  placeholder="e.g. SW1A 1AA"
-                  error={errors.postcode?.message}
-                  {...register("postcode")}
-                />
-                <Input
-                  label="Preferred start date (optional)"
-                  type="date"
-                  {...register("startBy")}
-                />
-              </div>
-
-              {reqError && (
-                <p className="text-hint text-danger">{reqError}</p>
-              )}
-
-              <div className="flex gap-3">
-                <Button type="submit" disabled={reqSubmitting}>
-                  {reqSubmitting ? "Sending…" : "Send request"}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowRequestForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          )}
+        <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-forest/20 bg-forest/3 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-body font-semibold text-ink">Want a contractor to do this?</p>
+            <p className="text-hint text-muted">
+              Post to local contractors or pick one directly from the directory.
+            </p>
+          </div>
+          <Button
+            href={`/cabinet/quote-requests/new?projectId=${id}`}
+            className="shrink-0"
+          >
+            Find a contractor →
+          </Button>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -21,7 +22,106 @@ import { useChatStore } from "@/store/chat";
 import { proposalSchema, type ProposalFormValues } from "@/lib/schemas";
 import type { NearbyRequestDetail } from "@/types/models";
 
-type DetailTab = "details" | "chat";
+type DetailTab = "details" | "photos" | "chat";
+
+const UPLOADS_BASE = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL ?? "";
+
+function CompletionPhotoUploader({
+  jobId,
+  completionPhotoUrls,
+  onUploaded,
+}: {
+  jobId: string;
+  completionPhotoUrls: string[];
+  onUploaded: (urls: string[]) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) { setErr("Max 15 MB"); return; }
+    setErr("");
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const r1 = await apiFetch("/uploads/photo", { method: "POST", body: form });
+      if (!r1.ok) { setErr("Upload failed"); return; }
+      const { url } = await r1.json() as { url: string };
+      const r2 = await apiFetch(`/quote-requests/nearby/${jobId}/completion-photo`, { method: "POST", body: { url } });
+      if (r2.ok) {
+        const d = await r2.json() as { completionPhotoUrls: string[] };
+        onUploaded(d.completionPhotoUrls);
+      }
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 mb-3">
+        {completionPhotoUrls.map((url) => (
+          <div key={url} className="relative aspect-square overflow-hidden rounded-lg border border-line bg-canvas">
+            <Image src={`${UPLOADS_BASE}${url}`} alt="" fill className="object-cover" unoptimized />
+          </div>
+        ))}
+      </div>
+      {completionPhotoUrls.length < 20 && (
+        <label className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line px-4 py-2.5 text-hint text-muted transition hover:border-forest hover:text-forest ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M7 2v7M4 6l3-3 3 3" /><path d="M2 11h10" />
+          </svg>
+          {uploading ? "Uploading…" : "Add completion photo"}
+          <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+        </label>
+      )}
+      {err && <p className="mt-2 text-hint text-danger">{err}</p>}
+    </div>
+  );
+}
+
+function DirectRequestBanner({ jobId, note, onAccepted }: { jobId: string; note: string | null; onAccepted: () => void }) {
+  const [accepting, setAccepting] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function handleAccept() {
+    setAccepting(true);
+    setErr("");
+    try {
+      const res = await apiFetch(`/quote-requests/direct/${jobId}/accept`, { method: "POST" });
+      if (!res.ok) { setErr("Could not accept. Please try again."); return; }
+      onAccepted();
+      window.location.reload();
+    } catch {
+      setErr("Could not accept. Please try again.");
+    } finally {
+      setAccepting(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-forest/30 bg-forest/5 px-5 py-5">
+      <p className="text-eyebrow text-forest mb-2">Direct request from homeowner</p>
+      {note && (
+        <div className="mb-4 border-l-2 border-forest/30 pl-3">
+          <p className="text-hint text-muted mb-0.5">Their note</p>
+          <p className="text-hint text-ink">{note}</p>
+        </div>
+      )}
+      <p className="text-hint text-muted mb-4">
+        Accept this request to start work and open the chat with the homeowner.
+      </p>
+      {err && <p className="mb-3 text-hint text-danger">{err}</p>}
+      <Button onClick={handleAccept} disabled={accepting}>
+        {accepting ? "Accepting…" : "Accept & Start work"}
+      </Button>
+    </div>
+  );
+}
 
 export default function NearbyRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -102,8 +202,10 @@ export default function NearbyRequestDetailPage() {
   const hasPlan = !!(req.planData as { zones?: unknown[] } | null)?.zones?.length;
   const proposalAccepted = req.myProposal?.status === "accepted";
 
+  const photoCount = (req.photoUrls?.length ?? 0) + (req.completionPhotoUrls?.length ?? 0);
   const tabs: { key: DetailTab; label: string; badge?: number }[] = [
     { key: "details", label: "Details" },
+    { key: "photos", label: photoCount > 0 ? `Photos (${photoCount})` : "Photos" },
     ...(proposalAccepted ? [{ key: "chat" as DetailTab, label: "Chat", badge: chatUnread }] : []),
   ];
 
@@ -124,10 +226,7 @@ export default function NearbyRequestDetailPage() {
         </div>
       </div>
 
-      {/* Tab bar — only when proposal accepted */}
-      {proposalAccepted && (
-        <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
-      )}
+      <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       <div className="mt-6">
         {activeTab === "details" && (
@@ -178,8 +277,13 @@ export default function NearbyRequestDetailPage() {
               </div>
             )}
 
+            {/* Direct request banner */}
+            {req.isDirectRequest && !req.myProposal && (
+              <DirectRequestBanner jobId={req.id} note={req.note} onAccepted={() => setActiveTab("chat")} />
+            )}
+
             {/* Proposal section */}
-            {req.myProposal ? (
+            {!req.isDirectRequest && req.myProposal ? (
               <div>
                 <h2 className="mb-4 text-hint font-semibold uppercase tracking-wide text-ink">
                   Your proposal
@@ -217,9 +321,9 @@ export default function NearbyRequestDetailPage() {
                   )}
                 </div>
               </div>
-            ) : req.status !== "open" ? (
+            ) : !req.isDirectRequest && req.status !== "open" ? (
               <p className="text-body text-muted">This request is no longer accepting proposals.</p>
-            ) : (
+            ) : !req.isDirectRequest ? (
               <div>
                 <h2 className="mb-4 text-hint font-semibold uppercase tracking-wide text-ink">
                   Send your proposal
@@ -260,6 +364,36 @@ export default function NearbyRequestDetailPage() {
                   </div>
                 </form>
               </div>
+            ) : null}
+          </div>
+        )}
+
+        {activeTab === "photos" && (
+          <div className="flex flex-col gap-6">
+            {(req.photoUrls?.length ?? 0) > 0 && (
+              <div>
+                <p className="mb-3 text-hint font-semibold uppercase tracking-wide text-muted">Garden photos from homeowner</p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {req.photoUrls.map((url) => (
+                    <div key={url} className="relative aspect-square overflow-hidden rounded-lg border border-line bg-canvas">
+                      <Image src={`${UPLOADS_BASE}${url}`} alt="" fill className="object-cover" unoptimized />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {proposalAccepted && (
+              <div>
+                <p className="mb-3 text-hint font-semibold uppercase tracking-wide text-muted">Your completion photos</p>
+                <CompletionPhotoUploader
+                  jobId={req.id}
+                  completionPhotoUrls={req.completionPhotoUrls ?? []}
+                  onUploaded={(urls) => setReq((prev) => prev ? { ...prev, completionPhotoUrls: urls } : prev)}
+                />
+              </div>
+            )}
+            {(req.photoUrls?.length ?? 0) === 0 && !proposalAccepted && (
+              <p className="text-body text-muted">No photos yet.</p>
             )}
           </div>
         )}

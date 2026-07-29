@@ -14,13 +14,13 @@ export default function HomePage() {
         tagline="For homeowners & contractors"
         headline={
           <>
-            YOUR SPACE.<br />
-            <span className="text-lime">EXACT COUNTS.</span>
+            PLAN YOUR GARDEN.<br />
+            <span className="text-lime">GET IT BUILT.</span>
           </>
         }
-        description="Bloomy gives you a visual garden planner, a precise tile calculator, and a contractor marketplace — design your project, count your materials, then connect with local professionals."
-        primaryCta={{ label: "Start a project", href: "/projects/new" }}
-        secondaryCta={{ label: "Open Tile Planner →", href: "/tile-plan" }}
+        description="Draw your garden layout, get exact material counts in seconds, then post your project to receive quotes from local contractors — all in one place."
+        primaryCta={{ label: "Start planning", href: "/projects/new" }}
+        secondaryCta={{ label: "Browse tile planner →", href: "/tile-plan" }}
         scrollHint
       />
       <IntroStrip />

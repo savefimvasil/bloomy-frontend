@@ -15,7 +15,7 @@ export type TilePlan = {
   createdAt: string;
 };
 
-export type RequestStatus = "open" | "awarded" | "closed";
+export type RequestStatus = "open" | "awarded" | "in_progress" | "completed" | "closed";
 export type ProposalStatus = "pending" | "accepted" | "rejected";
 
 export type QuoteRequestSummary = {
@@ -28,6 +28,7 @@ export type QuoteRequestSummary = {
   proposalCount: number;
   createdAt: string;
   updatedAt: string;
+  isDirectRequest: boolean;
 };
 
 export type ProposalInRequest = {
@@ -45,6 +46,8 @@ export type ProposalInRequest = {
     businessName: string | null;
     verified: boolean;
     phone: string | null;
+    avgRating: number | null;
+    reviewCount: number;
   };
 };
 
@@ -57,8 +60,12 @@ export type QuoteRequestDetail = {
   startBy: string | null;
   createdAt: string;
   updatedAt: string;
+  photoUrls: string[];
+  completionPhotoUrls: string[];
   calculationResult: import("@bloomy/bloomy-planner").CalculationResult | null;
   proposals: ProposalInRequest[];
+  isDirectRequest: boolean;
+  note: string | null;
 };
 
 export type NearbyRequest = {
@@ -68,6 +75,7 @@ export type NearbyRequest = {
   startBy: string | null;
   status: RequestStatus;
   hasProposed: boolean;
+  distanceMiles: number | null;
   createdAt: string;
 };
 
@@ -78,9 +86,13 @@ export type NearbyRequestDetail = {
   startBy: string | null;
   status: RequestStatus;
   createdAt: string;
+  photoUrls: string[];
+  completionPhotoUrls: string[];
   projectSummary: { zoneCount: number; zoneSummary: string[] };
   planData: Record<string, unknown> | null;
   calculationResult: import("@bloomy/bloomy-planner").CalculationResult | null;
+  isDirectRequest: boolean;
+  note: string | null;
   myProposal: {
     id: string;
     message: string;
@@ -130,6 +142,37 @@ export type ContractorProfile = {
   phone: string | null;
   website: string | null;
   verified: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NearbyContractor = {
+  id: string;
+  userId: string;
+  businessName: string;
+  bio: string | null;
+  postcode: string;
+  verified: boolean;
+  distanceMiles: number;
+};
+
+export type JobReview = {
+  id: string;
+  jobId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
+export type DocType = "insurance" | "dbs" | "trade-membership" | "id";
+export type DocStatus = "pending" | "approved" | "rejected";
+
+export type VerificationDocument = {
+  id: string;
+  type: DocType;
+  description: string;
+  status: DocStatus;
+  adminNote: string | null;
   createdAt: string;
   updatedAt: string;
 };

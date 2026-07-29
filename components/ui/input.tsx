@@ -1,5 +1,5 @@
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  label: string;
+  label?: string;
   hint?: string;
   error?: string;
 };
@@ -7,9 +7,11 @@ type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 export function Input({ label, hint, error, className = "", ...props }: InputProps) {
   return (
     <label className={`w-full ${className}`}>
-      <span className="mt-2 block text-eyebrow text-forest/70">
-        {label}
-      </span>
+      {label && (
+        <span className="mt-2 block text-eyebrow text-forest/70">
+          {label}
+        </span>
+      )}
       <input
         {...props}
         aria-invalid={!!error}

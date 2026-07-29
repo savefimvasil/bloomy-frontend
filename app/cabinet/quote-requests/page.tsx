@@ -19,10 +19,12 @@ import type { QuoteRequestSummary, RequestStatus } from "@/types/models";
 type Filter = "all" | RequestStatus;
 
 const FILTERS: { key: Filter; label: string }[] = [
-  { key: "all",     label: "All" },
-  { key: "open",    label: "Open" },
-  { key: "awarded", label: "Awarded" },
-  { key: "closed",  label: "Closed" },
+  { key: "all",         label: "All" },
+  { key: "open",        label: "Open" },
+  { key: "awarded",     label: "Awarded" },
+  { key: "in_progress", label: "In progress" },
+  { key: "completed",   label: "Completed" },
+  { key: "closed",      label: "Closed" },
 ];
 
 function RequestRow({
@@ -46,6 +48,9 @@ function RequestRow({
             <Badge dot color={requestStatusColor(req.status)}>
               {requestStatusLabel(req.status)}
             </Badge>
+            {req.isDirectRequest && (
+              <span className="rounded-full bg-forest/10 px-2 py-0.5 text-hint font-medium text-forest">Direct</span>
+            )}
             {chatUnread > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-hint font-semibold text-paper">
                 {chatUnread} new
@@ -105,10 +110,12 @@ export default function QuoteRequestsPage() {
   );
 
   const counts: Record<Filter, number> = {
-    all:     requests.length,
-    open:    requests.filter((r) => r.status === "open").length,
-    awarded: requests.filter((r) => r.status === "awarded").length,
-    closed:  requests.filter((r) => r.status === "closed").length,
+    all:         requests.length,
+    open:        requests.filter((r) => r.status === "open").length,
+    awarded:     requests.filter((r) => r.status === "awarded").length,
+    in_progress: requests.filter((r) => r.status === "in_progress").length,
+    completed:   requests.filter((r) => r.status === "completed").length,
+    closed:      requests.filter((r) => r.status === "closed").length,
   };
 
   const visible = filter === "all" ? requests : requests.filter((r) => r.status === filter);
