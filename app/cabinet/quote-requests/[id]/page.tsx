@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -391,7 +391,6 @@ function ProposalCard({
 
 export default function QuoteRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const [req, setReq] = useState<QuoteRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -470,9 +469,10 @@ export default function QuoteRequestDetailPage() {
     setChatOpeningId(contractorId);
     try {
       const roomId = await useChatStore.getState().openOrCreateRoom(req.id, contractorId);
-      router.push(`/cabinet/messages/${roomId}`);
+      setChatRoomId(roomId);
+      setActiveTab("chat");
     } catch {
-      // fail silently — user can navigate to messages manually
+      // fail silently
     } finally {
       setChatOpeningId(null);
     }

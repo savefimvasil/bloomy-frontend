@@ -53,11 +53,15 @@ export function ChatWindow({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     void loadMessages(roomId);
-    joinRoom(roomId);
     setActiveRoom(roomId);
     markRead(roomId);
     return () => setActiveRoom(null);
-  }, [roomId, loadMessages, joinRoom, setActiveRoom, markRead]);
+  }, [roomId, loadMessages, setActiveRoom, markRead]);
+
+  // Re-join the socket room on connect and after every reconnect.
+  useEffect(() => {
+    if (connected) joinRoom(roomId);
+  }, [connected, roomId, joinRoom]);
 
   // Scroll within the message container only — no page scroll
   useEffect(() => {
