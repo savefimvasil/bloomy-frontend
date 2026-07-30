@@ -9,6 +9,8 @@ function authHeaders(): Record<string, string> {
 
 type Options = Omit<RequestInit, "body"> & { body?: unknown };
 
+let redirecting = false;
+
 export async function apiFetch(path: string, { body, headers, ...rest }: Options = {}): Promise<Response> {
   const isFormData = body instanceof FormData;
   const res = await fetch(`${BASE}${path}`, {
@@ -21,7 +23,8 @@ export async function apiFetch(path: string, { body, headers, ...rest }: Options
     ...(body !== undefined ? { body: isFormData ? body : JSON.stringify(body) } : {}),
   });
 
-  if (res.status === 401 && typeof window !== "undefined") {
+  if (res.status === 401 && typeof window !== "undefined" && !redirecting) {
+    redirecting = true;
     clearAuth();
     window.location.href = "/login";
   }

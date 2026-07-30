@@ -14,7 +14,9 @@ function RegisterVerifyPageComponent() {
   const router = useRouter();
   const ready = useRedirectIfAuthenticated();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
+  const email = searchParams.get("email")
+    ?? (typeof window !== "undefined" ? sessionStorage.getItem("reg_email") : null)
+    ?? "";
 
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

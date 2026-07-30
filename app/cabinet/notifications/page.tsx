@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { useNotificationsStore, type AppNotification } from "@/store/notifications";
+
+const PAGE_LIMIT = 20;
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -50,20 +52,43 @@ function NotificationRow({ n, onRead }: { n: AppNotification; onRead: (id: strin
 export default function NotificationsPage() {
   const token = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const { notifications, setNotifications, markOneRead, markAllRead, setUnreadCount } = useNotificationsStore();
+  const { notifications, notificationsTotal, setNotifications, appendNotifications, markOneRead, markAllRead, setUnreadCount } = useNotificationsStore();
   const [fetched, setFetched] = useState(false);
-  const loading = !fetched;
+  const [loadingMore, setLoadingMore] = useState(false);
+  const pageRef = useRef(1);
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
     let cancelled = false;
-    apiFetch("/notifications")
-      .then((r) => r.ok ? r.json() : [])
-      .then((items: AppNotification[]) => { if (!cancelled) setNotifications(items); })
+    apiFetch(`/notifications?page=1&limit=${PAGE_LIMIT}`)
+      .then((r) => r.ok ? r.json() : { data: [], total: 0 })
+      .then(({ data, total }: { data: AppNotification[]; total: number }) => {
+        if (!cancelled) {
+          setNotifications(data, total);
+          pageRef.current = 1;
+        }
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setFetched(true); });
     return () => { cancelled = true; };
   }, [hasHydrated, token, setNotifications]);
+
+  const hasMore = notifications.length < notificationsTotal;
+
+  async function handleLoadMore() {
+    setLoadingMore(true);
+    const nextPage = pageRef.current + 1;
+    try {
+      const res = await apiFetch(`/notifications?page=${nextPage}&limit=${PAGE_LIMIT}`);
+      if (res.ok) {
+        const { data } = (await res.json()) as { data: AppNotification[] };
+        appendNotifications(data);
+        pageRef.current = nextPage;
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   const handleRead = async (id: string) => {
     markOneRead(id);
@@ -76,6 +101,7 @@ export default function NotificationsPage() {
     await apiFetch("/notifications/read-all", { method: "POST" }).catch(() => {});
   };
 
+  const loading = !fetched;
   const unread = notifications.filter((n) => !n.read).length;
 
   if (!loading && notifications.length === 0) {
@@ -100,7 +126,7 @@ export default function NotificationsPage() {
         <>
           <PageHeading
             title="Notifications"
-            count={notifications.length}
+            count={notificationsTotal}
             unit={["notification", "notifications"]}
             action={
               unread > 0 ? (
@@ -115,6 +141,21 @@ export default function NotificationsPage() {
               <NotificationRow key={n.id} n={n} onRead={handleRead} />
             ))}
           </div>
+
+          {hasMore && (
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <p className="text-hint text-muted">
+                Showing {notifications.length} of {notificationsTotal}
+              </p>
+              <button
+                onClick={() => void handleLoadMore()}
+                disabled={loadingMore}
+                className="rounded-lg border border-line px-4 py-2 text-body text-muted transition hover:border-forest/40 hover:text-ink disabled:opacity-50"
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

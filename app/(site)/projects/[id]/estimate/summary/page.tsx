@@ -116,14 +116,26 @@ export default function SummaryPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [vatOn, setVatOn] = useState(false);
+  const [pricesUpdatedAt, setPricesUpdatedAt] = useState<string | null>(null);
 
   const isHomeowner = getAuthRole() === "homeowner";
 
   useEffect(() => {
     let cancelled = false;
-    apiFetch(`/garden-projects/${id}/calculate`, { method: "POST" })
-      .then(res => { if (!res.ok) throw new Error(); return res.json() as Promise<CalculationResult>; })
-      .then(data => { if (!cancelled) { setResult(data); setError(null); } })
+    Promise.all([
+      apiFetch(`/garden-projects/${id}/calculate`, { method: "POST" })
+        .then(res => { if (!res.ok) throw new Error(); return res.json() as Promise<CalculationResult>; }),
+      apiFetch("/pricing/last-update")
+        .then(res => res.ok ? res.json() as Promise<{ updatedAt: string | null }> : { updatedAt: null }),
+    ])
+      .then(([data, priceInfo]) => {
+        if (!cancelled) {
+          setResult(data);
+          setPricesUpdatedAt(priceInfo.updatedAt);
+          setError(null);
+        }
+      })
       .catch(() => { if (!cancelled) setError("Failed to calculate. Please try again."); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -169,6 +181,10 @@ export default function SummaryPage() {
 
   const totalZones = result.byZone.length;
   const totalLines = result.byZone.reduce((s, z) => s + z.materials.length, 0);
+  const vatMultiplier = vatOn ? 1.2 : 1;
+  const isStale = pricesUpdatedAt !== null &&
+    result.computedAt !== undefined &&
+    new Date(pricesUpdatedAt) > new Date(result.computedAt);
 
   function handleBack() {
     const prev = steps[currentStepIndex - 1];
@@ -196,10 +212,24 @@ export default function SummaryPage() {
         </div>
         <div className="text-right">
           <p className="text-hint text-muted">Estimated total</p>
-          <p className="text-display-sm font-bold text-forest">{fmtGBP(result.grandTotal)}</p>
-          <p className="text-hint text-muted/60">excl. labour & delivery</p>
+          <p className="text-display-sm font-bold text-forest">{fmtGBP(result.grandTotal * vatMultiplier)}</p>
+          <p className="text-hint text-muted/60">{vatOn ? "incl. 20% VAT · " : ""}excl. labour & delivery</p>
         </div>
       </div>
+
+      {/* Stale prices warning */}
+      {isStale && (
+        <div className="mb-4 rounded-xl border border-amber-400/50 bg-amber-50/80 px-4 py-3 flex items-center gap-2">
+          <span className="text-amber-600">⚠</span>
+          <p className="text-hint text-amber-900/80">
+            Prices were updated since this estimate was calculated.{" "}
+            <button onClick={recalculate} className="font-medium underline underline-offset-2 hover:text-amber-900">
+              Recalculate
+            </button>{" "}
+            to use the latest rates.
+          </p>
+        </div>
+      )}
 
       {/* Notice */}
       <div className="mb-6 rounded-xl border border-amber-300/60 bg-amber-50/70 px-4 py-3">
@@ -217,9 +247,25 @@ export default function SummaryPage() {
       </div>
 
       {/* Grand total */}
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-forest/20 bg-forest/5 px-5 py-4">
-        <span className="text-body font-semibold text-ink">Grand total</span>
-        <span className="text-display-sm font-bold text-forest">{fmtGBP(result.grandTotal)}</span>
+      <div className="mt-6 rounded-2xl border border-forest/20 bg-forest/5 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <span className="text-body font-semibold text-ink">Grand total</span>
+          <span className="text-display-sm font-bold text-forest">{fmtGBP(result.grandTotal * vatMultiplier)}</span>
+        </div>
+        {vatOn && (
+          <p className="mt-1 text-hint text-muted/70">Includes 20% VAT ({fmtGBP(result.grandTotal)} + {fmtGBP(result.grandTotal * 0.2)})</p>
+        )}
+        <div className="mt-3 flex items-center gap-2 border-t border-forest/10 pt-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={vatOn}
+              onChange={(e) => setVatOn(e.target.checked)}
+              className="h-4 w-4 rounded border-line accent-forest"
+            />
+            <span className="text-hint text-muted">Show with 20% VAT</span>
+          </label>
+        </div>
       </div>
 
       {/* Request contractor quotes */}

@@ -9,11 +9,14 @@ import type { GardenProject, TilePlan, QuoteRequestSummary } from "@/types/model
 interface Slice<T> {
   items: T[];
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
   loaded: boolean;
+  total: number;
+  currentPage: number;
 }
 
-const empty = <T>(): Slice<T> => ({ items: [], loading: false, error: null, loaded: false });
+const empty = <T>(): Slice<T> => ({ items: [], loading: false, loadingMore: false, error: null, loaded: false, total: 0, currentPage: 1 });
 
 interface CabinetState {
   projects: Slice<GardenProject>;
@@ -23,6 +26,7 @@ interface CabinetState {
   fetchProjects: () => Promise<void>;
   fetchTilePlans: () => Promise<void>;
   fetchQuoteRequests: () => Promise<void>;
+  loadMoreQuoteRequests: () => Promise<void>;
 
   removeProject: (id: string) => void;
   removeTilePlan: (id: string) => void;
@@ -75,15 +79,30 @@ export const useCabinetStore = create<CabinetState>()((set, get) => ({
     if (get().quoteRequests.loaded) return;
     set(s => ({ quoteRequests: { ...s.quoteRequests, loading: true, error: null } }));
     try {
-      const res = await apiFetch(API.quoteRequests.mine);
+      const res = await apiFetch(`${API.quoteRequests.mine}?page=1&limit=20`);
       if (!res.ok) {
         set(s => ({ quoteRequests: { ...s.quoteRequests, loading: false, error: "Failed to load requests" } }));
         return;
       }
-      const quoteRequests = (await res.json()) as QuoteRequestSummary[];
-      set(s => ({ quoteRequests: { ...s.quoteRequests, items: quoteRequests, loading: false, error: null, loaded: true } }));
+      const { data, total } = (await res.json()) as { data: QuoteRequestSummary[]; total: number; page: number; limit: number };
+      set(s => ({ quoteRequests: { ...s.quoteRequests, items: data, total, currentPage: 1, loading: false, error: null, loaded: true } }));
     } catch (e) {
       set(s => ({ quoteRequests: { ...s.quoteRequests, loading: false, error: e instanceof Error ? e.message : "Unknown error" } }));
+    }
+  },
+
+  loadMoreQuoteRequests: async () => {
+    const { quoteRequests } = get();
+    if (quoteRequests.loadingMore || quoteRequests.items.length >= quoteRequests.total) return;
+    const nextPage = quoteRequests.currentPage + 1;
+    set(s => ({ quoteRequests: { ...s.quoteRequests, loadingMore: true } }));
+    try {
+      const res = await apiFetch(`${API.quoteRequests.mine}?page=${nextPage}&limit=20`);
+      if (!res.ok) { set(s => ({ quoteRequests: { ...s.quoteRequests, loadingMore: false } })); return; }
+      const { data, total } = (await res.json()) as { data: QuoteRequestSummary[]; total: number; page: number; limit: number };
+      set(s => ({ quoteRequests: { ...s.quoteRequests, items: [...s.quoteRequests.items, ...data], total, currentPage: nextPage, loadingMore: false } }));
+    } catch {
+      set(s => ({ quoteRequests: { ...s.quoteRequests, loadingMore: false } }));
     }
   },
 
@@ -116,6 +135,8 @@ export function useTilePlans() {
 export function useQuoteRequests() {
   const slice = useCabinetStore(useShallow(s => s.quoteRequests));
   const fetch = useCabinetStore(s => s.fetchQuoteRequests);
+  const loadMore = useCabinetStore(s => s.loadMoreQuoteRequests);
   const remove = useCabinetStore(s => s.removeQuoteRequest);
-  return { ...slice, fetch, remove };
+  const hasMore = slice.items.length < slice.total;
+  return { ...slice, fetch, loadMore, remove, hasMore };
 }

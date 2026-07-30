@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CabinetCard } from "@/components/ui/cabinet-row";
@@ -9,7 +9,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
-import { useApiFetch } from "@/lib/useApiFetch";
+import { usePaginatedFetch } from "@/lib/usePaginatedFetch";
 import { formatDate, formatPriceNote } from "@/lib/formatters";
 import { proposalStatusColor, proposalStatusLabel } from "@/lib/statusColors";
 import { useChatStore } from "@/store/chat";
@@ -74,18 +74,24 @@ function ProposalRow({ p }: { p: MyProposal }) {
 }
 
 export default function MyProposalsPage() {
-  const { data, loading, error } = useApiFetch<MyProposal[]>("/quote-requests/my-proposals");
+  const { items: proposals, total, loading, loadingMore, error, hasMore, loadMore } =
+    usePaginatedFetch<MyProposal>("/quote-requests/my-proposals", 20);
   const fetchRooms = useChatStore((s) => s.fetchRooms);
   const roomsLoaded = useChatStore((s) => s.roomsLoaded);
   const [filter, setFilter] = useState<Filter>("all");
 
-  // Load rooms so per-row unread dots work
   useEffect(() => { if (!roomsLoaded) void fetchRooms(); }, [roomsLoaded, fetchRooms]);
+
+  const counts: Record<Filter, number> = useMemo(() => ({
+    all:      proposals.length,
+    pending:  proposals.filter((p) => p.status === "pending").length,
+    accepted: proposals.filter((p) => p.status === "accepted").length,
+    rejected: proposals.filter((p) => p.status === "rejected").length,
+  }), [proposals]);
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;
   if (error) return <p className="text-body text-danger">{error}</p>;
 
-  const proposals = data ?? [];
   if (proposals.length === 0) return (
     <CabinetEmptyState
       eyebrow="My Proposals"
@@ -95,20 +101,13 @@ export default function MyProposalsPage() {
     />
   );
 
-  const counts: Record<Filter, number> = {
-    all:      proposals.length,
-    pending:  proposals.filter((p) => p.status === "pending").length,
-    accepted: proposals.filter((p) => p.status === "accepted").length,
-    rejected: proposals.filter((p) => p.status === "rejected").length,
-  };
-
   const visible = filter === "all" ? proposals : proposals.filter((p) => p.status === filter);
 
   return (
     <div>
       <PageHeading
         title={<>MY PROPOSALS</>}
-        count={proposals.length}
+        count={total}
         unit={["proposal", "proposals"]}
       />
 
@@ -127,6 +126,19 @@ export default function MyProposalsPage() {
           {visible.map((p) => (
             <ProposalRow key={p.id} p={p} />
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-hint text-muted">Showing {proposals.length} of {total}</p>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="rounded-lg border border-line px-4 py-2 text-body text-muted transition hover:border-forest/40 hover:text-ink disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
         </div>
       )}
     </div>

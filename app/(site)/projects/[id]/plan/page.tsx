@@ -23,6 +23,7 @@ export default function ProjectPlanPage() {
   const [project, setProject] = useState<ProjectMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   useEffect(() => {
     if (!getAuthToken()) { router.push("/login"); return; }
@@ -38,10 +39,18 @@ export default function ProjectPlanPage() {
   }, [id, router]);
 
   async function handleSave(plan: GardenPlan) {
-    await apiFetch(`/garden-projects/${id}`, {
-      method: "PUT",
-      body: { planData: plan as unknown as Record<string, unknown>, name: project?.name ?? undefined },
-    });
+    setSaveStatus("saving");
+    try {
+      const res = await apiFetch(`/garden-projects/${id}`, {
+        method: "PUT",
+        body: { planData: plan as unknown as Record<string, unknown>, name: project?.name ?? undefined },
+      });
+      setSaveStatus(res.ok ? "saved" : "error");
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }
   }
 
   if (loading) return (
@@ -77,14 +86,35 @@ export default function ProjectPlanPage() {
     return res.json() as Promise<{ images: string[] }>;
   }
 
+  const saveLabel = saveStatus === "saving" ? "Saving…"
+    : saveStatus === "saved" ? "Saved"
+    : saveStatus === "error" ? "Save failed"
+    : null;
+
   return (
-    <GardenPlannerCore
-      plan={plan}
-      onSave={handleSave}
-      onGenerateImage={handleGenerateImage}
-      onBuildEstimate={() => router.push(`/projects/${id}/estimate`)}
-      projectName={project.name ?? "Garden project"}
-      onBack={() => router.push("/cabinet/projects")}
-    />
+    <div className="relative h-full">
+      {saveLabel && (
+        <div
+          className={`pointer-events-none absolute right-4 top-4 z-50 flex items-center gap-1.5 rounded-full px-3 py-1 text-hint font-medium shadow-soft ${
+            saveStatus === "error"
+              ? "bg-danger/10 text-danger"
+              : "bg-forest/10 text-forest"
+          }`}
+        >
+          {saveStatus === "saving" && (
+            <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-forest border-t-transparent" />
+          )}
+          {saveLabel}
+        </div>
+      )}
+      <GardenPlannerCore
+        plan={plan}
+        onSave={handleSave}
+        onGenerateImage={handleGenerateImage}
+        onBuildEstimate={() => router.push(`/projects/${id}/estimate`)}
+        projectName={project.name ?? "Garden project"}
+        onBack={() => router.push("/cabinet/projects")}
+      />
+    </div>
   );
 }

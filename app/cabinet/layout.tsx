@@ -26,6 +26,7 @@ import { useAuthStore, clearAuth } from "@/store/auth";
 import { useCabinetStore } from "@/store/cabinet";
 import { useChatStore, selectTotalUnread } from "@/store/chat";
 import { useNotificationsStore } from "@/store/notifications";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 // ─── Role display names ──────────────────────────────────────────────────────
 
@@ -204,7 +205,9 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
         </div>
 
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <div className="flex-1 p-6 md:p-8">{children}</div>
+          <div className="flex-1 p-6 md:p-8">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </div>
           <SiteFooter />
         </div>
       </div>

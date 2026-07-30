@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,9 @@ import { CabinetCard } from "@/components/ui/cabinet-row";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
-import { useAuthStore } from "@/store/auth";
+import { apiFetch } from "@/lib/api";
+import { usePaginatedFetch } from "@/lib/usePaginatedFetch";
 import { formatDate } from "@/lib/formatters";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 type DirectRequest = {
   id: string;
@@ -25,47 +24,36 @@ type DirectRequest = {
 };
 
 export default function DirectRequestsPage() {
-  const token = useAuthStore((s) => s.token);
   const router = useRouter();
-  const [requests, setRequests] = useState<DirectRequest[] | null>(null);
+  const { items: requests, total, loading, loadingMore, error, hasMore, loadMore } =
+    usePaginatedFetch<DirectRequest>("/quote-requests/direct-to-me", 20);
   const [accepting, setAccepting] = useState<string | null>(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!token) return;
-    fetch(`${API_BASE}/quote-requests/direct-to-me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json() as Promise<DirectRequest[]>)
-      .then(setRequests)
-      .catch(() => setRequests([]));
-  }, [token]);
+  const [acceptError, setAcceptError] = useState("");
 
   async function handleAccept(id: string) {
     setAccepting(id);
-    setError("");
+    setAcceptError("");
     try {
-      const res = await fetch(`${API_BASE}/quote-requests/direct/${id}/accept`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) { setError("Could not accept. Please try again."); setAccepting(null); return; }
+      const res = await apiFetch(`/quote-requests/direct/${id}/accept`, { method: "POST" });
+      if (!res.ok) { setAcceptError("Could not accept. Please try again."); setAccepting(null); return; }
       router.push(`/cabinet/nearby-requests/${id}`);
     } catch {
-      setError("Could not accept. Please try again.");
+      setAcceptError("Could not accept. Please try again.");
       setAccepting(null);
     }
   }
 
-  if (requests === null) {
+  if (loading) {
     return <div className="flex justify-center py-12"><Spinner label="Loading requests…" /></div>;
   }
+
+  if (error) return <p className="text-body text-danger">{error}</p>;
 
   if (requests.length === 0) {
     return (
       <CabinetEmptyState
         eyebrow="Direct Requests"
-        title={<>NO REQUESTS<br />YET.</>}
+        title={<>NO REQUESTS YET</>}
         description="When a homeowner sends a job directly to you, it appears here for you to accept."
       />
     );
@@ -75,11 +63,11 @@ export default function DirectRequestsPage() {
     <div>
       <PageHeading
         title={<>DIRECT REQUESTS</>}
-        count={requests.length}
+        count={total}
         unit={["request", "requests"]}
       />
 
-      {error && <p className="mb-4 text-hint text-danger">{error}</p>}
+      {acceptError && <p className="mb-4 text-hint text-danger">{acceptError}</p>}
 
       <div className="divide-y divide-line">
         {requests.map((req) => {
@@ -130,6 +118,19 @@ export default function DirectRequestsPage() {
           );
         })}
       </div>
+
+      {hasMore && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-hint text-muted">Showing {requests.length} of {total}</p>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="rounded-lg border border-line px-4 py-2 text-body text-muted transition hover:border-forest/40 hover:text-ink disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

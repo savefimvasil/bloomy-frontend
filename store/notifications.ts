@@ -20,9 +20,11 @@ let _socket: Socket | null = null;
 interface NotificationsState {
   unreadCount: number;
   notifications: AppNotification[];
+  notificationsTotal: number;
   loading: boolean;
   setUnreadCount: (n: number) => void;
-  setNotifications: (items: AppNotification[]) => void;
+  setNotifications: (items: AppNotification[], total: number) => void;
+  appendNotifications: (items: AppNotification[]) => void;
   markOneRead: (id: string) => void;
   markAllRead: () => void;
   setLoading: (v: boolean) => void;
@@ -33,10 +35,13 @@ interface NotificationsState {
 export const useNotificationsStore = create<NotificationsState>((set) => ({
   unreadCount: 0,
   notifications: [],
+  notificationsTotal: 0,
   loading: false,
 
   setUnreadCount: (n) => set({ unreadCount: n }),
-  setNotifications: (items) => set({ notifications: items }),
+  setNotifications: (items, total) => set({ notifications: items, notificationsTotal: total }),
+  appendNotifications: (items) =>
+    set((s) => ({ notifications: [...s.notifications, ...items] })),
 
   markOneRead: (id) =>
     set((s) => ({

@@ -117,7 +117,7 @@ export default function EstimatesPage() {
   if (projects.length === 0) return (
     <CabinetEmptyState
       eyebrow="Estimates"
-      title={<>NO ESTIMATES<br />YET.</>}
+      title={<>NO ESTIMATES YET</>}
       description="Open a garden project, use the Build Estimate wizard to configure each zone, and save — your material list will appear here."
       action={<Button href="/cabinet/projects">Go to projects</Button>}
     />

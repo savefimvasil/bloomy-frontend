@@ -83,9 +83,9 @@ function NotificationBell({ token }: { token: string }) {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    apiFetch(API.notifications.list)
-      .then((r) => r.ok ? r.json() : [])
-      .then((items: AppNotification[]) => setNotifications(items))
+    apiFetch(`${API.notifications.list}?page=1&limit=20`)
+      .then((r) => r.ok ? r.json() : { data: [], total: 0 })
+      .then(({ data, total }: { data: AppNotification[]; total: number }) => setNotifications(data, total))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [open, setNotifications, setLoading]);

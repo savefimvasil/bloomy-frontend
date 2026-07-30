@@ -86,7 +86,7 @@ function RequestRow({
 }
 
 export default function QuoteRequestsPage() {
-  const { items: requests, loading, error, fetch: fetchQuoteRequests, remove: removeQuoteRequest } = useQuoteRequests();
+  const { items: requests, loading, loadingMore, error, total, hasMore, fetch: fetchQuoteRequests, loadMore, remove: removeQuoteRequest } = useQuoteRequests();
   const fetchRooms = useChatStore((s) => s.fetchRooms);
   const roomsLoaded = useChatStore((s) => s.roomsLoaded);
   const [filter, setFilter] = useState<Filter>("all");
@@ -128,7 +128,7 @@ export default function QuoteRequestsPage() {
   if (requests.length === 0) return (
     <CabinetEmptyState
       eyebrow="Quote Requests"
-      title={<>NO REQUESTS<br />YET.</>}
+      title={<>NO REQUESTS YET</>}
       description={<>Open a garden project, run the estimate, then click <strong>Request contractor quotes</strong> to invite local contractors to send you proposals.</>}
       action={<Button href="/cabinet/projects" variant="secondary">Go to projects</Button>}
     />
@@ -161,7 +161,7 @@ export default function QuoteRequestsPage() {
 
       <PageHeading
         title={<>QUOTE REQUESTS</>}
-        count={requests.length}
+        count={total}
         unit={["request", "requests"]}
       />
 
@@ -180,6 +180,19 @@ export default function QuoteRequestsPage() {
           {visible.map((req) => (
             <RequestRow key={req.id} req={req} onDelete={setPendingDeleteId} />
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-hint text-muted">Showing {requests.length} of {total}</p>
+          <button
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="rounded-lg border border-line px-4 py-2 text-body text-muted transition hover:border-forest/40 hover:text-ink disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
         </div>
       )}
     </div>

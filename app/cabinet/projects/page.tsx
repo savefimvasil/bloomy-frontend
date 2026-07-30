@@ -89,8 +89,8 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
       <div className="flex flex-col gap-5">
         <p className="text-eyebrow text-muted">Garden Projects</p>
-        <h2 className="text-display-xl text-ink">
-          NO PROJECTS<br />YET.
+        <h2 className="text-display-lg text-ink">
+          NO PROJECTS YET
         </h2>
         <p className="max-w-sm text-body text-muted">
           Create a garden project to plan zones — patio, lawn, beds, decking — and place objects like trees and furniture on your canvas.

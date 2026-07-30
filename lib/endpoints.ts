@@ -57,8 +57,11 @@ export const API = {
   pricing: {
     materials: "/pricing/materials",
     tools: "/pricing/tools",
+    labour: "/pricing/labour",
+    lastUpdate: "/pricing/last-update",
     updateMaterial: (id: string) => `/pricing/materials/${id}`,
     updateTool: (id: string) => `/pricing/tools/${id}`,
+    updateLabour: (id: string) => `/pricing/labour/${id}`,
   },
   contractors: {
     me: "/contractor-profiles/me",

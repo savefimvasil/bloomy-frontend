@@ -39,6 +39,7 @@ export default function RegisterPage() {
       return;
     }
 
+    sessionStorage.setItem("reg_email", values.email.trim());
     router.push(`/register/verify?email=${encodeURIComponent(values.email.trim())}`);
   });
 

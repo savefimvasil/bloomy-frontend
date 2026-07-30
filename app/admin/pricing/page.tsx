@@ -22,6 +22,15 @@ type Tool = {
   updatedAt: string;
 };
 
+type LabourRate = {
+  id: string;
+  name: string;
+  description: string | null;
+  pricePerUnit: number;
+  unit: string;
+  updatedAt: string;
+};
+
 // ─── Inline price cell ────────────────────────────────────────────────────────
 
 function PriceCell({
@@ -184,19 +193,61 @@ function ToolsTable({ items, onUpdate }: { items: Tool[]; onUpdate: (id: string,
   );
 }
 
+// ─── Labour table ─────────────────────────────────────────────────────────────
+
+function LabourTable({ items, onUpdate }: { items: LabourRate[]; onUpdate: (id: string, price: number) => void }) {
+  async function save(id: string, price: number) {
+    const res = await apiFetch(API.pricing.updateLabour(id), {
+      method: "PATCH",
+      body: { pricePerUnit: price },
+    });
+    if (!res.ok) throw new Error("Failed");
+    onUpdate(id, price);
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-line">
+      <table className="w-full text-left">
+        <thead className="border-b border-line bg-canvas">
+          <tr>
+            <th className="px-4 py-3 text-eyebrow text-muted">Labour type</th>
+            <th className="px-4 py-3 text-eyebrow text-muted">Unit</th>
+            <th className="px-4 py-3 text-eyebrow text-muted">Rate</th>
+            <th className="px-4 py-3 text-eyebrow text-muted hidden sm:table-cell">Description</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {items.map((l) => (
+            <tr key={l.id} className="bg-paper hover:bg-mist/40 transition">
+              <td className="px-4 py-3 text-body text-ink">{l.name}</td>
+              <td className="px-4 py-3 text-hint text-muted">per {l.unit}</td>
+              <td className="px-4 py-3">
+                <PriceCell value={Number(l.pricePerUnit)} onSave={(p) => save(l.id, p)} />
+              </td>
+              <td className="px-4 py-3 hidden sm:table-cell text-hint text-muted">{l.description ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminPricingPage() {
   const [materials, setMaterials] = useState<Material[] | null>(null);
   const [tools, setTools] = useState<Tool[] | null>(null);
+  const [labour, setLabour] = useState<LabourRate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
       apiFetch(API.pricing.materials).then((r) => r.ok ? r.json() as Promise<Material[]> : Promise.reject()),
       apiFetch(API.pricing.tools).then((r) => r.ok ? r.json() as Promise<Tool[]> : Promise.reject()),
+      apiFetch(API.pricing.labour).then((r) => r.ok ? r.json() as Promise<LabourRate[]> : Promise.reject()),
     ])
-      .then(([mats, toolItems]) => { setMaterials(mats); setTools(toolItems); })
+      .then(([mats, toolItems, labourItems]) => { setMaterials(mats); setTools(toolItems); setLabour(labourItems); })
       .catch(() => setError("Failed to load pricing data."));
   }, []);
 
@@ -208,7 +259,11 @@ export default function AdminPricingPage() {
     setTools((prev) => prev?.map((t) => t.id === id ? { ...t, pricePerDay: price } : t) ?? prev);
   }
 
-  const loading = materials === null && tools === null && !error;
+  function updateLabour(id: string, price: number) {
+    setLabour((prev) => prev?.map((l) => l.id === id ? { ...l, pricePerUnit: price } : l) ?? prev);
+  }
+
+  const loading = materials === null && tools === null && labour === null && !error;
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -236,11 +291,23 @@ export default function AdminPricingPage() {
         )}
 
         {tools && (
-          <section>
+          <section className="mb-10">
             <h2 className="mb-3 text-hint font-semibold uppercase tracking-wider text-muted">
               Tool rentals ({tools.length})
             </h2>
             <ToolsTable items={tools} onUpdate={updateTool} />
+          </section>
+        )}
+
+        {labour && (
+          <section>
+            <h2 className="mb-3 text-hint font-semibold uppercase tracking-wider text-muted">
+              Labour rates ({labour.length})
+            </h2>
+            <p className="mb-3 text-hint text-muted">
+              Reference rates shown to users as guidance — not used in automatic calculations.
+            </p>
+            <LabourTable items={labour} onUpdate={updateLabour} />
           </section>
         )}
       </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { StarDisplay } from "@/components/ui/star-display";
 import { apiFetch } from "@/lib/api";
+import { usePaginatedFetch } from "@/lib/usePaginatedFetch";
 import { API } from "@/lib/endpoints";
 
 type MyReview = {
@@ -82,9 +83,18 @@ function ReplyBox({ review, onSaved }: { review: MyReview; onSaved: (reply: stri
 }
 
 function ReviewCard({ review, onReplySaved }: { review: MyReview; onReplySaved: (id: string, reply: string) => void }) {
+  const [localReply, setLocalReply] = useState(review.reply);
+  const [localReplyAt, setLocalReplyAt] = useState(review.replyAt);
+
   const date = new Date(review.createdAt).toLocaleDateString("en-GB", {
     day: "numeric", month: "short", year: "numeric",
   });
+
+  function handleSaved(reply: string) {
+    setLocalReply(reply);
+    setLocalReplyAt(new Date().toISOString());
+    onReplySaved(review.id, reply);
+  }
 
   return (
     <div className="rounded-xl border border-line bg-paper px-5 py-5">
@@ -105,46 +115,44 @@ function ReviewCard({ review, onReplySaved }: { review: MyReview; onReplySaved: 
         <p className="mt-3 text-hint italic text-muted">No written comment.</p>
       )}
 
-      {review.reply && (
+      {localReply && (
         <div className="mt-4 rounded-lg border-l-2 border-forest/30 bg-canvas px-4 py-3">
           <p className="text-eyebrow text-muted mb-1">
             Your reply
-            {review.replyAt && (
-              <> · {new Date(review.replyAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</>
+            {localReplyAt && (
+              <> · {new Date(localReplyAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</>
             )}
           </p>
-          <p className="text-hint text-ink">{review.reply}</p>
+          <p className="text-hint text-ink">{localReply}</p>
         </div>
       )}
 
-      <ReplyBox review={review} onSaved={(reply) => onReplySaved(review.id, reply)} />
+      <ReplyBox review={{ ...review, reply: localReply, replyAt: localReplyAt }} onSaved={handleSaved} />
     </div>
   );
 }
 
 export default function MyReviewsPage() {
-  const [reviews, setReviews] = useState<MyReview[] | null>(null);
+  const { items: reviews, total, loading, loadingMore, error, hasMore, loadMore } =
+    usePaginatedFetch<MyReview>("/quote-requests/my-reviews", 20);
 
-  useEffect(() => {
-    apiFetch(API.quoteRequests.myReviews)
-      .then((r) => r.json() as Promise<MyReview[]>)
-      .then(setReviews)
-      .catch(() => setReviews([]));
-  }, []);
+  const avg = useMemo(() =>
+    reviews.length
+      ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
+      : null,
+    [reviews],
+  );
 
-  function handleReplySaved(reviewId: string, reply: string) {
-    setReviews((prev) =>
-      prev?.map((r) => r.id === reviewId ? { ...r, reply, replyAt: new Date().toISOString() } : r) ?? prev,
-    );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleReplySaved(_reviewId: string, _reply: string) {
+    // reply state is managed locally in each ReviewCard
   }
 
-  const avg = reviews?.length
-    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
-    : null;
-
-  if (reviews === null) {
+  if (loading) {
     return <div className="flex justify-center py-16"><Spinner label="Loading reviews…" /></div>;
   }
+
+  if (error) return <p className="text-body text-danger">{error}</p>;
 
   if (reviews.length === 0) {
     return (
@@ -160,7 +168,7 @@ export default function MyReviewsPage() {
     <div className="max-w-2xl">
       <PageHeading
         title={<>MY REVIEWS</>}
-        count={reviews.length}
+        count={total}
         unit={["review", "reviews"]}
         action={
           avg !== null ? (
@@ -177,6 +185,19 @@ export default function MyReviewsPage() {
           <ReviewCard key={review.id} review={review} onReplySaved={handleReplySaved} />
         ))}
       </div>
+
+      {hasMore && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-hint text-muted">Showing {reviews.length} of {total}</p>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="rounded-lg border border-line px-4 py-2 text-body text-muted transition hover:border-forest/40 hover:text-ink disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,16 +6,16 @@ import { Button } from "@/components/ui/button";
 import { CabinetEmptyState } from "@/components/ui/cabinet-empty-state";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
-import { useApiFetch } from "@/lib/useApiFetch";
+import { usePaginatedFetch } from "@/lib/usePaginatedFetch";
 import { relativeTime } from "@/lib/dateUtils";
 import type { NearbyRequest } from "@/types/models";
 
 export default function NearbyRequestsPage() {
-  const { data, loading, error } = useApiFetch<NearbyRequest[]>("/quote-requests/nearby");
+  const { items: requests, total, loading, loadingMore, error, hasMore, loadMore } =
+    usePaginatedFetch<NearbyRequest>("/quote-requests/nearby", 20);
 
   if (loading) return <div className="flex justify-center py-12"><Spinner label="Loading…" /></div>;
   if (error) return <p className="text-body text-danger">{error}</p>;
-  const requests = data ?? [];
 
   if (requests.length === 0) return (
     <CabinetEmptyState
@@ -37,7 +37,7 @@ export default function NearbyRequestsPage() {
     <div>
       <PageHeading
         title={<>REQUESTS NEAR ME</>}
-        count={requests.length}
+        count={total}
         unit={["request", "requests"]}
       />
       <div className="border-t border-line" />
@@ -67,6 +67,19 @@ export default function NearbyRequestsPage() {
           </div>
         ))}
       </div>
+
+      {hasMore && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="text-hint text-muted">Showing {requests.length} of {total}</p>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="rounded-lg border border-line px-4 py-2 text-body text-muted transition hover:border-forest/40 hover:text-ink disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

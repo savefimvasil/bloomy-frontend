@@ -71,23 +71,42 @@ function NotifPreview({ n }: { n: AppNotification }) {
 // ─── Homeowner dashboard ──────────────────────────────────────────────────────
 
 function HomeownerDashboard() {
-  const [stats, setStats] = useState<{ total: number; open: number; inProgress: number } | null>(null);
+  const [stats, setStats] = useState<{ total: number; open: number; inProgress: number; pendingProposals: number } | null>(null);
 
   useEffect(() => {
-    apiFetch("/quote-requests/mine")
-      .then((r) => r.ok ? r.json() : [])
-      .then((jobs: { status: string }[]) => {
+    apiFetch("/quote-requests/mine?page=1&limit=100")
+      .then((r) => r.ok ? r.json() : { data: [], total: 0 })
+      .then(({ data, total }: { data: { status: string; proposalCount?: number }[]; total: number }) => {
         setStats({
-          total: jobs.length,
-          open: jobs.filter((j) => j.status === "open").length,
-          inProgress: jobs.filter((j) => ["awarded", "in_progress"].includes(j.status)).length,
+          total,
+          open: data.filter((j) => j.status === "open").length,
+          inProgress: data.filter((j) => ["awarded", "in_progress"].includes(j.status)).length,
+          pendingProposals: data.filter((j) => j.status === "open" && (j.proposalCount ?? 0) > 0).length,
         });
       })
-      .catch(() => setStats({ total: 0, open: 0, inProgress: 0 }));
+      .catch(() => setStats({ total: 0, open: 0, inProgress: 0, pendingProposals: 0 }));
   }, []);
 
   return (
     <>
+      {/* Contextual alerts */}
+      {stats !== null && stats.pendingProposals > 0 && (
+        <Link
+          href="/cabinet/quote-requests"
+          className="flex items-center gap-3 rounded-xl border border-forest/30 bg-forest/5 px-4 py-3 transition hover:bg-forest/10"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-forest text-[12px] font-bold text-paper">
+            {stats.pendingProposals}
+          </span>
+          <span className="text-hint font-medium text-ink">
+            {stats.pendingProposals === 1
+              ? "1 request has new contractor proposals to review"
+              : `${stats.pendingProposals} requests have new contractor proposals to review`}
+          </span>
+          <span className="ml-auto text-hint text-forest">Review →</span>
+        </Link>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {stats === null ? (
@@ -144,19 +163,37 @@ function ContractorDashboard() {
 
   useEffect(() => {
     Promise.all([
-      apiFetch("/quote-requests/my-proposals").then((r) => r.ok ? r.json() : []),
-      apiFetch("/quote-requests/direct-to-me").then((r) => r.ok ? r.json() : []),
-    ]).then(([proposals, directs]: [{ status: string }[], { status: string }[]]) => {
+      apiFetch("/quote-requests/my-proposals?page=1&limit=100").then((r) => r.ok ? r.json() : { data: [], total: 0 }),
+      apiFetch("/quote-requests/direct-to-me?page=1&limit=100").then((r) => r.ok ? r.json() : { data: [], total: 0 }),
+    ]).then(([pRes, dRes]: [{ data: { status: string }[]; total: number }, { data: unknown[]; total: number }]) => {
       setStats({
-        proposals: proposals.length,
-        active: proposals.filter((p) => ["awarded", "in_progress"].includes(p.status)).length,
-        direct: directs.length,
+        proposals: pRes.total,
+        active: pRes.data.filter((p) => ["awarded", "in_progress"].includes(p.status)).length,
+        direct: dRes.total,
       });
     }).catch(() => setStats({ proposals: 0, active: 0, direct: 0 }));
   }, []);
 
   return (
     <>
+      {/* Contextual alerts */}
+      {stats !== null && stats.direct > 0 && (
+        <Link
+          href="/cabinet/direct-requests"
+          className="flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-50/70 px-4 py-3 transition hover:bg-amber-50"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[12px] font-bold text-paper">
+            {stats.direct}
+          </span>
+          <span className="text-hint font-medium text-ink">
+            {stats.direct === 1
+              ? "1 homeowner sent you a direct request"
+              : `${stats.direct} homeowners sent you direct requests`}
+          </span>
+          <span className="ml-auto text-hint text-amber-700">View →</span>
+        </Link>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {stats === null ? (
@@ -218,9 +255,9 @@ export default function CabinetDashboard() {
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
-    apiFetch("/notifications")
-      .then((r) => r.ok ? r.json() : [])
-      .then((items: AppNotification[]) => { setNotifications(items); setNotifsLoaded(true); })
+    apiFetch("/notifications?page=1&limit=20")
+      .then((r) => r.ok ? r.json() : { data: [], total: 0 })
+      .then(({ data, total }: { data: AppNotification[]; total: number }) => { setNotifications(data, total); setNotifsLoaded(true); })
       .catch(() => setNotifsLoaded(true));
   }, [hasHydrated, token, setNotifications]);
 

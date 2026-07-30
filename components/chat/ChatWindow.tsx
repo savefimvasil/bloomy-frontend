@@ -35,13 +35,21 @@ export function ChatWindow({ roomId }: { roomId: string }) {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const setActiveRoom = useChatStore((s) => s.setActiveRoom);
   const markRead = useChatStore((s) => s.markRead);
+  const emitTyping = useChatStore((s) => s.emitTyping);
+  const typingSet = useChatStore((s) => s.typing[roomId]);
 
   const token = useAuthStore((s) => s.token);
   const userId = token ? parseUserIdFromToken(token) : null;
 
+  const othersTyping = typingSet
+    ? typingSet.size - (userId && typingSet.has(userId) ? 1 : 0)
+    : 0;
+
   const [input, setInput] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(0);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
 
   useEffect(() => {
     void loadMessages(roomId);
@@ -63,12 +71,33 @@ export function ChatWindow({ roomId }: { roomId: string }) {
     });
   }, [messages]);
 
+  const stopTyping = useCallback(() => {
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      emitTyping(roomId, false);
+    }
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+  }, [roomId, emitTyping]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      emitTyping(roomId, true);
+    }
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(stopTyping, 3000);
+  }, [roomId, emitTyping, stopTyping]);
+
+  useEffect(() => () => stopTyping(), [stopTyping]);
+
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed) return;
+    stopTyping();
     sendMessage(roomId, trimmed);
     setInput("");
-  }, [input, roomId, sendMessage]);
+  }, [input, roomId, sendMessage, stopTyping]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -126,11 +155,18 @@ export function ChatWindow({ roomId }: { roomId: string }) {
         )}
       </div>
 
+      {/* Typing indicator */}
+      {othersTyping > 0 && (
+        <p className="text-hint text-muted/70 italic px-1">
+          {othersTyping === 1 ? "Someone is typing…" : "Several people are typing…"}
+        </p>
+      )}
+
       {/* Input */}
       <div className="flex gap-3">
         <textarea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Type a message… (Enter to send)"
           rows={2}

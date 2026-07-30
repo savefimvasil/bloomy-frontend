@@ -32,6 +32,9 @@ interface ChatState {
   // Unread counts per roomId
   unread: Record<string, number>;
 
+  // Typing indicators: roomId → set of user IDs currently typing
+  typing: Record<string, Set<string>>;
+
   // ── Socket lifecycle ─────────────────────────────────────────────────────
 
   connect: () => void;
@@ -48,6 +51,7 @@ interface ChatState {
   joinRoom: (roomId: string) => void;
   sendMessage: (roomId: string, content: string) => void;
   markRead: (roomId: string) => void;
+  emitTyping: (roomId: string, isTyping: boolean) => void;
 
   // Creates or finds the room for a given jobId (and optionally a specific contractor), returns roomId
   openOrCreateRoom: (jobId: string, contractorId?: string) => Promise<string>;
@@ -63,6 +67,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   connected: false,
   activeRoomId: null,
   unread: {},
+  typing: {},
 
   // ── Socket lifecycle ───────────────────────────────────────────────────────
 
@@ -79,6 +84,14 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     _socket.on("connect", () => set({ connected: true }));
 
     _socket.on("disconnect", () => set({ connected: false }));
+
+    _socket.on("user_typing", ({ roomId, userId: typingId, isTyping }: { roomId: string; userId: string; isTyping: boolean }) => {
+      set((s) => {
+        const prev = new Set(s.typing[roomId] ?? []);
+        if (isTyping) prev.add(typingId); else prev.delete(typingId);
+        return { typing: { ...s.typing, [roomId]: prev } };
+      });
+    });
 
     _socket.on("new_message", (msg: ChatMessage) => {
       set((s) => {
@@ -166,6 +179,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
   markRead: (roomId) => {
     set((s) => ({ unread: { ...s.unread, [roomId]: 0 } }));
+  },
+
+  emitTyping: (roomId, isTyping) => {
+    _socket?.emit("typing", { roomId, isTyping });
   },
 
   openOrCreateRoom: async (jobId, contractorId?) => {
