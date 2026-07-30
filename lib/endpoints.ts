@@ -33,6 +33,7 @@ export const API = {
     removePhoto: (id: string) => `/quote-requests/mine/${id}/photos`,
     nearby: "/quote-requests/nearby",
     nearbyDetail: (id: string) => `/quote-requests/nearby/${id}`,
+    contractorStartWork: (id: string) => `/quote-requests/nearby/${id}/start`,
     propose: (id: string) => `/quote-requests/nearby/${id}/propose`,
     updateProposal: (id: string) => `/quote-requests/nearby/${id}/proposal`,
     withdrawProposal: (id: string) => `/quote-requests/nearby/${id}/proposal`,
@@ -52,6 +53,12 @@ export const API = {
     unreadCount: "/notifications/unread-count",
     markRead: (id: string) => `/notifications/${id}/read`,
     markAllRead: "/notifications/read-all",
+  },
+  pricing: {
+    materials: "/pricing/materials",
+    tools: "/pricing/tools",
+    updateMaterial: (id: string) => `/pricing/materials/${id}`,
+    updateTool: (id: string) => `/pricing/tools/${id}`,
   },
   contractors: {
     me: "/contractor-profiles/me",

@@ -20,6 +20,7 @@ import { proposalStatusColor, requestStatusColor, proposalStatusLabel, requestSt
 import { BackButton } from "@/components/ui/back-button";
 import { useChatStore } from "@/store/chat";
 import { proposalSchema, type ProposalFormValues } from "@/lib/schemas";
+import { API } from "@/lib/endpoints";
 import type { NearbyRequestDetail } from "@/types/models";
 
 type DetailTab = "details" | "photos" | "chat";
@@ -135,6 +136,7 @@ export default function NearbyRequestDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
+  const [startingWork, setStartingWork] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>(
     searchParams.get("tab") === "chat" ? "chat" : "details",
   );
@@ -221,6 +223,17 @@ export default function NearbyRequestDetailPage() {
       setSubmitting(false);
     }
   });
+
+  async function handleStartWork() {
+    setStartingWork(true);
+    try {
+      await apiFetch(API.quoteRequests.contractorStartWork(id), { method: "POST" });
+      setLoading(true);
+      loadRequest();
+    } finally {
+      setStartingWork(false);
+    }
+  }
 
   async function handleWithdraw() {
     if (!window.confirm("Withdraw your proposal? This cannot be undone.")) return;
@@ -381,8 +394,19 @@ export default function NearbyRequestDetailPage() {
                   ) : (
                     <div className="mt-4 pt-4 border-t border-forest/20">
                       {proposalAccepted ? (
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-hint font-medium text-forest">Accepted — coordinate the work in chat.</p>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          {req.status === "awarded" ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={startingWork}
+                              onClick={() => void handleStartWork()}
+                            >
+                              {startingWork ? "Updating…" : "Mark work started →"}
+                            </Button>
+                          ) : (
+                            <p className="text-hint font-medium text-forest capitalize">{req.status.replace("_", " ")} — coordinate in chat.</p>
+                          )}
                           <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline">
                             Open chat →
                           </Button>
