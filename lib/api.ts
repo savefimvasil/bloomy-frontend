@@ -23,7 +23,7 @@ export async function apiFetch(path: string, { body, headers, ...rest }: Options
     ...(body !== undefined ? { body: isFormData ? body : JSON.stringify(body) } : {}),
   });
 
-  if (res.status === 401 && typeof window !== "undefined" && !redirecting) {
+  if (res.status === 401 && typeof window !== "undefined" && !redirecting && !path.startsWith("/auth/")) {
     redirecting = true;
     clearAuth();
     window.location.href = "/login";

@@ -102,7 +102,9 @@ export default function NearbyRequestsPage() {
                 <div key={req.id} className="flex items-start gap-5 px-5 py-5">
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-body font-semibold text-ink">{req.title}</span>
+                      <Link href={`/cabinet/nearby-requests/${req.id}`} className="text-body font-semibold text-ink hover:text-forest transition">
+                        {req.title}
+                      </Link>
                       <Badge dot color="amber">Direct</Badge>
                     </div>
                     <p className="text-hint text-muted">

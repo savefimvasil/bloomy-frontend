@@ -133,7 +133,10 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
                 </span>
                 <span className="flex-1">{label}</span>
                 {badge > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-eyebrow font-semibold text-paper">
+                  <span
+                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-eyebrow font-semibold text-paper"
+                    {...(notifBadge ? { "data-testid": "notification-badge" } : {})}
+                  >
                     {badge}
                   </span>
                 )}
@@ -184,7 +187,10 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
                 <Icon />
                 {label}
                 {badge > 0 && (
-                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-eyebrow font-bold text-paper leading-none">
+                  <span
+                    className="flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-eyebrow font-bold text-paper leading-none"
+                    {...(notifBadge ? { "data-testid": "notification-badge" } : {})}
+                  >
                     {badge}
                   </span>
                 )}
@@ -203,9 +209,9 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
         </div>
 
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <div className="flex-1 p-6 md:p-8">
+          <main className="flex-1 p-6 md:p-8">
             <ErrorBoundary>{children}</ErrorBoundary>
-          </div>
+          </main>
           <SiteFooter />
         </div>
       </div>

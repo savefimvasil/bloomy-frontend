@@ -332,7 +332,7 @@ export default function NearbyRequestDetailPage() {
 
             {/* Direct request banner */}
             {req.isDirectRequest && !req.myProposal && (
-              <DirectRequestBanner jobId={req.id} note={req.note} onAccepted={() => setActiveTab("chat")} />
+              <DirectRequestBanner jobId={req.id} note={req.note} onAccepted={() => { setLoading(true); loadRequest(); setActiveTab("chat"); }} />
             )}
 
             {/* Proposal section */}

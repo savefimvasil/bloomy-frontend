@@ -505,6 +505,7 @@ export default function QuoteRequestDetailPage() {
         onConfirm={() => { if (acceptingId) void handleAccept(acceptingId); }}
         title="Accept this proposal?"
         message="All other proposals will be declined. The contractor's contact details will be revealed."
+        confirmLabel="Accept"
       />
 
       {showReview && (

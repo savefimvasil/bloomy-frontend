@@ -170,7 +170,7 @@ connect();
 disconnect();
 
 // Open (or find) the chat room for a job
-const roomId = await openOrCreateRoom(jobId, contractorId?);
+const roomId = await openOrCreateRoom(jobId, contractorId?/);
 
 // In the chat UI
 joinRoom(roomId);
