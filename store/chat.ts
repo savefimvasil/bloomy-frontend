@@ -85,6 +85,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
     _socket.on("disconnect", () => set({ connected: false }));
 
+    _socket.on("exception", (err) => console.error("[chat ws]", err));
+
     _socket.on("user_typing", ({ roomId, userId: typingId, isTyping }: { roomId: string; userId: string; isTyping: boolean }) => {
       set((s) => {
         const prev = new Set(s.typing[roomId] ?? []);
