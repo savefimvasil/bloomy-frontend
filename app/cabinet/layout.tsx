@@ -20,7 +20,6 @@ import {
   BellNavIcon,
   LogoutIcon,
   UserIcon,
-  DirectRequestsIcon,
 } from "@/components/ui/icons";
 import { useAuthStore, clearAuth } from "@/store/auth";
 import { useCabinetStore } from "@/store/cabinet";
@@ -48,13 +47,12 @@ const HOMEOWNER_NAV = [
 ];
 
 const CONTRACTOR_NAV = [
-  { href: "/cabinet",                    label: "Dashboard",           Icon: DashboardIcon,      chatBadge: false, notifBadge: false, exact: true  },
-  { href: "/cabinet/direct-requests",    label: "Direct Requests",     Icon: DirectRequestsIcon, chatBadge: false, notifBadge: false, exact: false },
-  { href: "/cabinet/nearby-requests",    label: "Browse Jobs",         Icon: BrowseIcon,         chatBadge: false, notifBadge: false, exact: false },
-  { href: "/cabinet/my-proposals",       label: "My Proposals",        Icon: QuotesIcon,         chatBadge: true,  notifBadge: false, exact: false },
-  { href: "/cabinet/my-reviews",         label: "My Reviews",          Icon: ReviewsIcon,        chatBadge: false, notifBadge: false, exact: false },
-  { href: "/cabinet/contractor-profile", label: "My Profile",          Icon: ProfileIcon,        chatBadge: false, notifBadge: false, exact: false },
-  { href: "/cabinet/notifications",      label: "Notifications",       Icon: BellNavIcon,        chatBadge: false, notifBadge: true,  exact: false },
+  { href: "/cabinet",                    label: "Dashboard",           Icon: DashboardIcon,  chatBadge: false, notifBadge: false, exact: true  },
+  { href: "/cabinet/nearby-requests",    label: "Browse Jobs",         Icon: BrowseIcon,     chatBadge: false, notifBadge: false, exact: false },
+  { href: "/cabinet/my-proposals",       label: "My Proposals",        Icon: QuotesIcon,     chatBadge: true,  notifBadge: false, exact: false },
+  { href: "/cabinet/my-reviews",         label: "My Reviews",          Icon: ReviewsIcon,    chatBadge: false, notifBadge: false, exact: false },
+  { href: "/cabinet/contractor-profile", label: "My Profile",          Icon: ProfileIcon,    chatBadge: false, notifBadge: false, exact: false },
+  { href: "/cabinet/notifications",      label: "Notifications",       Icon: BellNavIcon,    chatBadge: false, notifBadge: true,  exact: false },
 ];
 
 // ─── Layout ─────────────────────────────────────────────────────────────────

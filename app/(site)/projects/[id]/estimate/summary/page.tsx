@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEstimate } from "@/store/estimate";
 import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
 import type { MaterialItem, ZoneMaterialList, CalculationResult, ToolRentalItem } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthRole } from "@/store/auth";
 import { fmtGBP } from "@/lib/currency";
+import { quoteRequestSchema, type QuoteRequestFormValues } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable, type TableColumn } from "@/components/ui/DataTable";
 import { CollapsibleCard } from "@/components/estimate/CollapsibleCard";
@@ -118,6 +122,14 @@ export default function SummaryPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [vatOn, setVatOn] = useState(false);
   const [pricesUpdatedAt, setPricesUpdatedAt] = useState<string | null>(null);
+
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
+
+  const { register: registerReq, handleSubmit: handleReqSubmit, formState: { errors: reqErrors } } =
+    useForm<QuoteRequestFormValues>({ resolver: zodResolver(quoteRequestSchema) });
 
   const isHomeowner = getAuthRole() === "homeowner";
 
@@ -270,19 +282,84 @@ export default function SummaryPage() {
 
       {/* Request contractor quotes */}
       {isHomeowner && (
-        <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-forest/20 bg-forest/3 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-body font-semibold text-ink">Want a contractor to do this?</p>
-            <p className="text-hint text-muted">
-              Post to local contractors or pick one directly from the directory.
-            </p>
-          </div>
-          <Button
-            href={`/cabinet/quote-requests/new?projectId=${id}`}
-            className="shrink-0"
-          >
-            Find a contractor →
-          </Button>
+        <div className="mt-6 rounded-2xl border border-forest/20 bg-forest/3 p-6">
+          {requested ? (
+            <div className="text-center">
+              <p className="text-body font-semibold text-forest">Request sent to local contractors</p>
+              <p className="mt-1 text-hint text-muted">Contractors in your area will review the project and send you proposals.</p>
+              <Button href="/cabinet/quote-requests" className="mt-4">
+                View my requests →
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-body font-semibold text-ink">Want a contractor to do this?</p>
+                  <p className="text-hint text-muted">
+                    Post to local contractors or pick one directly from the directory.
+                  </p>
+                </div>
+                {!requestOpen && (
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <Button onClick={() => setRequestOpen(true)}>
+                      Post to contractors →
+                    </Button>
+                    <Button href="/contractors" variant="secondary">
+                      Browse directory
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {requestOpen && (
+                <form
+                  onSubmit={handleReqSubmit(async (values) => {
+                    setRequesting(true);
+                    setRequestError(null);
+                    try {
+                      const res = await apiFetch("/quote-requests", {
+                        method: "POST",
+                        body: { gardenProjectId: id, postcode: values.postcode.trim(), startBy: values.startBy || undefined },
+                      });
+                      const payload = (await res.json()) as { message?: string };
+                      if (!res.ok) { setRequestError(payload.message ?? "Failed to send request"); return; }
+                      setRequested(true);
+                    } catch (err) {
+                      setRequestError(err instanceof Error ? err.message : "Unknown error");
+                    } finally {
+                      setRequesting(false);
+                    }
+                  })}
+                  className="mt-5 flex flex-col gap-4 border-t border-forest/10 pt-5"
+                >
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Postcode of the work"
+                      type="text"
+                      placeholder="e.g. SW1A 1AA"
+                      error={reqErrors.postcode?.message}
+                      {...registerReq("postcode")}
+                    />
+                    <Input
+                      label="Preferred start date"
+                      type="date"
+                      {...registerReq("startBy")}
+                    />
+                  </div>
+                  {requestError && <p className="text-hint text-danger">{requestError}</p>}
+                  <div className="flex gap-3">
+                    <Button type="submit" disabled={requesting}>
+                      {requesting ? "Sending…" : "Send to local contractors"}
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => setRequestOpen(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
         </div>
       )}
 
