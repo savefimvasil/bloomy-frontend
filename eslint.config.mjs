@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Playwright auto-generated output
+    "playwright-results/**",
+    "playwright-report/**",
   ]),
   // Planner package renders AI images at runtime URLs — can't use next/image
   {
