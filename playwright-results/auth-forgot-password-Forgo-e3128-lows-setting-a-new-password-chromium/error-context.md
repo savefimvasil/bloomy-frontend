@@ -12,127 +12,12 @@
 # Error details
 
 ```
-Error: expect(page).toHaveURL(expected) failed
-
-Expected pattern: /\/login/
-Received string:  "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-Timeout: 15000ms
-
+TimeoutError: locator.fill: Timeout 10000ms exceeded.
 Call log:
-  - Expect "toHaveURL" with timeout 15000ms
-    6 × locator resolved to <html lang="en" class="h-full antialiased">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-    2 × locator resolved to <html id="__next_error__">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html lang="en" class="h-full antialiased">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html lang="en" class="h-full antialiased">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html id="__next_error__">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-    - locator resolved to <html id="__next_error__">…</html>
-    3 × unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html lang="en" class="h-full antialiased">…</html>
-    - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-    - waiting for "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3" navigation to finish...
-    - navigated to "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-    2 × locator resolved to <html id="__next_error__">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-    2 × locator resolved to <html lang="en" class="h-full antialiased">…</html>
-      - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-    - locator resolved to <html id="__next_error__">…</html>
-    5 × unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html lang="en" class="h-full antialiased">…</html>
-    2 × unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html id="__next_error__">…</html>
-    4 × unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
-      - locator resolved to <html lang="en" class="h-full antialiased">…</html>
-    - unexpected value "http://localhost:3001/reset-password?token=a1cb74014388c079c54a040b89102fe86c2acbf777fc1a7409c8bb9bdd048de3"
+  - waiting for getByLabel(/email/i)
+    4 × waiting for "http://localhost:3001/forgot-password" navigation to finish...
+      - navigated to "http://localhost:3001/forgot-password"
 
-```
-
-```yaml
-- banner:
-  - link "Bloomy Garden":
-    - /url: /
-    - img "Bloomy Garden": BLOOMY GARDEN
-  - navigation:
-    - button "Tools"
-    - link "Find contractors":
-      - /url: /contractors
-    - link "Log in":
-      - /url: /login
-    - link "Get started":
-      - /url: /register
-- main:
-  - heading "Set a new password" [level=1]
-  - paragraph: Choose a strong password to secure your Bloomy account.
-  - heading "Set a new password" [level=2]
-  - paragraph: Choose something strong — at least 8 characters.
-  - text: New password
-  - textbox "New password":
-    - /placeholder: At least 8 characters
-  - text: Confirm new password
-  - textbox "Confirm new password":
-    - /placeholder: Repeat password
-  - button "Update password"
-  - paragraph:
-    - link "Request a new link":
-      - /url: /forgot-password
-  - link "Bloomy Garden":
-    - /url: /
-    - img "Bloomy Garden": BLOOMY GARDEN
-  - paragraph: Plan your garden, estimate materials, connect with local contractors.
-  - paragraph: For homeowners
-  - list:
-    - listitem:
-      - link "Plan your garden":
-        - /url: /projects/new
-    - listitem:
-      - link "Tile planner":
-        - /url: /tile-plan
-    - listitem:
-      - link "Find a contractor":
-        - /url: /contractors
-    - listitem:
-      - link "My quote requests":
-        - /url: /cabinet/quote-requests
-  - paragraph: For contractors
-  - list:
-    - listitem:
-      - link "Direct requests":
-        - /url: /cabinet/direct-requests
-    - listitem:
-      - link "Browse local jobs":
-        - /url: /cabinet/nearby-requests
-    - listitem:
-      - link "Join as a contractor":
-        - /url: /register
-    - listitem:
-      - link "My proposals":
-        - /url: /cabinet/my-proposals
-    - listitem:
-      - link "My reviews":
-        - /url: /cabinet/my-reviews
-    - listitem:
-      - link "My profile":
-        - /url: /cabinet/contractor-profile
-  - paragraph: Resources
-  - list:
-    - listitem:
-      - link "How it works":
-        - /url: /#how-it-works
-    - listitem:
-      - link "Contractor directory":
-        - /url: /contractors
-  - paragraph: © 2026 Bloomy Garden
-  - link "Terms":
-    - /url: /terms
-  - link "Privacy":
-    - /url: /privacy
-  - link "Admin":
-    - /url: /admin/heatmap
-- alert
 ```
 
 # Test source
@@ -186,7 +71,8 @@ Call log:
   46 | 
   47 |     // Trigger reset email to generate token
   48 |     await page.goto('/forgot-password');
-  49 |     await page.getByLabel(/email/i).fill(user.email);
+> 49 |     await page.getByLabel(/email/i).fill(user.email);
+     |                                     ^ TimeoutError: locator.fill: Timeout 10000ms exceeded.
   50 |     await page.getByRole('button', { name: /send|reset|submit/i }).click();
   51 | 
   52 |     // Read token from DB
@@ -202,8 +88,7 @@ Call log:
   62 |     await page.getByLabel(/confirm/i).fill('NewSecure99!');
   63 |     await page.getByRole('button', { name: /reset|save|update/i }).click();
   64 | 
-> 65 |     await expect(page).toHaveURL(/\/login/);
-     |                        ^ Error: expect(page).toHaveURL(expected) failed
+  65 |     await expect(page).toHaveURL(/\/login/);
   66 |   });
   67 | 
   68 |   test('expired / invalid reset token shows an error', async ({ page }) => {

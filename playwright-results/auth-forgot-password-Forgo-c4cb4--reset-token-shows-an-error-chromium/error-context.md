@@ -12,17 +12,15 @@
 # Error details
 
 ```
-Error: expect(locator).toContainText(expected) failed
+Error: Channel closed
+```
 
-Locator: locator('main, form')
-Expected pattern: /invalid|expired|not found/i
-Error: strict mode violation: locator('main, form') resolved to 2 elements:
-    1) <main class="flex-1 overflow-y-auto pt-[68px]">…</main> aka getByRole('main')
-    2) <form class="mt-6 flex flex-col gap-4">…</form> aka getByText('New passwordConfirm new')
-
+```
+Error: locator.fill: Test ended.
 Call log:
-  - Expect "toContainText" with timeout 15000ms
-  - waiting for locator('main, form')
+  - waiting for getByLabel(/^new password|^password/i).first()
+    2 × waiting for "http://localhost:3001/reset-password?token=invalidtoken123" navigation to finish...
+      - navigated to "http://localhost:3001/reset-password?token=invalidtoken123"
 
 ```
 
@@ -98,12 +96,12 @@ Call log:
   67 | 
   68 |   test('expired / invalid reset token shows an error', async ({ page }) => {
   69 |     await page.goto('/reset-password?token=invalidtoken123');
-  70 |     await page.getByLabel(/^new password|^password/i).first().fill('NewSecure99!');
+> 70 |     await page.getByLabel(/^new password|^password/i).first().fill('NewSecure99!');
+     |                                                               ^ Error: locator.fill: Test ended.
   71 |     await page.getByLabel(/confirm/i).fill('NewSecure99!');
   72 |     await page.getByRole('button', { name: /reset|save|update/i }).click();
   73 | 
-> 74 |     await expect(page.locator('main, form')).toContainText(/invalid|expired|not found/i);
-     |                                              ^ Error: expect(locator).toContainText(expected) failed
+  74 |     await expect(page.locator('main, form')).toContainText(/invalid|expired|not found/i);
   75 |   });
   76 | });
   77 | 
