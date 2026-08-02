@@ -28,7 +28,7 @@ test.describe('Contractor – profile management', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto('/cabinet/contractor-profile');
 
-    await expect(page.locator('main')).toContainText('Pre-filled Landscaping');
+    await expect(page.getByLabel(/business name/i)).toHaveValue('Pre-filled Landscaping');
     await expect(page.getByLabel(/postcode/i)).toHaveValue(/SW1A 1AA/i);
   });
 

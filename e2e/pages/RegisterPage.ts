@@ -19,7 +19,7 @@ export class RegisterPage {
   }
 
   async submitInit() {
-    await this.page.getByRole('button', { name: /continue|next|send/i }).click();
+    await this.page.locator('main').getByRole('button', { name: /continue|send/i }).click();
   }
 
   // Step 2 – OTP
@@ -41,17 +41,17 @@ export class RegisterPage {
   }
 
   async submitOtp() {
-    await this.page.getByRole('button', { name: /verify|confirm|next/i }).click();
+    await this.page.locator('main').getByRole('button', { name: /verify|confirm/i }).click();
   }
 
   // Step 3 – role
   async selectRole(role: 'homeowner' | 'contractor') {
     const label = role === 'homeowner' ? /homeowner/i : /contractor/i;
-    await this.page.getByText(label).click();
+    await this.page.getByRole('button', { name: label }).first().click();
   }
 
   async submitRole() {
-    await this.page.getByRole('button', { name: /continue|next/i }).click();
+    await this.page.locator('main').getByRole('button', { name: /continue/i }).click();
   }
 
   // Step 4 – password
@@ -61,7 +61,7 @@ export class RegisterPage {
   }
 
   async submitPassword() {
-    await this.page.getByRole('button', { name: /continue|next|set/i }).click();
+    await this.page.locator('main').getByRole('button', { name: /continue|set/i }).click();
   }
 
   // Step 5 – profile

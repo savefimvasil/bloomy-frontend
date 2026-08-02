@@ -36,8 +36,8 @@ export default function NearbyRequestsPage() {
 
   useEffect(() => {
     apiFetch("/quote-requests/direct-to-me?limit=50")
-      .then(res => res.ok ? res.json() as Promise<{ items: DirectRequest[] }> : { items: [] })
-      .then(data => setDirectRequests(data.items ?? []))
+      .then(res => res.ok ? res.json() as Promise<{ data: DirectRequest[] }> : { data: [] })
+      .then(data => setDirectRequests(data.data ?? []))
       .catch(() => {/* non-critical */})
       .finally(() => setDirectLoading(false));
   }, []);

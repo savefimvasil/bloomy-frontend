@@ -97,6 +97,15 @@ test.describe('Homeowner – job lifecycle (mark complete, photos, leave review)
     ids.push({ table: 'quotes', id: q.id });
 
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
+
+    // Intercept upload API calls so we don't need Sharp to process the test buffer
+    await page.route('**/api/uploads/photo', async (route) => {
+      await route.fulfill({ json: { url: '/uploads/e2e-test.webp' } });
+    });
+    await page.route(`**/api/quote-requests/mine/${job.id}/photos`, async (route) => {
+      await route.fulfill({ json: { photoUrls: ['/uploads/e2e-test.webp'] } });
+    });
+
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
     // Switch to photos tab to access the file input
@@ -104,9 +113,8 @@ test.describe('Homeowner – job lifecycle (mark complete, photos, leave review)
 
     const fileInput = page.locator('input[type="file"]').first();
     await expect(fileInput).toBeAttached({ timeout: 5_000 });
-    // Use a small test fixture image from Playwright's built-in fixtures
     await fileInput.setInputFiles([
-      { name: 'photo1.jpg', mimeType: 'image/jpeg', buffer: Buffer.alloc(1024, 0xff) },
+      { name: 'photo1.jpg', mimeType: 'image/jpeg', buffer: Buffer.alloc(128, 0) },
     ]);
 
     await expect(page.locator('img').first()).toBeVisible({ timeout: 10_000 });

@@ -49,6 +49,9 @@ test.describe('Forgot password / reset flow', () => {
     await page.getByLabel(/email/i).fill(user.email);
     await page.getByRole('button', { name: /send|reset|submit/i }).click();
 
+    // Wait for the backend to process and store the token
+    await page.waitForLoadState('networkidle');
+
     // Read token from DB
     const { rows } = await db.query<{ token: string }>(
       `SELECT token FROM password_reset_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
@@ -71,6 +74,6 @@ test.describe('Forgot password / reset flow', () => {
     await page.getByLabel(/confirm/i).fill('NewSecure99!');
     await page.getByRole('button', { name: /reset|save|update/i }).click();
 
-    await expect(page.locator('main, form')).toContainText(/invalid|expired|not found/i);
+    await expect(page.locator('main')).toContainText(/invalid|expired|not found/i);
   });
 });

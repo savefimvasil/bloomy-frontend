@@ -92,6 +92,6 @@ test.describe('Contractor registration flow', () => {
     await reg.fillEmailInit(testEmail);
     await reg.acceptTerms();
     await reg.submitInit();
-    await expect(page.locator('form, main')).toContainText(/already exists|already registered|email.*taken/i);
+    await expect(page.locator('main')).toContainText(/already exists|already registered|email.*taken/i);
   });
 });
