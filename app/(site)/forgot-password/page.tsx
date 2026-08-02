@@ -86,13 +86,14 @@ export default function ForgotPasswordPage() {
                     placeholder="your@email.com"
                     autoComplete="email"
                     required
+                    data-testid="forgot-email"
                   />
 
                   {error && (
                     <div className="bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
                   )}
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
+                  <Button type="submit" disabled={isSubmitting} className="w-full" data-testid="forgot-submit">
                     {isSubmitting ? "Sending…" : "Send reset link"}
                   </Button>
                 </form>

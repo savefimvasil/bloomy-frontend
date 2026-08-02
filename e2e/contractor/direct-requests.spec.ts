@@ -98,7 +98,7 @@ test.describe('Contractor – direct requests', () => {
     await page.goto(`/cabinet/nearby-requests/${job.id}`);
     await page.waitForLoadState('networkidle');
 
-    await page.getByRole('button', { name: /accept.*start|start work|accept/i }).first().click();
+    await page.getByTestId('accept-direct-btn').first().click();
 
     await expect(page.locator('main')).toContainText(/in progress|started|accepted/i, {
       timeout: 10_000,

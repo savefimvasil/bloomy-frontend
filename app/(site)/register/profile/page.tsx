@@ -131,6 +131,7 @@ function RegisterProfilePageComponent() {
                 placeholder="Your name"
                 autoComplete="given-name"
                 error={e.name?.message}
+                data-testid="register-name"
                 {...register("name")}
               />
               <Input
@@ -138,6 +139,7 @@ function RegisterProfilePageComponent() {
                 placeholder="Your surname"
                 autoComplete="family-name"
                 error={e.surname?.message}
+                data-testid="register-surname"
                 {...register("surname")}
               />
 
@@ -148,6 +150,7 @@ function RegisterProfilePageComponent() {
                     placeholder="e.g. SW1A 1AA"
                     autoComplete="postal-code"
                     error={e.postcode?.message}
+                    data-testid="register-postcode"
                     {...register("postcode")}
                   />
                   <Input
@@ -157,6 +160,7 @@ function RegisterProfilePageComponent() {
                     min="1"
                     max="200"
                     error={e.radiusMiles?.message}
+                    data-testid="register-radius"
                     {...register("radiusMiles")}
                   />
                   <Input
@@ -164,6 +168,7 @@ function RegisterProfilePageComponent() {
                     placeholder="Your trading name"
                     autoComplete="organization"
                     error={e.businessName?.message}
+                    data-testid="register-business-name"
                     {...register("businessName")}
                   />
                   <Input
@@ -199,7 +204,7 @@ function RegisterProfilePageComponent() {
                 <div className="rounded-lg bg-danger/10 px-4 py-3 text-hint text-danger">{errors.root.message}</div>
               )}
 
-              <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+              <Button type="submit" disabled={isSubmitting} className="mt-2 w-full" data-testid="register-profile-submit">
                 {isSubmitting ? "Creating account..." : "Create account"}
               </Button>
             </form>

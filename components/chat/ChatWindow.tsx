@@ -176,12 +176,14 @@ export function ChatWindow({ roomId }: { roomId: string }) {
           placeholder="Type a message… (Enter to send)"
           rows={2}
           className="flex-1 resize-none rounded-xl border border-line bg-paper px-4 py-3 text-body text-ink placeholder:text-muted focus:border-forest/40 focus:outline-none"
+          data-testid="chat-input"
         />
         <Button
           type="button"
           onClick={handleSend}
           disabled={!input.trim() || !connected}
           className="self-end"
+          data-testid="chat-send"
         >
           Send
         </Button>

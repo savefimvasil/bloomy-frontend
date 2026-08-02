@@ -28,8 +28,8 @@ test.describe('Contractor – profile management', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto('/cabinet/contractor-profile');
 
-    await expect(page.getByLabel(/business name/i)).toHaveValue('Pre-filled Landscaping');
-    await expect(page.getByLabel(/postcode/i)).toHaveValue(/SW1A 1AA/i);
+    await expect(page.getByTestId('profile-business-name')).toHaveValue('Pre-filled Landscaping');
+    await expect(page.getByTestId('profile-postcode')).toHaveValue(/SW1A 1AA/i);
   });
 
   test('updating business name persists to DB', async ({ page }) => {
@@ -40,9 +40,9 @@ test.describe('Contractor – profile management', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto('/cabinet/contractor-profile');
 
-    await page.getByLabel(/business name/i).clear();
-    await page.getByLabel(/business name/i).fill('New Name Ltd');
-    await page.getByRole('button', { name: /save|update/i }).click();
+    await page.getByTestId('profile-business-name').clear();
+    await page.getByTestId('profile-business-name').fill('New Name Ltd');
+    await page.getByTestId('profile-save').click();
 
     await expect(page.locator('main')).toContainText(/saved|updated|success/i);
 
@@ -61,9 +61,9 @@ test.describe('Contractor – profile management', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto('/cabinet/contractor-profile');
 
-    await page.getByLabel(/postcode/i).clear();
-    await page.getByLabel(/postcode/i).fill('INVALID');
-    await page.getByRole('button', { name: /save|update/i }).click();
+    await page.getByTestId('profile-postcode').clear();
+    await page.getByTestId('profile-postcode').fill('INVALID');
+    await page.getByTestId('profile-save').click();
 
     await expect(page.locator('main')).toContainText(/valid.*postcode|postcode.*invalid/i);
   });
@@ -76,10 +76,9 @@ test.describe('Contractor – profile management', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto('/cabinet/contractor-profile');
 
-    const radiusInput = page.getByLabel(/radius|service area|miles/i).first();
-    await radiusInput.clear();
-    await radiusInput.fill('20');
-    await page.getByRole('button', { name: /save|update/i }).click();
+    await page.getByTestId('profile-radius').clear();
+    await page.getByTestId('profile-radius').fill('20');
+    await page.getByTestId('profile-save').click();
 
     await expect(page.locator('main')).toContainText(/saved|updated|success/i);
 

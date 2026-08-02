@@ -87,6 +87,7 @@ function RegisterRolePageComponent() {
                 return (
                   <CardButton
                     key={role}
+                    data-testid={`role-${role}`}
                     onClick={() => setSelected(role)}
                     className={`flex items-start gap-5 rounded-xl border-2 p-5 ${
                       active
@@ -124,6 +125,7 @@ function RegisterRolePageComponent() {
               disabled={!selected}
               onClick={handleContinue}
               className="mt-8 w-full"
+              data-testid="role-continue"
             >
               Continue
             </Button>

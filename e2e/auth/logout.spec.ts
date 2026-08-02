@@ -20,7 +20,7 @@ test.describe('Logout', () => {
     await injectAuth(page, { token: user.token, email: user.email, role: 'homeowner' });
     await page.goto('/cabinet');
 
-    await page.getByRole('button', { name: /log out|sign out/i }).click();
+    await page.getByTestId('logout-btn').first().click();
 
     await expect(page).toHaveURL(/\/login/);
     const stored = await page.evaluate(() => localStorage.getItem('bloomy-auth'));
@@ -33,7 +33,7 @@ test.describe('Logout', () => {
 
     await injectAuth(page, { token: user.token, email: user.email, role: 'homeowner' });
     await page.goto('/cabinet');
-    await page.getByRole('button', { name: /log out|sign out/i }).click();
+    await page.getByTestId('logout-btn').first().click();
     await expect(page).toHaveURL(/\/login/);
 
     // After logout localStorage is cleared; the auth guard must redirect fresh navigation

@@ -79,9 +79,9 @@ test.describe('Homeowner – view proposals, accept and reject', () => {
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
-    await page.getByRole('button', { name: /accept proposal/i }).first().click();
-    // Confirm dialog — button label is "Accept"
-    await page.getByRole('button', { name: /^Accept$/i }).click();
+    await page.getByTestId('accept-proposal-btn').first().click();
+    // Confirm dialog
+    await page.getByTestId('confirm-btn').click();
 
     await expect(page.locator('main')).toContainText(/awarded/i);
 
@@ -115,8 +115,9 @@ test.describe('Homeowner – view proposals, accept and reject', () => {
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
     // Accept the first proposal — all others should be auto-rejected by the API
-    await page.getByRole('button', { name: /accept proposal/i }).first().click();
-    await page.getByRole('button', { name: /^Accept$/i }).click();
+    await page.getByTestId('accept-proposal-btn').first().click();
+    // Confirm dialog
+    await page.getByTestId('confirm-btn').click();
 
     await expect(page.locator('main')).toContainText(/awarded/i);
 

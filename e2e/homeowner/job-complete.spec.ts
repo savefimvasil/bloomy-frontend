@@ -32,7 +32,7 @@ test.describe('Homeowner – job lifecycle (mark complete, photos, leave review)
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
-    await page.getByRole('button', { name: /mark.*(complete|done)|complete/i }).click();
+    await page.getByTestId('mark-complete-btn').click();
 
     await expect(page.locator('main')).toContainText(/completed|work completed/i);
 
@@ -60,10 +60,10 @@ test.describe('Homeowner – job lifecycle (mark complete, photos, leave review)
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
     // Open the review modal
-    await page.getByRole('button', { name: /write a review/i }).click();
+    await page.getByTestId('write-review-btn').click();
 
     const reviewText = 'Excellent work, very professional and on time.';
-    await page.getByPlaceholder(/quality.*work|punctuality|communication/i).fill(reviewText);
+    await page.getByTestId('review-comment').fill(reviewText);
 
     // Star rating – click 4th star
     const stars = page.locator('[aria-label*="star"]');
@@ -72,7 +72,7 @@ test.describe('Homeowner – job lifecycle (mark complete, photos, leave review)
       await stars.nth(3).click();
     }
 
-    await page.getByRole('button', { name: /submit review/i }).click();
+    await page.getByTestId('review-submit').click();
 
     await expect(page.locator('main')).toContainText(/you reviewed|your review/i);
 
@@ -109,9 +109,9 @@ test.describe('Homeowner – job lifecycle (mark complete, photos, leave review)
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
     // Switch to photos tab to access the file input
-    await page.getByRole('button', { name: /photos/i }).click();
+    await page.getByTestId('tab-photos').click();
 
-    const fileInput = page.locator('input[type="file"]').first();
+    const fileInput = page.getByTestId('photo-upload');
     await expect(fileInput).toBeAttached({ timeout: 5_000 });
     await fileInput.setInputFiles([
       { name: 'photo1.jpg', mimeType: 'image/jpeg', buffer: Buffer.alloc(128, 0) },

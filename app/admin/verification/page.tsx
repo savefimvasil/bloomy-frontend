@@ -42,7 +42,7 @@ function DocCard({ doc, onAction }: { doc: PendingDoc; onAction: (id: string, ac
   }
 
   return (
-    <div className="rounded-xl border border-line bg-paper p-5">
+    <div className="rounded-xl border border-line bg-paper p-5" data-testid="doc-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -77,7 +77,7 @@ function DocCard({ doc, onAction }: { doc: PendingDoc; onAction: (id: string, ac
 
       <div className="mt-4">
         {!expanded ? (
-          <Button size="sm" variant="secondary" onClick={() => setExpanded(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setExpanded(true)} data-testid="review-doc-btn">
             Review this document
           </Button>
         ) : (
@@ -90,6 +90,7 @@ function DocCard({ doc, onAction }: { doc: PendingDoc; onAction: (id: string, ac
                 rows={2}
                 placeholder="e.g. Document expired, please resubmit with a current certificate."
                 className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink placeholder:text-muted focus:border-forest focus:outline-none"
+                data-testid="admin-note"
               />
             </div>
             <div className="flex gap-2">
@@ -98,6 +99,7 @@ function DocCard({ doc, onAction }: { doc: PendingDoc; onAction: (id: string, ac
                 onClick={() => void submit("approve")}
                 disabled={!!acting}
                 className="bg-forest text-paper hover:bg-moss"
+                data-testid="approve-doc-btn"
               >
                 {acting === "approve" ? "Approving…" : "Approve"}
               </Button>
@@ -107,6 +109,7 @@ function DocCard({ doc, onAction }: { doc: PendingDoc; onAction: (id: string, ac
                 onClick={() => void submit("reject")}
                 disabled={!!acting}
                 className="border-danger/30 text-danger hover:bg-danger/5"
+                data-testid="reject-doc-btn"
               >
                 {acting === "reject" ? "Rejecting…" : "Reject"}
               </Button>

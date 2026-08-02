@@ -20,8 +20,8 @@ test.describe('Forgot password / reset flow', () => {
     ids.push({ table: 'users', id: user.id });
 
     await page.goto('/forgot-password');
-    await page.getByLabel(/email/i).fill(user.email);
-    await page.getByRole('button', { name: /send|reset|submit/i }).click();
+    await page.getByTestId('forgot-email').fill(user.email);
+    await page.getByTestId('forgot-submit').click();
 
     // Page shows "Check your inbox" heading on success
     await expect(page.locator('main, [role="main"]')).toContainText(
@@ -31,8 +31,8 @@ test.describe('Forgot password / reset flow', () => {
 
   test('submitting an unknown email shows generic success (no enumeration)', async ({ page }) => {
     await page.goto('/forgot-password');
-    await page.getByLabel(/email/i).fill('nobody@e2e.test');
-    await page.getByRole('button', { name: /send reset link|send|reset|submit/i }).click();
+    await page.getByTestId('forgot-email').fill('nobody@e2e.test');
+    await page.getByTestId('forgot-submit').click();
 
     // API should always return 200 for unknown emails (no-enumeration behaviour)
     await expect(page.locator('main, [role="main"]')).toContainText(
@@ -46,8 +46,8 @@ test.describe('Forgot password / reset flow', () => {
 
     // Trigger reset email to generate token
     await page.goto('/forgot-password');
-    await page.getByLabel(/email/i).fill(user.email);
-    await page.getByRole('button', { name: /send|reset|submit/i }).click();
+    await page.getByTestId('forgot-email').fill(user.email);
+    await page.getByTestId('forgot-submit').click();
 
     // Wait for the backend to process and store the token
     await page.waitForLoadState('networkidle');
@@ -61,18 +61,18 @@ test.describe('Forgot password / reset flow', () => {
     const { token } = rows[0];
 
     await page.goto(`/reset-password?token=${token}`);
-    await page.getByLabel(/^new password|^password/i).first().fill('NewSecure99!');
-    await page.getByLabel(/confirm/i).fill('NewSecure99!');
-    await page.getByRole('button', { name: /reset|save|update/i }).click();
+    await page.getByTestId('reset-password').fill('NewSecure99!');
+    await page.getByTestId('reset-confirm-password').fill('NewSecure99!');
+    await page.getByTestId('reset-submit').click();
 
     await expect(page).toHaveURL(/\/login/);
   });
 
   test('expired / invalid reset token shows an error', async ({ page }) => {
     await page.goto('/reset-password?token=invalidtoken123');
-    await page.getByLabel(/^new password|^password/i).first().fill('NewSecure99!');
-    await page.getByLabel(/confirm/i).fill('NewSecure99!');
-    await page.getByRole('button', { name: /reset|save|update/i }).click();
+    await page.getByTestId('reset-password').fill('NewSecure99!');
+    await page.getByTestId('reset-confirm-password').fill('NewSecure99!');
+    await page.getByTestId('reset-submit').click();
 
     await expect(page.locator('main')).toContainText(/invalid|expired|not found/i);
   });

@@ -120,7 +120,7 @@ function NotificationBell({ token }: { token: string }) {
       >
         <BellIcon />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-paper leading-none">
+          <span data-testid="notification-badge" className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-paper leading-none">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}

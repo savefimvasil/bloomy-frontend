@@ -116,7 +116,7 @@ function DirectRequestBanner({ jobId, note, onAccepted }: { jobId: string; note:
         Accept this request to start work and open the chat with the homeowner.
       </p>
       {err && <p className="mb-3 text-hint text-danger">{err}</p>}
-      <Button onClick={handleAccept} disabled={accepting}>
+      <Button onClick={handleAccept} disabled={accepting} data-testid="accept-direct-btn">
         {accepting ? "Accepting…" : "Accept & Start work"}
       </Button>
     </div>
@@ -407,13 +407,13 @@ export default function NearbyRequestDetailPage() {
                           ) : (
                             <p className="text-hint font-medium text-forest capitalize">{req.status.replace("_", " ")} — coordinate in chat.</p>
                           )}
-                          <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline" data-testid="open-chat-btn">
                             Open chat →
                           </Button>
                         </div>
                       ) : (
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setActiveTab("chat")} className="text-forest underline underline-offset-4 hover:no-underline" data-testid="open-chat-btn">
                             Chat with homeowner →
                           </Button>
                           <div className="flex items-center gap-2">
@@ -460,12 +460,14 @@ export default function NearbyRequestDetailPage() {
                     placeholder="Describe your experience, your approach to this type of project, and why you're the right person for it…"
                     rows={5}
                     error={errors.message?.message}
+                    data-testid="proposal-message"
                     {...register("message")}
                   />
                   <Input
                     label="Price indication (optional)"
                     placeholder="e.g. £2,400–£3,000 depending on materials"
                     error={errors.priceNote?.message}
+                    data-testid="proposal-price"
                     {...register("priceNote")}
                   />
                   <Input
@@ -475,13 +477,14 @@ export default function NearbyRequestDetailPage() {
                     max="3650"
                     placeholder="e.g. 5"
                     error={errors.timelineDays?.message}
+                    data-testid="proposal-duration"
                     {...register("timelineDays")}
                   />
                   {submitError && (
                     <div className="rounded-lg bg-danger/10 px-4 py-3 text-hint text-danger">{submitError}</div>
                   )}
                   <div className="flex gap-3">
-                    <Button type="submit" disabled={submitting} className="px-8">
+                    <Button type="submit" disabled={submitting} className="px-8" data-testid="send-proposal-btn">
                       {submitting ? "Sending…" : "Send proposal"}
                     </Button>
                     <Button type="button" variant="secondary" onClick={() => router.push("/cabinet/nearby-requests")}>

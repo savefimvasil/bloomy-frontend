@@ -55,6 +55,7 @@ function RegisterPasswordPageComponent() {
                 placeholder="At least 8 characters"
                 autoComplete="new-password"
                 error={errors.password?.message}
+                data-testid="register-password"
                 {...register("password")}
               />
               <Input
@@ -63,10 +64,11 @@ function RegisterPasswordPageComponent() {
                 placeholder="Repeat password"
                 autoComplete="new-password"
                 error={errors.confirmPassword?.message}
+                data-testid="register-confirm-password"
                 {...register("confirmPassword")}
               />
 
-              <Button type="submit" className="mt-2 w-full">
+              <Button type="submit" className="mt-2 w-full" data-testid="register-password-submit">
                 Continue
               </Button>
             </form>

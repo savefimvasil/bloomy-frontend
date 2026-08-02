@@ -33,11 +33,11 @@ export class CabinetPage {
   }
 
   notificationBadge() {
-    return this.page.locator('[data-testid="notification-badge"], .notification-badge, [aria-label*="notification"]').first();
+    return this.page.getByTestId('notification-badge').first();
   }
 
   async logout() {
-    await this.page.getByRole('button', { name: /log out|sign out/i }).click();
+    await this.page.getByTestId('logout-btn').first().click();
   }
 
   async expectRedirectedToLogin() {

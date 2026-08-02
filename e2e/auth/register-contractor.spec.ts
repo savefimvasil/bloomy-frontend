@@ -71,8 +71,8 @@ test.describe('Contractor registration flow', () => {
     const reg = new RegisterPage(page);
     await reg.fillProfile('Bob', 'Builder');
     // Contractor profile requires postcode and service radius
-    await page.getByLabel(/postcode/i).fill('SW1A 1AA');
-    await page.getByLabel(/service radius/i).fill('25');
+    await page.getByTestId('register-postcode').fill('SW1A 1AA');
+    await page.getByTestId('register-radius').fill('25');
     await reg.submitProfile();
     await expect(page).toHaveURL(/\/cabinet/);
   });

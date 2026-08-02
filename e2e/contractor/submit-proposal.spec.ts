@@ -38,21 +38,21 @@ test.describe('Contractor – submit proposal and manage own proposals', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto(`/cabinet/nearby-requests/${job.id}`);
 
-    await page.getByLabel(/your message/i).fill(
+    await page.getByTestId('proposal-message').fill(
       'I have 10 years of experience and can start next week.',
     );
 
-    const priceNote = page.getByLabel(/price indication/i).first();
+    const priceNote = page.getByTestId('proposal-price');
     if (await priceNote.isVisible()) {
       await priceNote.fill('£1,200–£1,500');
     }
 
-    const timeline = page.getByLabel(/estimated duration/i).first();
+    const timeline = page.getByTestId('proposal-duration');
     if (await timeline.isVisible()) {
       await timeline.fill('14');
     }
 
-    await page.getByRole('button', { name: /send proposal/i }).click();
+    await page.getByTestId('send-proposal-btn').click();
 
     await expect(page.locator('main')).toContainText(/your proposal|pending/i);
 
@@ -124,8 +124,8 @@ test.describe('Contractor – submit proposal and manage own proposals', () => {
     await injectAuth(page, { token: contractor.token, email: contractor.email, role: 'contractor' });
     await page.goto(`/cabinet/nearby-requests/${job.id}`);
 
-    await page.getByLabel(/your message/i).fill('Too short');
-    await page.getByRole('button', { name: /send proposal/i }).click();
+    await page.getByTestId('proposal-message').fill('Too short');
+    await page.getByTestId('send-proposal-btn').click();
 
     await expect(page.locator('main')).toContainText(/at least|minimum|too short|characters/i);
   });

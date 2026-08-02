@@ -54,8 +54,14 @@ test.describe('Notifications – notification centre', () => {
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto('/cabinet/notifications');
 
-    // Click to mark as read (row click or explicit "mark read" button)
-    await page.getByText('Read Me').click();
+    // Click to mark as read and wait for the API call to complete
+    await Promise.all([
+      page.waitForResponse(
+        (r) => r.url().includes('/notifications/') && r.url().includes('/read'),
+        { timeout: 8_000 },
+      ),
+      page.getByTestId('notification-item').filter({ hasText: 'Read Me' }).click(),
+    ]);
 
     // Verify DB updated
     const { rows } = await db.query<{ read: boolean }>(
@@ -78,20 +84,18 @@ test.describe('Notifications – notification centre', () => {
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto('/cabinet/notifications');
 
-    const markAllBtn = page.getByRole('button', { name: /mark all.*read|clear all/i });
+    const markAllBtn = page.getByTestId('mark-all-read');
     if (await markAllBtn.isVisible()) {
       await markAllBtn.click();
     } else {
       // Fallback: mark each individually
-      const items = await page.getByText(/Unread/).all();
+      const items = await page.getByTestId('notification-item').all();
       for (const item of items) await item.click();
     }
 
     // Badge should now be 0 or hidden
     await page.goto('/cabinet');
-    const badge = page
-      .locator('[data-testid="notification-badge"], .notification-badge')
-      .first();
+    const badge = page.getByTestId('notification-badge').first();
     const visible = await badge.isVisible().catch(() => false);
     if (visible) {
       const text = await badge.textContent();
@@ -114,7 +118,7 @@ test.describe('Notifications – notification centre', () => {
     await page.goto('/cabinet/notifications');
     await page.waitForLoadState('networkidle');
 
-    await page.getByText('Go to proposal').click();
+    await page.getByTestId('notification-item').filter({ hasText: 'Go to proposal' }).click();
     await expect(page).toHaveURL(/\/cabinet\/quote-requests/);
   });
 });

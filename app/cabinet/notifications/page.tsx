@@ -37,13 +37,13 @@ function NotificationRow({ n, onRead }: { n: AppNotification; onRead: (id: strin
 
   if (n.link) {
     return (
-      <Link href={n.link} onClick={() => onRead(n.id)}>
+      <Link href={n.link} onClick={() => onRead(n.id)} data-testid="notification-item">
         {inner}
       </Link>
     );
   }
   return (
-    <button onClick={() => onRead(n.id)} className="block w-full text-left">
+    <button onClick={() => onRead(n.id)} className="block w-full text-left" data-testid="notification-item">
       {inner}
     </button>
   );
@@ -130,7 +130,7 @@ export default function NotificationsPage() {
             unit={["notification", "notifications"]}
             action={
               unread > 0 ? (
-                <button onClick={handleReadAll} className="text-hint font-medium text-forest hover:underline">
+                <button onClick={handleReadAll} className="text-hint font-medium text-forest hover:underline" data-testid="mark-all-read">
                   Mark all as read
                 </button>
               ) : undefined

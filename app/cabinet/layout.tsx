@@ -159,6 +159,7 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
             size="sm"
             onClick={handleLogout}
             className="mt-1 w-full justify-start gap-3 text-body text-muted hover:bg-danger/5 hover:text-danger"
+            data-testid="logout-btn"
           >
             <LogoutIcon />
             Log out
@@ -202,6 +203,7 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
             size="sm"
             onClick={handleLogout}
             className="ml-auto gap-1.5 text-hint text-muted hover:text-danger"
+            data-testid="logout-btn"
           >
             <LogoutIcon />
             Log out

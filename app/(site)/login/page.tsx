@@ -78,6 +78,7 @@ export default function LoginPage() {
                 placeholder="your@email.com"
                 autoComplete="email"
                 error={errors.email?.message}
+                data-testid="login-email"
                 {...register("email")}
               />
               <div className="flex flex-col gap-1">
@@ -87,6 +88,7 @@ export default function LoginPage() {
                   placeholder="Your password"
                   autoComplete="current-password"
                   error={errors.password?.message}
+                  data-testid="login-password"
                   {...register("password")}
                 />
                 <div className="flex justify-end">
@@ -100,7 +102,7 @@ export default function LoginPage() {
                 <div className="rounded-lg bg-danger/10 px-4 py-3 text-hint text-danger">{errors.root.message}</div>
               )}
 
-              <Button type="submit" disabled={isSubmitting} className="w-full">
+              <Button type="submit" disabled={isSubmitting} className="w-full" data-testid="login-submit">
                 {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </form>

@@ -125,6 +125,7 @@ function ResetPasswordPageComponent() {
                     autoComplete="new-password"
                     minLength={8}
                     required
+                    data-testid="reset-password"
                   />
                   <Input
                     label="Confirm new password"
@@ -135,13 +136,14 @@ function ResetPasswordPageComponent() {
                     autoComplete="new-password"
                     minLength={8}
                     required
+                    data-testid="reset-confirm-password"
                   />
 
                   {error && (
                     <div className="bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
                   )}
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
+                  <Button type="submit" disabled={isSubmitting} className="w-full" data-testid="reset-submit">
                     {isSubmitting ? "Updating…" : "Update password"}
                   </Button>
                 </form>

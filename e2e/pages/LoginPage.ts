@@ -9,15 +9,15 @@ export class LoginPage {
   }
 
   async fillEmail(email: string) {
-    await this.page.getByLabel('Email').fill(email);
+    await this.page.getByTestId('login-email').fill(email);
   }
 
   async fillPassword(password: string) {
-    await this.page.getByLabel('Password').fill(password);
+    await this.page.getByTestId('login-password').fill(password);
   }
 
   async submit() {
-    await this.page.getByRole('button', { name: /sign in/i }).click();
+    await this.page.getByTestId('login-submit').click();
   }
 
   async login(email: string, password: string) {

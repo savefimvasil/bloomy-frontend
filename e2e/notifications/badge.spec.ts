@@ -44,9 +44,7 @@ test.describe('Notifications – in-app badge', () => {
     await page.goto('/cabinet');
 
     // Badge shows 2 unread
-    const badge = page
-      .locator('[data-testid="notification-badge"], .notification-badge, [aria-label*="notification"]')
-      .first();
+    const badge = page.getByTestId('notification-badge').first();
     await expect(badge).toBeVisible();
     await expect(badge).toContainText('2');
   });
@@ -61,9 +59,7 @@ test.describe('Notifications – in-app badge', () => {
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto('/cabinet');
 
-    const badge = page
-      .locator('[data-testid="notification-badge"], .notification-badge')
-      .first();
+    const badge = page.getByTestId('notification-badge').first();
 
     // Badge should not exist or contain 0
     const visible = await badge.isVisible().catch(() => false);
@@ -110,19 +106,15 @@ test.describe('Notifications – in-app badge', () => {
     await homeownerPage.goto('/cabinet');
     await contractorPage.goto(`/cabinet/nearby-requests/${job.id}`);
 
-    await contractorPage
-      .getByLabel(/your message/i)
-      .fill('I can do this job, excellent work guaranteed.');
-    await contractorPage.getByRole('button', { name: /send proposal/i }).click();
+    await contractorPage.getByTestId('proposal-message').fill('I can do this job, excellent work guaranteed.');
+    await contractorPage.getByTestId('send-proposal-btn').click();
     await expect(contractorPage.locator('main')).toContainText(/your proposal|pending/i, {
       timeout: 8_000,
     });
 
     // Homeowner badge should now show ≥ 1
     await homeownerPage.reload();
-    const badge = homeownerPage
-      .locator('[data-testid="notification-badge"], .notification-badge, [aria-label*="notification"]')
-      .first();
+    const badge = homeownerPage.getByTestId('notification-badge').first();
     await expect(badge).toBeVisible({ timeout: 8_000 });
     const count = parseInt((await badge.textContent()) ?? '0', 10);
     expect(count).toBeGreaterThanOrEqual(1);

@@ -43,9 +43,9 @@ test.describe('Chat – real-time messaging between homeowner and contractor', (
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto(`/cabinet/quote-requests/${job.id}`);
 
-    await page.getByRole('button', { name: /chat|message|open chat/i }).first().click();
+    await page.getByTestId('open-chat-btn').first().click();
 
-    const chatPane = page.locator('[data-testid="chat-pane"], [role="log"], .chat-messages').first();
+    const chatPane = page.getByTestId('chat-pane');
     await expect(chatPane).toBeVisible();
   });
 
@@ -67,14 +67,12 @@ test.describe('Chat – real-time messaging between homeowner and contractor', (
 
     await injectAuth(page, { token: homeowner.token, email: homeowner.email, role: 'homeowner' });
     await page.goto(`/cabinet/quote-requests/${job.id}`);
-    await page.getByRole('button', { name: /chat|message|open chat/i }).first().click();
+    await page.getByTestId('open-chat-btn').first().click();
 
-    const msgInput = page.getByPlaceholder(/type.*message|message.../i).first();
-    await msgInput.fill('Hello, when can you start?');
-    await page.getByRole('button', { name: /send/i }).click();
+    await page.getByTestId('chat-input').fill('Hello, when can you start?');
+    await page.getByTestId('chat-send').click();
 
-    await expect(page.locator('[data-testid="chat-pane"], [role="log"], .chat-messages').first())
-      .toContainText('Hello, when can you start?');
+    await expect(page.getByTestId('chat-pane')).toContainText('Hello, when can you start?');
   });
 
   test('message sent by homeowner appears for contractor in the same room', async ({ browser }) => {
@@ -107,19 +105,16 @@ test.describe('Chat – real-time messaging between homeowner and contractor', (
     await homeownerPage.goto(`/cabinet/quote-requests/${job.id}`);
     await contractorPage.goto(`/cabinet/nearby-requests/${job.id}`);
 
-    await homeownerPage.getByRole('button', { name: /chat|message|open chat/i }).first().click();
+    await homeownerPage.getByTestId('open-chat-btn').first().click();
 
     // Contractor opens chat from the job detail page
-    await contractorPage.getByRole('button', { name: /chat|message|open chat/i }).first().click();
+    await contractorPage.getByTestId('open-chat-btn').first().click();
 
     const uniqueMsg = `E2E test message ${Date.now()}`;
-    const homeownerInput = homeownerPage.getByPlaceholder(/type.*message|message.../i).first();
-    await homeownerInput.fill(uniqueMsg);
-    await homeownerPage.getByRole('button', { name: /send/i }).click();
+    await homeownerPage.getByTestId('chat-input').fill(uniqueMsg);
+    await homeownerPage.getByTestId('chat-send').click();
 
-    await expect(
-      contractorPage.locator('[data-testid="chat-pane"], [role="log"], .chat-messages').first(),
-    ).toContainText(uniqueMsg, { timeout: 5_000 });
+    await expect(contractorPage.getByTestId('chat-pane')).toContainText(uniqueMsg, { timeout: 5_000 });
 
     await homeownerCtx.close();
     await contractorCtx.close();

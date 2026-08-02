@@ -10,68 +10,54 @@ export class RegisterPage {
   }
 
   async fillEmailInit(email: string) {
-    await this.page.getByLabel('Email').fill(email);
+    await this.page.getByTestId('register-email').fill(email);
   }
 
   async acceptTerms() {
-    const checkbox = this.page.locator('input[type="checkbox"]').first();
+    const checkbox = this.page.getByTestId('register-terms');
     if (!(await checkbox.isChecked())) await checkbox.check();
   }
 
   async submitInit() {
-    await this.page.locator('main').getByRole('button', { name: /continue|send/i }).click();
+    await this.page.getByTestId('register-submit').click();
   }
 
   // Step 2 – OTP
   async fillOtp(code: string) {
-    // The verify page uses a single input[inputmode="numeric"] with maxlength=6
-    const single = this.page.locator('input[inputmode="numeric"]');
-    if (await single.count() > 0) {
-      await single.first().fill(code);
-      return;
-    }
-    // Fallback: individual digit inputs (alternative OTP UI)
-    const inputs = await this.page.locator('input[maxlength="1"], input[name^="digit"]').all();
-    if (inputs.length >= 6) {
-      const digits = code.split('');
-      for (let i = 0; i < 6; i++) await inputs[i].fill(digits[i]);
-    } else {
-      await this.page.locator('input[type="text"]').first().fill(code);
-    }
+    await this.page.getByTestId('register-otp').fill(code);
   }
 
   async submitOtp() {
-    await this.page.locator('main').getByRole('button', { name: /verify|confirm/i }).click();
+    await this.page.getByTestId('register-verify').click();
   }
 
   // Step 3 – role
   async selectRole(role: 'homeowner' | 'contractor') {
-    const label = role === 'homeowner' ? /homeowner/i : /contractor/i;
-    await this.page.getByRole('button', { name: label }).first().click();
+    await this.page.getByTestId(`role-${role}`).click();
   }
 
   async submitRole() {
-    await this.page.locator('main').getByRole('button', { name: /continue/i }).click();
+    await this.page.getByTestId('role-continue').click();
   }
 
   // Step 4 – password
   async fillPassword(password: string) {
-    await this.page.getByLabel(/^password$/i).fill(password);
-    await this.page.getByLabel(/confirm password/i).fill(password);
+    await this.page.getByTestId('register-password').fill(password);
+    await this.page.getByTestId('register-confirm-password').fill(password);
   }
 
   async submitPassword() {
-    await this.page.locator('main').getByRole('button', { name: /continue|set/i }).click();
+    await this.page.getByTestId('register-password-submit').click();
   }
 
   // Step 5 – profile
   async fillProfile(name: string, surname: string) {
-    await this.page.getByLabel(/first name|name/i).first().fill(name);
-    await this.page.getByLabel(/last name|surname/i).fill(surname);
+    await this.page.getByTestId('register-name').fill(name);
+    await this.page.getByTestId('register-surname').fill(surname);
   }
 
   async submitProfile() {
-    await this.page.getByRole('button', { name: /finish|complete|create/i }).click();
+    await this.page.getByTestId('register-profile-submit').click();
   }
 
   async expectRedirectToVerify() {

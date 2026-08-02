@@ -69,6 +69,7 @@ export default function RegisterPage() {
                 placeholder="your@email.com"
                 autoComplete="email"
                 error={errors.email?.message}
+                data-testid="register-email"
                 {...register("email")}
               />
 
@@ -76,6 +77,7 @@ export default function RegisterPage() {
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
+                  data-testid="register-terms"
                   {...register("acceptTerms")}
                 />
                 <span className="text-hint text-muted leading-snug">
@@ -93,7 +95,7 @@ export default function RegisterPage() {
                 <p className="text-hint text-danger">{errors.acceptTerms.message}</p>
               )}
 
-              <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+              <Button type="submit" disabled={isSubmitting} className="mt-2 w-full" data-testid="register-submit">
                 {isSubmitting ? "Sending code..." : "Continue"}
               </Button>
             </form>

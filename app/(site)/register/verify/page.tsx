@@ -107,9 +107,10 @@ function RegisterVerifyPageComponent() {
                 placeholder="123456"
                 autoComplete="one-time-code"
                 required
+                data-testid="register-otp"
               />
 
-              <Button type="submit" disabled={isSubmitting || code.length !== 6} className="mt-2 w-full">
+              <Button type="submit" disabled={isSubmitting || code.length !== 6} className="mt-2 w-full" data-testid="register-verify">
                 {isSubmitting ? "Verifying..." : "Verify"}
               </Button>
             </form>

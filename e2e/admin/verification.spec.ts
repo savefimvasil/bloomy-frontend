@@ -91,9 +91,9 @@ test.describe('Admin – contractor verification flow', () => {
     await page.goto('/admin/verification');
 
     // Find the card for this specific contractor and click its "Review" button
-    const card = page.locator('[class*="rounded-xl"]').filter({ hasText: 'Approve Me Contractor' });
-    await card.getByRole('button', { name: /review this document/i }).click();
-    await card.getByRole('button', { name: /^Approve$/i }).click();
+    const card = page.getByTestId('doc-card').filter({ hasText: 'Approve Me Contractor' });
+    await card.getByTestId('review-doc-btn').click();
+    await card.getByTestId('approve-doc-btn').click();
 
     // Card disappears from the queue after approval
     await expect(page.locator('main')).not.toContainText('Approve Me Contractor', {
@@ -122,9 +122,9 @@ test.describe('Admin – contractor verification flow', () => {
     await injectAuth(page, { token: admin.token, email: admin.email, role: 'homeowner' });
     await page.goto('/admin/verification');
 
-    const card = page.locator('[class*="rounded-xl"]').filter({ hasText: 'Reject Me Contractor' });
-    await card.getByRole('button', { name: /review this document/i }).click();
-    await card.getByRole('button', { name: /^Reject$/i }).click();
+    const card = page.getByTestId('doc-card').filter({ hasText: 'Reject Me Contractor' });
+    await card.getByTestId('review-doc-btn').click();
+    await card.getByTestId('reject-doc-btn').click();
 
     // After rejection, document is removed from the pending list
     await expect(page.locator('main')).not.toContainText('Reject Me Contractor', {

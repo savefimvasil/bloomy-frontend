@@ -102,6 +102,7 @@ export default function ContractorProfilePage() {
           label="Business name"
           placeholder="e.g. Green Garden Services"
           error={errors.businessName?.message}
+          data-testid="profile-business-name"
           {...register("businessName")}
         />
 
@@ -117,6 +118,7 @@ export default function ContractorProfilePage() {
             label="Your postcode"
             placeholder="e.g. SW1A 1AA"
             error={errors.postcode?.message}
+            data-testid="profile-postcode"
             {...register("postcode")}
           />
           <Input
@@ -125,6 +127,7 @@ export default function ContractorProfilePage() {
             min="1"
             max="200"
             error={errors.radiusMiles?.message}
+            data-testid="profile-radius"
             {...register("radiusMiles")}
           />
         </div>
@@ -157,7 +160,7 @@ export default function ContractorProfilePage() {
         )}
 
         <div>
-          <Button type="submit" disabled={isSubmitting} className="px-8">
+          <Button type="submit" disabled={isSubmitting} className="px-8" data-testid="profile-save">
             {isSubmitting ? "Saving…" : profile ? "Save changes" : "Create profile"}
           </Button>
         </div>

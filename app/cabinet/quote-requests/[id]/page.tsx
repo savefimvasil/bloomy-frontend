@@ -113,6 +113,7 @@ function ReviewModal({
             onChange={e => setComment(e.target.value)}
             placeholder="Quality of work, punctuality, communication…"
             className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink focus:border-forest/40 focus:outline-none"
+            data-testid="review-comment"
           />
         </div>
 
@@ -120,7 +121,7 @@ function ReviewModal({
 
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={handleSubmit} disabled={saving}>
+          <Button className="flex-1" onClick={handleSubmit} disabled={saving} data-testid="review-submit">
             {saving ? "Submitting…" : "Submit review"}
           </Button>
         </div>
@@ -215,7 +216,7 @@ function PhotoGrid({
             <path d="M7 2v7M4 6l3-3 3 3" /><path d="M2 11h10" />
           </svg>
           {uploading ? "Uploading…" : "Add photo"}
-          <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+          <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} data-testid="photo-upload" />
         </label>
       )}
       {err && <p className="mt-2 text-hint text-danger">{err}</p>}
@@ -370,6 +371,7 @@ function ProposalCard({
             onClick={onChat}
             disabled={chatOpening}
             className="relative inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-hint text-muted transition hover:border-forest/60 hover:text-forest disabled:opacity-50"
+            data-testid="open-chat-btn"
           >
             {chatOpening ? "Opening…" : isAccepted ? "Open chat" : "Chat"}
             {chatUnread > 0 && (
@@ -379,7 +381,7 @@ function ProposalCard({
             )}
           </button>
           {requestStatus === "open" && proposal.status === "pending" && (
-            <Button size="sm" onClick={() => onAccept(proposal.id)}>Accept proposal</Button>
+            <Button size="sm" onClick={() => onAccept(proposal.id)} data-testid="accept-proposal-btn">Accept proposal</Button>
           )}
         </div>
       </div>
@@ -572,7 +574,7 @@ export default function QuoteRequestDetailPage() {
               </p>
             </div>
             {(isAwarded || isInProgress) && (
-              <Button size="sm" disabled={actionLoading} onClick={() => void handleStatusAction("complete")}>
+              <Button size="sm" disabled={actionLoading} onClick={() => void handleStatusAction("complete")} data-testid="mark-complete-btn">
                 {actionLoading ? "Saving…" : "Mark work done"}
               </Button>
             )}
@@ -584,7 +586,7 @@ export default function QuoteRequestDetailPage() {
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
             <p className="text-body font-semibold text-ink mb-1">Leave a review for {acceptedContractorName}</p>
             <p className="text-hint text-muted mb-3">Reviews help other homeowners choose the right contractor. It only takes a minute.</p>
-            <Button size="sm" onClick={() => setShowReview(true)}>Write a review →</Button>
+            <Button size="sm" onClick={() => setShowReview(true)} data-testid="write-review-btn">Write a review →</Button>
           </div>
         )}
         {isCompleted && review && (
