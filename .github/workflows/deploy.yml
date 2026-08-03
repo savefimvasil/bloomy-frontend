@@ -22,6 +22,7 @@ jobs:
         with:
           repository: savefimvasil/bloomy-packages
           path: bloomy-packages
+          token: ${{ secrets.GH_PAT }}
 
       - uses: docker/login-action@v3
         with:
