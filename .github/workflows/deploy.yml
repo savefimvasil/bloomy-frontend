@@ -43,4 +43,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.SERVER_DEPLOY_PATH }}
+            git pull
             ./deploy.sh
