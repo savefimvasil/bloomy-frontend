@@ -61,14 +61,6 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
 
   connect: (token: string) => {
     if (_socket?.connected) return;
-    // Fetch initial unread count via HTTP so badge shows immediately on page load
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000/api";
-    fetch(`${apiBase}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? (r.json() as Promise<{ count: number }>) : { count: 0 }))
-      .then(({ count }: { count: number }) => set({ unreadCount: count }))
-      .catch(() => {});
     _socket = io(`${SOCKET_URL}/notifications`, {
       auth: { token },
       transports: ["websocket", "polling"],

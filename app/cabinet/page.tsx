@@ -74,9 +74,11 @@ function HomeownerDashboard() {
   const [stats, setStats] = useState<{ total: number; open: number; inProgress: number; pendingProposals: number } | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     apiFetch("/quote-requests/mine?page=1&limit=100")
       .then((r) => r.ok ? r.json() : { data: [], total: 0 })
       .then(({ data, total }: { data: { status: string; proposalCount?: number }[]; total: number }) => {
+        if (cancelled) return;
         setStats({
           total,
           open: data.filter((j) => j.status === "open").length,
@@ -84,7 +86,8 @@ function HomeownerDashboard() {
           pendingProposals: data.filter((j) => j.status === "open" && (j.proposalCount ?? 0) > 0).length,
         });
       })
-      .catch(() => setStats({ total: 0, open: 0, inProgress: 0, pendingProposals: 0 }));
+      .catch(() => { if (!cancelled) setStats({ total: 0, open: 0, inProgress: 0, pendingProposals: 0 }); });
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -162,16 +165,19 @@ function ContractorDashboard() {
   const [stats, setStats] = useState<{ proposals: number; active: number; direct: number } | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     Promise.all([
       apiFetch("/quote-requests/my-proposals?page=1&limit=100").then((r) => r.ok ? r.json() : { data: [], total: 0 }),
       apiFetch("/quote-requests/direct-to-me?page=1&limit=100").then((r) => r.ok ? r.json() : { data: [], total: 0 }),
     ]).then(([pRes, dRes]: [{ data: { status: string }[]; total: number }, { data: unknown[]; total: number }]) => {
+      if (cancelled) return;
       setStats({
         proposals: pRes.total,
         active: pRes.data.filter((p) => ["awarded", "in_progress"].includes(p.status)).length,
         direct: dRes.total,
       });
-    }).catch(() => setStats({ proposals: 0, active: 0, direct: 0 }));
+    }).catch(() => { if (!cancelled) setStats({ proposals: 0, active: 0, direct: 0 }); });
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -255,10 +261,16 @@ export default function CabinetDashboard() {
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
+    let cancelled = false;
     apiFetch("/notifications?page=1&limit=20")
       .then((r) => r.ok ? r.json() : { data: [], total: 0 })
-      .then(({ data, total }: { data: AppNotification[]; total: number }) => { setNotifications(data, total); setNotifsLoaded(true); })
-      .catch(() => setNotifsLoaded(true));
+      .then(({ data, total }: { data: AppNotification[]; total: number }) => {
+        if (cancelled) return;
+        setNotifications(data, total);
+        setNotifsLoaded(true);
+      })
+      .catch(() => { if (!cancelled) setNotifsLoaded(true); });
+    return () => { cancelled = true; };
   }, [hasHydrated, token, setNotifications]);
 
   if (!hasHydrated) return <Spinner />;
