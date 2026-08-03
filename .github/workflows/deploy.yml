@@ -1,0 +1,48 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # Check out frontend into bloomy-frontend/ so the Dockerfile path matches
+      - uses: actions/checkout@v4
+        with:
+          path: bloomy-frontend
+
+      # Dockerfile also needs bloomy-packages/planner at build time
+      - uses: actions/checkout@v4
+        with:
+          repository: savefimvasil/bloomy-packages
+          path: bloomy-packages
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: bloomy-frontend/Dockerfile
+          build-args: |
+            NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
+          push: true
+          tags: ghcr.io/savefimvasil/bloomy-frontend:latest
+
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_DEPLOY_PATH }}
+            ./deploy.sh
