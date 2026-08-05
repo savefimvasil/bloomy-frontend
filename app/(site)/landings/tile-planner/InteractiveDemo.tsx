@@ -314,15 +314,15 @@ export function InteractiveDemo() {
           </div>
         </div>
 
-        {/* ── Planner + Code side-by-side ── */}
-        <div className="mt-5 flex items-start gap-5">
+        {/* ── Planner + Code side-by-side (stacked on mobile) ── */}
+        <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start">
 
           {/* Planner */}
           {isCompact ? (
-            <div className="flex shrink-0 flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <div
-                className="overflow-hidden rounded-xl border border-line shadow-md"
-                style={{ width: 440, height: 400, ...theme.vars } as React.CSSProperties}
+                className="overflow-hidden rounded-xl border border-line shadow-md lg:w-[440px]"
+                style={{ height: 400, ...theme.vars } as React.CSSProperties}
               >
                 <PlannerCore
                   key={`${cfg.planType}-compact`}
@@ -339,8 +339,8 @@ export function InteractiveDemo() {
             </div>
           ) : (
             <div
-              className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line"
-              style={{ height: 680, ...theme.vars } as React.CSSProperties}
+              className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line h-[440px] lg:h-[680px]"
+              style={{ ...theme.vars } as React.CSSProperties}
             >
               <PlannerCore
                 key={`${cfg.planType}-standard`}
@@ -351,15 +351,12 @@ export function InteractiveDemo() {
             </div>
           )}
 
-          {/* Code block — fills remaining width in compact, fixed 420px in standard */}
+          {/* Code block */}
           <div
-            className="flex flex-col overflow-hidden rounded-xl"
-            style={{
-              background: CB,
-              ...(isCompact
-                ? { flex: 1, minWidth: 0, height: 400 }
-                : { width: 420, flexShrink: 0, height: 680 }),
-            } as React.CSSProperties}
+            className={isCompact
+              ? "flex flex-col overflow-hidden rounded-xl h-[300px] lg:flex-1 lg:min-w-0 lg:h-[400px]"
+              : "flex flex-col overflow-hidden rounded-xl h-[300px] lg:w-[420px] lg:flex-shrink-0 lg:h-[680px]"}
+            style={{ background: CB } as React.CSSProperties}
           >
             <div className="flex shrink-0 items-center gap-3 border-b px-4 py-3" style={{ borderColor: BR, background: CBB }}>
               <div className="flex gap-1.5">

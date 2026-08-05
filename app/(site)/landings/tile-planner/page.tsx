@@ -21,7 +21,7 @@ function Terminal({ title = "terminal", minHeight, children }: { title?: string;
         <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
         <span className="ml-3 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>{title}</span>
       </div>
-      <div className="p-5 font-mono text-sm" style={{ color: "#e8f5e9", minHeight }}>
+      <div className="overflow-x-auto p-5 font-mono text-sm" style={{ color: "#e8f5e9", minHeight }}>
         {children}
       </div>
     </div>
@@ -302,34 +302,36 @@ function ApiReference() {
           as props.
         </p>
 
-        <div className="mt-10 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-          <div
-            className="grid grid-cols-[180px_220px_1fr] gap-4 px-5 py-3 font-mono text-[10px] uppercase tracking-widest"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
-          >
-            <span>option</span>
-            <span>type</span>
-            <span>description</span>
-          </div>
-          {MOUNT_OPTS.map((p, i) => (
+        <div className="mt-10 overflow-x-auto rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+          <div className="min-w-[580px]">
             <div
-              key={p.name}
-              className="grid grid-cols-[180px_220px_1fr] gap-4 px-5 py-4 text-xs"
-              style={{
-                borderTop: i > 0 ? "1px solid rgba(255,255,255,0.07)" : undefined,
-                background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)",
-              }}
+              className="grid grid-cols-[180px_220px_1fr] gap-4 px-5 py-3 font-mono text-[10px] uppercase tracking-widest"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
             >
-              <span className="font-mono font-bold text-lime">{p.name}</span>
-              <span className="font-mono text-paper/70">{p.type}</span>
-              <div>
-                <span className="mr-2 rounded px-1.5 py-0.5 font-mono text-[10px] text-paper/40" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  default: {p.default}
-                </span>
-                <span className="text-paper/60">{p.desc}</span>
-              </div>
+              <span>option</span>
+              <span>type</span>
+              <span>description</span>
             </div>
-          ))}
+            {MOUNT_OPTS.map((p, i) => (
+              <div
+                key={p.name}
+                className="grid grid-cols-[180px_220px_1fr] gap-4 px-5 py-4 text-xs"
+                style={{
+                  borderTop: i > 0 ? "1px solid rgba(255,255,255,0.07)" : undefined,
+                  background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)",
+                }}
+              >
+                <span className="font-mono font-bold text-lime">{p.name}</span>
+                <span className="font-mono text-paper/70">{p.type}</span>
+                <div>
+                  <span className="mr-2 rounded px-1.5 py-0.5 font-mono text-[10px] text-paper/40" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    default: {p.default}
+                  </span>
+                  <span className="text-paper/60">{p.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* PlanExport type + theming */}
