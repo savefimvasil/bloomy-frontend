@@ -18,10 +18,6 @@ const PlannerCore = dynamic(
   }
 );
 
-// ---------------------------------------------------------------------------
-// Colour themes — CSS custom-property overrides applied on the wrapper div
-// ---------------------------------------------------------------------------
-
 type ThemeDef = {
   name: string;
   swatch: string;
@@ -78,10 +74,6 @@ const THEMES: ThemeDef[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Plan-type options
-// ---------------------------------------------------------------------------
-
 type ConfigOption = {
   label: string;
   planType: "garden" | "indoor";
@@ -92,10 +84,6 @@ const CONFIGS: ConfigOption[] = [
   { label: "outdoor", planType: "garden", description: "Garden / patio — preset paving sizes" },
   { label: "indoor",  planType: "indoor", description: "Room shape — tile + laminate materials" },
 ];
-
-// ---------------------------------------------------------------------------
-// Code snippets
-// ---------------------------------------------------------------------------
 
 const CB  = "#0d2414";
 const BR  = "rgba(255,255,255,0.10)";
@@ -199,10 +187,6 @@ function SimpleSnippet({ planType }: { planType: string }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 function CompactSnippet({ planType }: { planType: string }) {
   return (

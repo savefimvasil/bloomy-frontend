@@ -8,17 +8,9 @@ export const metadata: Metadata = {
   description: "Drop a fully-featured interactive tile planner into any web project. Vanilla JS, React, Vue, jQuery — no backend required.",
 };
 
-// ---------------------------------------------------------------------------
-// Color constants (no plain black)
-// ---------------------------------------------------------------------------
-
 const CB  = "#0d2414";   // code block background
 const CBB = "rgba(255,255,255,0.07)"; // code block header
 const BR  = "rgba(255,255,255,0.10)"; // border on dark
-
-// ---------------------------------------------------------------------------
-// Shared primitives
-// ---------------------------------------------------------------------------
 
 function Terminal({ title = "terminal", minHeight, children }: { title?: string; minHeight?: number; children: React.ReactNode }) {
   return (
@@ -60,10 +52,6 @@ function CodeLine({ n, children }: { n: number; children: React.ReactNode }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Hero
-// ---------------------------------------------------------------------------
 
 function Hero() {
   return (
@@ -135,10 +123,6 @@ function Hero() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Feature strip
-// ---------------------------------------------------------------------------
-
 const PILLS = [
   "mountTilePlanner()", "5 install patterns", "Herringbone",
   "Running bond", "Diagonal", "Chess colour", "PDF export",
@@ -161,10 +145,6 @@ function FeatureStrip() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// How it works (3 steps — Bloomy palette, not black)
-// ---------------------------------------------------------------------------
 
 function HowItWorks() {
   return (
@@ -234,10 +214,6 @@ function HowItWorks() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Advantages
-// ---------------------------------------------------------------------------
-
 const FEATURES = [
   {
     icon: "⊞",
@@ -304,10 +280,6 @@ function Advantages() {
     </section>
   );
 }
-
-// ---------------------------------------------------------------------------
-// API reference
-// ---------------------------------------------------------------------------
 
 const MOUNT_OPTS = [
   { name: "planType",    type: '"garden" | "indoor"',          default: '"garden"',   desc: "Starting shape and default tile preset." },
@@ -403,10 +375,6 @@ function ApiReference() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// CTA
-// ---------------------------------------------------------------------------
-
 function Cta() {
   return (
     <section className="bg-canvas py-24 text-center">
@@ -432,10 +400,6 @@ function Cta() {
     </section>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 
 export default function TilePlannerLandingPage() {
   return (
