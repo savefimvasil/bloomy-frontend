@@ -56,7 +56,7 @@ function CodeLine({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex gap-4 leading-6">
       <span className="w-5 shrink-0 select-none text-right text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{n}</span>
-      <span className="text-xs">{children}</span>
+      <span className="whitespace-pre text-xs">{children}</span>
     </div>
   );
 }
