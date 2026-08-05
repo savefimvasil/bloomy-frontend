@@ -149,10 +149,10 @@ const PILLS = [
 
 function FeatureStrip() {
   return (
-    <div className="overflow-hidden border-y border-line bg-forest py-4">
-      <div className="flex gap-6 whitespace-nowrap">
-        {[...PILLS, ...PILLS].map((pill, i) => (
-          <span key={i} className="flex shrink-0 items-center gap-2 text-xs font-medium text-paper/60">
+    <div className="overflow-hidden border-y border-line bg-forest py-4 select-none">
+      <div className="animate-marquee-ltr flex gap-8 whitespace-nowrap">
+        {[...PILLS, ...PILLS, ...PILLS].map((pill, i) => (
+          <span key={i} className="flex shrink-0 items-center gap-2.5 text-xs font-medium text-paper/60">
             <span className="text-lime">◆</span>
             {pill}
           </span>
