@@ -48,7 +48,7 @@ function CodeLine({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex gap-4 leading-6">
       <span className="w-5 shrink-0 select-none text-right text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{n}</span>
-      <span className="whitespace-pre text-xs">{children}</span>
+      <span className="whitespace-pre-wrap break-words text-xs lg:whitespace-pre lg:break-normal">{children}</span>
     </div>
   );
 }
@@ -294,7 +294,7 @@ function ApiReference() {
     <section className="bg-forest py-24">
       <div className="container">
         <p className="text-eyebrow text-lime/60">API reference</p>
-        <h2 className="mt-2 text-display-sm text-paper">mountTilePlanner options</h2>
+        <h2 className="mt-2 text-display-sm text-paper">API options</h2>
         <p className="mt-3 max-w-xl text-lead text-paper/60">
           All options are optional — the planner works with zero config.
           The same options are accepted by{" "}
@@ -405,7 +405,7 @@ function Cta() {
 
 export default function TilePlannerLandingPage() {
   return (
-    <>
+    <div className="overflow-x-hidden">
       <Hero />
       <FeatureStrip />
       <HowItWorks />
@@ -415,6 +415,6 @@ export default function TilePlannerLandingPage() {
       </div>
       <ApiReference />
       <Cta />
-    </>
+    </div>
   );
 }
