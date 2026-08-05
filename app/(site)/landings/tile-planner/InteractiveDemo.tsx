@@ -1,8 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
+import type { PlannerConfig } from "@bloomy/bloomy-planner";
+import { outdoorConfig, indoorConfig } from "@bloomy/bloomy-planner";
 
 const PlannerCore = dynamic(
   () => import("@bloomy/bloomy-planner").then((m) => m.PlannerCore),
@@ -178,6 +180,26 @@ function SaveSnippet({ planType }: { planType: string }) {
   );
 }
 
+function SimpleSnippet({ planType }: { planType: string }) {
+  const cfg = planType === "indoor" ? "indoorConfig" : "outdoorConfig";
+  return (
+    <div className="space-y-0.5">
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(", ")}{fn_(cfg)}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={2}>{plain("")}</CodeLine>
+      <CodeLine n={3}>{cm("// engineering: false — simple homeowner mode")}</CodeLine>
+      <CodeLine n={4}>{cm("// hides cut colours, advanced patterns, grout,")}</CodeLine>
+      <CodeLine n={5}>{cm("// stats detail, materials estimator, JSON export")}</CodeLine>
+      <CodeLine n={6}>{kw("const")} {plain("config = { ...")}{fn_(cfg)}{plain(", ")}{fn_("engineering")}{plain(": ")}{kw("false")}{plain(" };")}</CodeLine>
+      <CodeLine n={7}>{plain("")}</CodeLine>
+      <CodeLine n={8}>{fn_("mountTilePlanner")}{plain("(el, {")}</CodeLine>
+      <CodeLine n={9}>{plain("  ")}{fn_("planType")}{plain(": ")}{str(`"${planType}"`)}{plain(",")}</CodeLine>
+      <CodeLine n={10}>{plain("  ")}{fn_("config")}{plain(",")}</CodeLine>
+      <CodeLine n={11}>{plain("  ")}{fn_("persistKey")}{plain(": ")}{str('"my-plan"')}{plain(",")}</CodeLine>
+      <CodeLine n={12}>{plain("});")}</CodeLine>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -199,13 +221,22 @@ function CompactSnippet({ planType }: { planType: string }) {
 }
 
 export function InteractiveDemo() {
-  const [cfgIdx, setCfgIdx]         = useState(0);
-  const [snippetKey, setSnippetKey] = useState<"minimal" | "persist" | "theme" | "compact" | "onSave">("minimal");
-  const [themeIdx, setThemeIdx]     = useState(0);
-  const [isCompact, setIsCompact]   = useState(false);
+  const [cfgIdx, setCfgIdx]           = useState(0);
+  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple">("minimal");
+  const [themeIdx, setThemeIdx]       = useState(0);
+  const [isCompact, setIsCompact]     = useState(false);
+  const [engineering, setEngineering] = useState(true);
 
   const cfg   = CONFIGS[cfgIdx];
   const theme = THEMES[themeIdx];
+
+  // Build a config that applies the engineering flag on top of the base config
+  const baseConfig: PlannerConfig = cfg.planType === "indoor" ? indoorConfig : outdoorConfig;
+  const resolvedConfig = useMemo<PlannerConfig>(
+    () => ({ ...baseConfig, engineering }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cfg.planType, engineering]
+  );
 
   const snippetMap = {
     minimal: <MinimalSnippet planType={cfg.planType} />,
@@ -213,12 +244,19 @@ export function InteractiveDemo() {
     theme:   <ThemeSnippet   planType={cfg.planType} />,
     compact: <CompactSnippet planType={cfg.planType} />,
     onSave:  <SaveSnippet    planType={cfg.planType} />,
+    simple:  <SimpleSnippet  planType={cfg.planType} />,
   };
 
-  function switchMode(compact: boolean) {
+  function switchSize(compact: boolean) {
     setIsCompact(compact);
-    if (compact) setSnippetKey("compact");
-    else if (snippetKey === "compact") setSnippetKey("minimal");
+    if (compact && snippetKey !== "simple") setSnippetKey("compact");
+    else if (!compact && snippetKey === "compact") setSnippetKey("minimal");
+  }
+
+  function switchEngineering(eng: boolean) {
+    setEngineering(eng);
+    if (!eng) setSnippetKey("simple");
+    else if (snippetKey === "simple") setSnippetKey("minimal");
   }
 
   return (
@@ -271,12 +309,23 @@ export function InteractiveDemo() {
 
           <span className="h-4 w-px shrink-0 bg-line" />
 
-          {/* View mode */}
+          {/* Size */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs text-muted">Size</span>
+            <div className="flex gap-1">
+              <ToggleButton active={!isCompact} onClick={() => switchSize(false)}>Standard</ToggleButton>
+              <ToggleButton active={isCompact}  onClick={() => switchSize(true)}>Compact</ToggleButton>
+            </div>
+          </div>
+
+          <span className="h-4 w-px shrink-0 bg-line" />
+
+          {/* Mode */}
           <div className="flex items-center gap-2.5">
             <span className="text-xs text-muted">Mode</span>
             <div className="flex gap-1">
-              <ToggleButton active={!isCompact} onClick={() => switchMode(false)}>Standard</ToggleButton>
-              <ToggleButton active={isCompact}  onClick={() => switchMode(true)}>Compact</ToggleButton>
+              <ToggleButton active={engineering}  onClick={() => switchEngineering(true)}>Engineering</ToggleButton>
+              <ToggleButton active={!engineering} onClick={() => switchEngineering(false)}>Simple</ToggleButton>
             </div>
           </div>
         </div>
@@ -294,6 +343,7 @@ export function InteractiveDemo() {
                 <PlannerCore
                   key={`${cfg.planType}-compact`}
                   planType={cfg.planType}
+                  config={resolvedConfig}
                   persistKey={`landing-demo-${cfg.planType}`}
                   compact
                 />
@@ -311,6 +361,7 @@ export function InteractiveDemo() {
               <PlannerCore
                 key={`${cfg.planType}-standard`}
                 planType={cfg.planType}
+                config={resolvedConfig}
                 persistKey={`landing-demo-${cfg.planType}`}
               />
             </div>
@@ -334,7 +385,7 @@ export function InteractiveDemo() {
               </div>
               <span className="ml-1 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>app.js</span>
               <div className="ml-auto flex flex-wrap gap-1">
-                {(["minimal", "persist", "theme", "compact", "onSave"] as const).map((k) => (
+                {(["minimal", "persist", "theme", "compact", "onSave", "simple"] as const).map((k) => (
                   <button
                     key={k}
                     onClick={() => setSnippetKey(k)}
