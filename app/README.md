@@ -50,6 +50,5 @@ It owns:
 
 ```ts
 import { apiFetch } from "@/lib/api";
-
 const res = await apiFetch("/tile-plans", { method: "POST", body: { name: "..." } });
 ```
