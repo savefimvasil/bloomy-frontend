@@ -1,11 +1,14 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-COPY bloomy-packages/planner/package.json bloomy-packages/planner/
+COPY bloomy-packages/tile-planner/package.json bloomy-packages/tile-planner/
+COPY bloomy-packages/garden-planner/package.json bloomy-packages/garden-planner/
 COPY bloomy-frontend/package*.json bloomy-frontend/
 
-# Install planner deps (including devDeps for tsup + @types/react).
-WORKDIR /app/bloomy-packages/planner
+WORKDIR /app/bloomy-packages/tile-planner
+RUN npm install
+
+WORKDIR /app/bloomy-packages/garden-planner
 RUN npm install
 
 WORKDIR /app/bloomy-frontend
@@ -17,24 +20,25 @@ WORKDIR /app
 ARG BACKEND_INTERNAL_URL=http://backend:3000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 
-# NEXT_PUBLIC_* vars are baked into the JS bundle at build time.
-# Pass the public backend URL so the browser can open a WebSocket connection.
 ARG NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
 ENV DOCKER_BUILD=1
 
-# Copy source first, then overlay clean node_modules from the deps stage.
-COPY bloomy-packages/planner bloomy-packages/planner
+COPY bloomy-packages/shared bloomy-packages/shared
+COPY bloomy-packages/tile-planner bloomy-packages/tile-planner
+COPY bloomy-packages/garden-planner bloomy-packages/garden-planner
 COPY bloomy-frontend bloomy-frontend
-COPY --from=deps /app/bloomy-packages/planner/node_modules bloomy-packages/planner/node_modules
+COPY --from=deps /app/bloomy-packages/tile-planner/node_modules bloomy-packages/tile-planner/node_modules
+COPY --from=deps /app/bloomy-packages/garden-planner/node_modules bloomy-packages/garden-planner/node_modules
 COPY --from=deps /app/bloomy-frontend/node_modules bloomy-frontend/node_modules
 
-# Build planner to dist/ so the frontend consumes compiled output.
-WORKDIR /app/bloomy-packages/planner
+WORKDIR /app/bloomy-packages/tile-planner
 RUN npm run build
 
-# Swap to the prod tsconfig (points to dist/ instead of src/).
+WORKDIR /app/bloomy-packages/garden-planner
+RUN npm run build
+
 WORKDIR /app/bloomy-frontend
 RUN cp tsconfig.build.json tsconfig.json
 RUN npm run build

@@ -17,7 +17,7 @@ jobs:
         with:
           path: bloomy-frontend
 
-      # Dockerfile also needs bloomy-packages/planner at build time
+      # Dockerfile needs bloomy-packages at build time
       - name: Checkout bloomy-packages
         run: git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/savefimvasil/bloomy-packages.git bloomy-packages
 

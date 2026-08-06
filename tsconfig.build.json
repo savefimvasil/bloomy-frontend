@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@bloomy/bloomy-planner": ["../bloomy-packages/planner/dist/index"]
+      "@bloomy/tile-planner": ["../bloomy-packages/tile-planner/dist/index"],
+      "@bloomy/garden-planner": ["../bloomy-packages/garden-planner/dist/index"]
     }
   },
   "include": [
