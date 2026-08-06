@@ -53,6 +53,3 @@ import { apiFetch } from "@/lib/api";
 
 const res = await apiFetch("/tile-plans", { method: "POST", body: { name: "..." } });
 ```
-
-Never call `fetch("/api/...")` or read `process.env.NEXT_PUBLIC_API_BASE_URL` directly
-from a page — that bypasses auth and breaks when the env var changes.
