@@ -18,7 +18,7 @@ function Line({ children, n }: { children: React.ReactNode; n: number }) {
   return (
     <div className="flex gap-4 leading-6">
       <span className="w-5 shrink-0 select-none text-right text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{n}</span>
-      <span className="whitespace-pre text-xs">{children}</span>
+      <span className="whitespace-pre-wrap break-words text-xs lg:whitespace-pre lg:break-normal">{children}</span>
     </div>
   );
 }
