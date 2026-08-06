@@ -6,7 +6,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
 import { Spinner } from "@/components/ui/spinner";
-import { GardenPlannerCore } from "@bloomy/bloomy-planner";
+import { GardenPlannerWidget } from "@/components/plan/GardenPlannerWidget";
 import type { GardenPlan } from "@bloomy/bloomy-planner";
 
 type ProjectMeta = {
@@ -107,7 +107,8 @@ export default function ProjectPlanPage() {
           {saveLabel}
         </div>
       )}
-      <GardenPlannerCore
+      <GardenPlannerWidget
+        key={project.id}
         plan={plan}
         onSave={handleSave}
         onGenerateImage={handleGenerateImage}

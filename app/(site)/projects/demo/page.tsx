@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GardenPlannerCore } from "@bloomy/bloomy-planner";
+import { GardenPlannerWidget } from "@/components/plan/GardenPlannerWidget";
 import type { GardenPlan, Vertex } from "@bloomy/bloomy-planner";
 
 const EMPTY_PLAN: GardenPlan = {
@@ -54,7 +54,7 @@ export default function DemoPlannerPage() {
 
       {/* Full planner — no onSave so nothing is persisted */}
       <div className="min-h-0 flex-1">
-        <GardenPlannerCore
+        <GardenPlannerWidget
           plan={plan}
           projectName="My garden"
           onBack={() => router.push("/projects/new")}

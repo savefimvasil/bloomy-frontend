@@ -1,22 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
 import type { PlannerConfig } from "@bloomy/bloomy-planner";
 import { outdoorConfig, indoorConfig } from "@bloomy/bloomy-planner";
-
-const PlannerCore = dynamic(
-  () => import("@bloomy/bloomy-planner").then((m) => m.PlannerCore),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full items-center justify-center text-sm text-muted">
-        loading planner…
-      </div>
-    ),
-  }
-);
+import { PlannerWidget } from "@/components/plan/PlannerWidget";
 
 type ThemeDef = {
   name: string;
@@ -324,7 +312,7 @@ export function InteractiveDemo() {
                 className="overflow-hidden rounded-xl border border-line shadow-md lg:w-[440px]"
                 style={{ height: 400, ...theme.vars } as React.CSSProperties}
               >
-                <PlannerCore
+                <PlannerWidget
                   key={`${cfg.planType}-compact`}
                   planType={cfg.planType}
                   config={resolvedConfig}
@@ -342,7 +330,7 @@ export function InteractiveDemo() {
               className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line h-[440px] lg:h-[680px]"
               style={{ ...theme.vars } as React.CSSProperties}
             >
-              <PlannerCore
+              <PlannerWidget
                 key={`${cfg.planType}-standard`}
                 planType={cfg.planType}
                 config={resolvedConfig}

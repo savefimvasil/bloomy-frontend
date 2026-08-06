@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { GardenPlannerCore } from "@bloomy/bloomy-planner";
+import { GardenPlannerWidget } from "@/components/plan/GardenPlannerWidget";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
 import type { GardenPlan } from "@bloomy/bloomy-planner";
@@ -60,7 +60,8 @@ export default function NearbyRequestPlanPage() {
   return (
     // Break out of the cabinet layout's padding so the planner fills the viewport.
     <div className="-m-6 md:-m-8 overflow-hidden h-[calc(100dvh-2.5rem)]">
-      <GardenPlannerCore
+      <GardenPlannerWidget
+        key={id}
         plan={plan}
         projectName={req.title}
         readOnly

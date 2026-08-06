@@ -81,20 +81,23 @@ const SNIPPETS: Record<Tab, { file: string; code: React.ReactNode }> = {
     ),
   },
   React: {
-    file: "page.tsx",
+    file: "Planner.tsx",
     code: (
       <div className="space-y-0.5">
-        <Line n={1}>{cm("// Next.js — use dynamic import with ssr: false")}</Line>
-        <Line n={2}>{kw("import")} {pl("dynamic")} {kw("from")} {str('"next/dynamic"')}{pl(";")}</Line>
-        <Line n={3}>{pl("")}</Line>
-        <Line n={4}>{kw("const")} {ty("PlannerCore")} {pl("=")} {fn_("dynamic")}{pl("(")}</Line>
-        <Line n={5}>{pl("  () =>")} {fn_("import")}{pl("(")}{str('"@bloomy/bloomy-planner"')}{pl(").")}{fn_("then")}{pl("(m => m.PlannerCore),")}</Line>
-        <Line n={6}>{pl("  { ssr: ")}{kw("false")}{pl(" }")}</Line>
-        <Line n={7}>{pl(");")}</Line>
-        <Line n={8}>{pl("")}</Line>
-        <Line n={9}>{kw("export default function")} {fn_("Page")}{pl("() {")}</Line>
-        <Line n={10}>{pl("  ")}{kw("return")} {pl("<")}{ty("PlannerCore")}{pl(" ")}{fn_("planType")}{pl("=")}{str('"garden"')}{pl(" ")}{fn_("persistKey")}{pl("=")}{str('"my-plan"')}{pl(" />;")}</Line>
-        <Line n={11}>{pl("}")}</Line>
+        <Line n={1}>{cm("// Works in React, Next.js, Remix, etc.")}</Line>
+        <Line n={2}>{kw("import")} {pl("{ ")}{fn_("useRef")}{pl(", ")}{fn_("useEffect")}{pl(" }")} {kw("from")} {str('"react"')}{pl(";")}</Line>
+        <Line n={3}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{pl(";")}</Line>
+        <Line n={4}>{pl("")}</Line>
+        <Line n={5}>{kw("export default function")} {fn_("Planner")}{pl("() {")}</Line>
+        <Line n={6}>{pl("  ")}{kw("const")} {pl("ref =")} {fn_("useRef")}{pl("(null);")}</Line>
+        <Line n={7}>{pl("  ")}{fn_("useEffect")}{pl("(")}</Line>
+        <Line n={8}>{pl("    () => ")}{fn_("mountTilePlanner")}{pl("(ref.current, {")}</Line>
+        <Line n={9}>{pl("      ")}{fn_("planType")}{pl(": ")}{str('"garden"')}{pl(",")}</Line>
+        <Line n={10}>{pl("      ")}{fn_("persistKey")}{pl(": ")}{str('"my-plan"')}{pl(",")}</Line>
+        <Line n={11}>{pl("    }), []")}</Line>
+        <Line n={12}>{pl("  );")}</Line>
+        <Line n={13}>{pl("  ")}{kw("return")} {pl("<")}{ty("div")} {fn_("ref")}{pl("={ref} style={{ height: ")}{str('"600px"')}{pl(" }} />;")}</Line>
+        <Line n={14}>{pl("}")}</Line>
       </div>
     ),
   },

@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import React from "react";
@@ -10,7 +9,7 @@ import { PlanExportSchema } from "@bloomy/bloomy-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
 import { ExportModal } from "./ExportModal";
-import { UploadFloorplanButton } from "./UploadFloorplanButton";
+import { PlannerWidget } from "./PlannerWidget";
 
 class PlannerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -39,18 +38,6 @@ class PlannerErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
-
-const PlannerCore = dynamic(
-  () => import("@bloomy/bloomy-planner").then((m) => m.PlannerCore),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full items-center justify-center bg-canvas text-muted">
-        Loading planner…
-      </div>
-    ),
-  }
-);
 
 function PlannerEntryInner() {
   const searchParams = useSearchParams();
@@ -120,12 +107,12 @@ function PlannerEntryInner() {
 
   return (
     <PlannerErrorBoundary>
-      <PlannerCore
+      <PlannerWidget
+        key={`${planType}-${projectId ?? "local"}`}
         planType={planType}
         initialPlan={initialPlan}
         onSave={projectId ? handleSave : undefined}
         onRequestExport={handleRequestExport}
-        uploadSlot={(dispatch) => <UploadFloorplanButton dispatch={dispatch} />}
       />
       <ExportModal
         kind={exportModal}
