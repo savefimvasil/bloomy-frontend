@@ -202,11 +202,13 @@ export function InteractiveDemo() {
   const cfg   = CONFIGS[cfgIdx];
   const theme = THEMES[themeIdx];
 
-  // baseConfig is the stable config for the live planner — only changes when planType changes.
-  // The engineering toggle only drives the code snippet; the live demo always shows full mode.
-  const baseConfig = useMemo<PlannerConfig>(
-    () => cfg.planType === "indoor" ? indoorConfig : outdoorConfig,
-    [cfg.planType]
+  const baseConfig: PlannerConfig = cfg.planType === "indoor" ? indoorConfig : outdoorConfig;
+
+  // resolvedConfig carries the engineering flag; PlannerWidget applies it in-place (no remount).
+  const resolvedConfig = useMemo<PlannerConfig>(
+    () => ({ ...baseConfig, engineering }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cfg.planType, engineering]
   );
 
   const snippetMap = {
@@ -304,39 +306,29 @@ export function InteractiveDemo() {
         {/* ── Planner + Code side-by-side (stacked on mobile) ── */}
         <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start">
 
-          {/* Planner */}
-          {isCompact ? (
-            <div className="flex flex-col gap-2">
-              <div
-                className="overflow-hidden rounded-xl border border-line shadow-md lg:w-[440px]"
-                style={{ height: 400, ...theme.vars } as React.CSSProperties}
-              >
-                <PlannerWidget
-                  key={`${cfg.planType}-compact`}
-                  planType={cfg.planType}
-                  config={baseConfig}
-                  persistKey={`landing-demo-${cfg.planType}`}
-                  compact
-                />
-              </div>
+          {/* Planner — single tree position so compact/engineering toggles update in-place */}
+          <div className={isCompact ? "flex flex-col gap-2" : "min-w-0 flex-1"}>
+            <div
+              className={isCompact
+                ? "overflow-hidden rounded-xl border border-line shadow-md lg:w-[440px]"
+                : "overflow-hidden rounded-xl border border-line h-[440px] lg:h-[680px]"}
+              style={{ ...(isCompact ? { height: 400 } : {}), ...theme.vars } as React.CSSProperties}
+            >
+              <PlannerWidget
+                key={cfg.planType}
+                planType={cfg.planType}
+                config={resolvedConfig}
+                compact={isCompact}
+                persistKey={`landing-demo-${cfg.planType}`}
+              />
+            </div>
+            {isCompact && (
               <p className="text-xs text-muted">
                 <span className="font-mono text-[11px]">440 × 400 px</span>
                 {" "}— sidebar or widget embed
               </p>
-            </div>
-          ) : (
-            <div
-              className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line h-[440px] lg:h-[680px]"
-              style={{ ...theme.vars } as React.CSSProperties}
-            >
-              <PlannerWidget
-                key={`${cfg.planType}-standard`}
-                planType={cfg.planType}
-                config={baseConfig}
-                persistKey={`landing-demo-${cfg.planType}`}
-              />
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Code block */}
           <div
