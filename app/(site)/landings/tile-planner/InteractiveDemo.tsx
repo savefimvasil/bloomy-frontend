@@ -202,12 +202,11 @@ export function InteractiveDemo() {
   const cfg   = CONFIGS[cfgIdx];
   const theme = THEMES[themeIdx];
 
-  // Build a config that applies the engineering flag on top of the base config
-  const baseConfig: PlannerConfig = cfg.planType === "indoor" ? indoorConfig : outdoorConfig;
-  const resolvedConfig = useMemo<PlannerConfig>(
-    () => ({ ...baseConfig, engineering }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cfg.planType, engineering]
+  // baseConfig is the stable config for the live planner — only changes when planType changes.
+  // The engineering toggle only drives the code snippet; the live demo always shows full mode.
+  const baseConfig = useMemo<PlannerConfig>(
+    () => cfg.planType === "indoor" ? indoorConfig : outdoorConfig,
+    [cfg.planType]
   );
 
   const snippetMap = {
@@ -315,7 +314,7 @@ export function InteractiveDemo() {
                 <PlannerWidget
                   key={`${cfg.planType}-compact`}
                   planType={cfg.planType}
-                  config={resolvedConfig}
+                  config={baseConfig}
                   persistKey={`landing-demo-${cfg.planType}`}
                   compact
                 />
@@ -333,7 +332,7 @@ export function InteractiveDemo() {
               <PlannerWidget
                 key={`${cfg.planType}-standard`}
                 planType={cfg.planType}
-                config={resolvedConfig}
+                config={baseConfig}
                 persistKey={`landing-demo-${cfg.planType}`}
               />
             </div>
