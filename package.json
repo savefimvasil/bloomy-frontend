@@ -20,7 +20,8 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@bloomy/bloomy-planner": "file:../bloomy-packages/planner",
+    "@bloomy/tile-planner": "file:../bloomy-packages/tile-planner",
+    "@bloomy/garden-planner": "file:../bloomy-packages/garden-planner",
     "@hookform/resolvers": "^5.5.7",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

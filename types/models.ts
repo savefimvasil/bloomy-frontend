@@ -62,7 +62,7 @@ export type QuoteRequestDetail = {
   updatedAt: string;
   photoUrls: string[];
   completionPhotoUrls: string[];
-  calculationResult: import("@bloomy/bloomy-planner").CalculationResult | null;
+  calculationResult: import("@bloomy/garden-planner").CalculationResult | null;
   proposals: ProposalInRequest[];
   isDirectRequest: boolean;
   note: string | null;
@@ -90,7 +90,7 @@ export type NearbyRequestDetail = {
   completionPhotoUrls: string[];
   projectSummary: { zoneCount: number; zoneSummary: string[] };
   planData: Record<string, unknown> | null;
-  calculationResult: import("@bloomy/bloomy-planner").CalculationResult | null;
+  calculationResult: import("@bloomy/garden-planner").CalculationResult | null;
   isDirectRequest: boolean;
   note: string | null;
   myProposal: {

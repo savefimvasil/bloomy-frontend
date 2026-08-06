@@ -48,7 +48,7 @@ const SNIPPETS: Record<Tab, { file: string; code: React.ReactNode }> = {
     code: (
       <div className="space-y-0.5">
         <Line n={1}>{cm("// Works with any JS framework or plain HTML")}</Line>
-        <Line n={2}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{pl(";")}</Line>
+        <Line n={2}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{pl(";")}</Line>
         <Line n={3}>{pl("")}</Line>
         <Line n={4}>{kw("const")} {pl("el =")} {ty("document")}{pl(".")}{fn_("getElementById")}{pl("(")}{str('"planner"')}{pl(");")}</Line>
         <Line n={5}>{pl("")}</Line>
@@ -69,7 +69,7 @@ const SNIPPETS: Record<Tab, { file: string; code: React.ReactNode }> = {
     code: (
       <div className="space-y-0.5">
         <Line n={1}>{cm("// Pass the raw DOM element — jQuery's [0] unwraps it")}</Line>
-        <Line n={2}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{pl(";")}</Line>
+        <Line n={2}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{pl(";")}</Line>
         <Line n={3}>{pl("")}</Line>
         <Line n={4}>{fn_("$")}{pl("(")}{str('"#planner"')}{pl(").")}{fn_("ready")}{pl("(function () {")}</Line>
         <Line n={5}>{pl("  ")}{kw("const")} {pl("unmount =")} {fn_("mountTilePlanner")}{pl("(")}</Line>
@@ -86,7 +86,7 @@ const SNIPPETS: Record<Tab, { file: string; code: React.ReactNode }> = {
       <div className="space-y-0.5">
         <Line n={1}>{cm("// Works in React, Next.js, Remix, etc.")}</Line>
         <Line n={2}>{kw("import")} {pl("{ ")}{fn_("useRef")}{pl(", ")}{fn_("useEffect")}{pl(" }")} {kw("from")} {str('"react"')}{pl(";")}</Line>
-        <Line n={3}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{pl(";")}</Line>
+        <Line n={3}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{pl(";")}</Line>
         <Line n={4}>{pl("")}</Line>
         <Line n={5}>{kw("export default function")} {fn_("Planner")}{pl("() {")}</Line>
         <Line n={6}>{pl("  ")}{kw("const")} {pl("ref =")} {fn_("useRef")}{pl("(null);")}</Line>
@@ -110,7 +110,7 @@ const SNIPPETS: Record<Tab, { file: string; code: React.ReactNode }> = {
         <Line n={3}>{pl("</")} {ty("template")}{pl(">")}</Line>
         <Line n={4}>{pl("")}</Line>
         <Line n={5}>{pl("<")}{ty("script setup")}{pl(">")}</Line>
-        <Line n={6}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{pl(";")}</Line>
+        <Line n={6}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{pl(";")}</Line>
         <Line n={7}>{kw("import")} {pl("{ ")}{fn_("ref")}{pl(", ")}{fn_("onMounted")}{pl(", ")}{fn_("onUnmounted")}{pl(" }")} {kw("from")} {str('"vue"')}{pl(";")}</Line>
         <Line n={8}>{pl("")}</Line>
         <Line n={9}>{kw("const")} {pl("container =")} {fn_("ref")}{pl("(null);")}</Line>

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useEstimate } from "@/store/estimate";
-import { ZONE_CONFIGS, defaultExistingStructure } from "@bloomy/bloomy-planner";
-import type { ExistingStructure, CalculationResult } from "@bloomy/bloomy-planner";
+import { ZONE_CONFIGS, defaultExistingStructure } from "@bloomy/garden-planner";
+import type { ExistingStructure, CalculationResult } from "@bloomy/garden-planner";
 import { apiFetch } from "@/lib/api";
 import { InlineInput } from "@/components/ui/inline-input";
 import { ToggleButton } from "@/components/ui/toggle-button";

@@ -3,9 +3,9 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import React from "react";
-import type { PlanType } from "@bloomy/bloomy-planner";
-import type { PlanExport, ExportKind } from "@bloomy/bloomy-planner";
-import { PlanExportSchema } from "@bloomy/bloomy-planner";
+import type { PlanType } from "@bloomy/tile-planner";
+import type { PlanExport, ExportKind } from "@bloomy/tile-planner";
+import { PlanExportSchema } from "@bloomy/tile-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
 import { ExportModal } from "./ExportModal";

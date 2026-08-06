@@ -14,28 +14,25 @@ const nextConfig: NextConfig = {
   ...(isDockerBuild
     ? {}
     : {
-        transpilePackages: ["@bloomy/bloomy-planner"],
+        transpilePackages: ["@bloomy/tile-planner", "@bloomy/garden-planner"],
         webpack(config) {
-          const plannerSrc = path.resolve(__dirname, "../bloomy-packages/planner/src");
-          // Planner-internal @/X imports must come BEFORE Next.js's generic @/ alias
-          // (webpack first-match wins). The planner uses five @/ namespaces:
-          //   @/canvas, @/garden, @/sidebar, @/ui  — not used by the frontend at all
-          //   @/lib/*  — some sub-paths overlap with frontend's lib/, so alias only
-          //              the specific files the planner needs, not the whole @/lib.
+          const tileSrc    = path.resolve(__dirname, "../bloomy-packages/tile-planner/src");
+          const gardenSrc  = path.resolve(__dirname, "../bloomy-packages/garden-planner/src");
+          const sharedSrc  = path.resolve(__dirname, "../bloomy-packages/shared");
           config.resolve.alias = {
-            "@/canvas":            path.resolve(plannerSrc, "canvas"),
-            "@/garden":            path.resolve(plannerSrc, "garden"),
-            "@/sidebar":           path.resolve(plannerSrc, "sidebar"),
-            "@/ui":                path.resolve(plannerSrc, "ui"),
-            "@/lib/constants":     path.resolve(plannerSrc, "lib/constants"),
-            "@/lib/types":         path.resolve(plannerSrc, "lib/types"),
-            "@/lib/geometry":      path.resolve(plannerSrc, "lib/geometry"),
-            "@/lib/labels":        path.resolve(plannerSrc, "lib/labels"),
-            "@/lib/hooks":         path.resolve(plannerSrc, "lib/hooks"),
-            "@/lib/optimal-patterns": path.resolve(plannerSrc, "lib/optimal-patterns"),
-            "@/lib/config":        path.resolve(plannerSrc, "lib/config"),
+            // tile-planner internal @/ paths
+            "@/lib":    tileSrc + "/lib",
+            "@/tile":   tileSrc + "/tile",
+            // garden-planner internal @/ paths
+            "@/garden":      gardenSrc + "/garden",
+            "@/calculator":  gardenSrc + "/calculator",
+            // shared ~/  paths
+            "~/lib":         sharedSrc + "/lib",
+            "~/ui":          sharedSrc + "/ui",
+            "~/canvas":      sharedSrc + "/canvas",
+            "~/mount-utils": sharedSrc + "/mount-utils",
             ...config.resolve.alias,
-            react:    path.resolve(__dirname, "node_modules/react"),
+            react:       path.resolve(__dirname, "node_modules/react"),
             "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
           };
           return config;

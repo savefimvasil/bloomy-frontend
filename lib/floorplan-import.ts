@@ -1,5 +1,5 @@
 import { apiFetch } from "./api";
-import type { Vertex } from "@bloomy/bloomy-planner";
+import type { Vertex } from "@bloomy/tile-planner";
 
 const ACCEPTED_TYPES = new Set([
   "image/jpeg",

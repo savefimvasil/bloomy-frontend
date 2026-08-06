@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { PlannerAction } from "@bloomy/bloomy-planner";
+import type { TilePlannerAction } from "@bloomy/tile-planner";
 import {
   extractShapeFromFloorplan,
   FLOORPLAN_ACCEPT,
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth";
 
 interface Props {
-  dispatch: React.Dispatch<PlannerAction>;
+  dispatch: React.Dispatch<TilePlannerAction>;
 }
 
 export function UploadFloorplanButton({ dispatch }: Props) {

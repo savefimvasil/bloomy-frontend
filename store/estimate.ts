@@ -10,8 +10,8 @@ import type {
   ZoneSpec,
   ExistingStructure,
   ZoneType,
-} from "@bloomy/bloomy-planner";
-import { DEFAULT_PARAMS } from "@bloomy/bloomy-planner";
+} from "@bloomy/garden-planner";
+import { DEFAULT_PARAMS } from "@bloomy/garden-planner";
 import { apiFetch } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

@@ -1,10 +1,10 @@
 "use client";
 
-import type { Vertex, PlannerAction } from "@bloomy/bloomy-planner";
+import type { Vertex, TilePlannerAction } from "@bloomy/tile-planner";
 
 interface Props {
   vertices: Vertex[];
-  dispatch: React.Dispatch<PlannerAction>;
+  dispatch: React.Dispatch<TilePlannerAction>;
 }
 
 export function VertexTable({ vertices, dispatch }: Props) {

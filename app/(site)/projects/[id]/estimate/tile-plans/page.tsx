@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEstimate } from "@/store/estimate";
-import { ZONE_CONFIGS } from "@bloomy/bloomy-planner";
+import { ZONE_CONFIGS } from "@bloomy/garden-planner";
 import { apiFetch } from "@/lib/api";
 import type { TilePlan } from "@/types/models";
 import { Button } from "@/components/ui/button";

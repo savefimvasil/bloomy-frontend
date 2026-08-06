@@ -67,7 +67,7 @@ function Hero() {
       <div className="container relative">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
           <span className="h-1.5 w-1.5 rounded-full bg-lime" />
-          <span className="font-mono text-[11px] text-paper/70">@bloomy/bloomy-planner</span>
+          <span className="font-mono text-[11px] text-paper/70">@bloomy/tile-planner</span>
         </div>
 
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
@@ -99,9 +99,9 @@ function Hero() {
 
           <div className="space-y-3">
             <Terminal title="bash">
-              <Prompt>npm install @bloomy/bloomy-planner</Prompt>
+              <Prompt>npm install @bloomy/tile-planner</Prompt>
               <div className="mt-4 space-y-0.5">
-                <CodeLine n={1}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{pl(";")}</CodeLine>
+                <CodeLine n={1}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{pl(";")}</CodeLine>
                 <CodeLine n={2}>{pl("")}</CodeLine>
                 <CodeLine n={3}>{fn_("mountTilePlanner")}{pl("(")}</CodeLine>
                 <CodeLine n={4}>{pl("  ")}{ty("document")}{pl(".")}{fn_("getElementById")}{pl("(")}{str('"planner"')}{pl("),")}</CodeLine>
@@ -161,7 +161,7 @@ function HowItWorks() {
               <span className="font-mono text-xs text-muted">install</span>
             </div>
             <Terminal title="bash" minHeight={168}>
-              <Prompt>npm install @bloomy/bloomy-planner</Prompt>
+              <Prompt>npm install @bloomy/tile-planner</Prompt>
             </Terminal>
             <p className="mt-3 text-sm text-muted">Single package — no peer deps beyond React itself (used internally).</p>
           </div>
@@ -192,7 +192,7 @@ function HowItWorks() {
             <Terminal title="app.js" minHeight={168}>
               <div className="space-y-0.5">
                 <CodeLine n={1}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")}</CodeLine>
-                <CodeLine n={2}>{pl("  ")}{str('"@bloomy/bloomy-planner"')}{pl(";")}</CodeLine>
+                <CodeLine n={2}>{pl("  ")}{str('"@bloomy/tile-planner"')}{pl(";")}</CodeLine>
                 <CodeLine n={3}>{pl("")}</CodeLine>
                 <CodeLine n={4}>{fn_("mountTilePlanner")}{pl("(")}</CodeLine>
                 <CodeLine n={5}>{pl("  ")}{ty("document")}{pl(".")}{fn_("getElementById")}{pl("(")}{str('"planner"')}{pl("),")}</CodeLine>
@@ -396,7 +396,7 @@ function Cta() {
         </div>
         <div className="mt-10 inline-flex items-center gap-3 rounded-lg border border-line bg-paper px-5 py-3 font-mono text-sm text-muted">
           <span className="text-leaf">$</span>
-          npm install @bloomy/bloomy-planner
+          npm install @bloomy/tile-planner
         </div>
       </div>
     </section>

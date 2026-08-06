@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { mountGardenPlanner } from "@bloomy/bloomy-planner";
-import type { GardenPlannerCoreProps } from "@bloomy/bloomy-planner";
+import { mountGardenPlanner } from "@bloomy/garden-planner";
+import type { GardenPlannerCoreProps } from "@bloomy/garden-planner";
 
 /**
  * Thin React wrapper around mountGardenPlanner.

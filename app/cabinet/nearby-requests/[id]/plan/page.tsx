@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { GardenPlannerWidget } from "@/components/plan/GardenPlannerWidget";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
-import type { GardenPlan } from "@bloomy/bloomy-planner";
+import type { GardenPlan } from "@bloomy/garden-planner";
 import type { NearbyRequestDetail } from "@/types/models";
 
 export default function NearbyRequestPlanPage() {

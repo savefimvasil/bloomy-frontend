@@ -1,7 +1,7 @@
 // Client-only — import from "use client" components only
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { CalculationResult } from "@bloomy/bloomy-planner";
+import type { CalculationResult } from "@bloomy/garden-planner";
 import { fmtGBP } from "./currency";
 
 export function generateGardenPdf(result: CalculationResult, title = "Garden Project"): void {

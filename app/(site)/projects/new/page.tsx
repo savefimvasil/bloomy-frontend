@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
-import { BoundaryEditor, boundaryArea } from "@bloomy/bloomy-planner";
-import type { GardenPlan, Vertex } from "@bloomy/bloomy-planner";
+import { BoundaryEditor, boundaryArea } from "@bloomy/garden-planner";
+import type { GardenPlan, Vertex } from "@bloomy/garden-planner";
 
 const DEFAULT_VERTICES: Vertex[] = [[0, 0], [8, 0], [8, 10], [0, 10]];
 

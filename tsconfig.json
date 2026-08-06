@@ -22,6 +22,7 @@
       "@/canvas/*": ["../bloomy-packages/planner/src/canvas/*"],
       "@/garden/*": ["../bloomy-packages/planner/src/garden/*"],
       "@/sidebar/*": ["../bloomy-packages/planner/src/sidebar/*"],
+      "@/tile/*": ["../bloomy-packages/planner/src/tile/*"],
       "@/ui/*": ["../bloomy-packages/planner/src/ui/*"],
       "@/lib/constants": ["../bloomy-packages/planner/src/lib/constants"],
       "@/lib/types": ["../bloomy-packages/planner/src/lib/types"],

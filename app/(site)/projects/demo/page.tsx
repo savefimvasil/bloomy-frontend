@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GardenPlannerWidget } from "@/components/plan/GardenPlannerWidget";
-import type { GardenPlan, Vertex } from "@bloomy/bloomy-planner";
+import type { GardenPlan, Vertex } from "@bloomy/garden-planner";
 
 const EMPTY_PLAN: GardenPlan = {
   version: 2,

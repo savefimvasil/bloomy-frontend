@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
-import type { PlannerConfig } from "@bloomy/bloomy-planner";
-import { outdoorConfig, indoorConfig } from "@bloomy/bloomy-planner";
+import type { PlannerConfig } from "@bloomy/tile-planner";
+import { outdoorConfig, indoorConfig } from "@bloomy/tile-planner";
 import { PlannerWidget } from "@/components/plan/PlannerWidget";
 
 type ThemeDef = {
@@ -96,7 +96,7 @@ function CodeLine({ children, n }: { children: React.ReactNode; n: number }) {
 function MinimalSnippet({ planType }: { planType: string }) {
   return (
     <div className="space-y-0.5">
-      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
       <CodeLine n={2}>{plain("")}</CodeLine>
       <CodeLine n={3}>{fn_("mountTilePlanner")}{plain("(")}</CodeLine>
       <CodeLine n={4}>{plain("  ")}{ty("document")}{plain(".")}{fn_("getElementById")}{plain("(")}{str('"planner"')}{plain("),")}</CodeLine>
@@ -109,7 +109,7 @@ function MinimalSnippet({ planType }: { planType: string }) {
 function PersistSnippet({ planType }: { planType: string }) {
   return (
     <div className="space-y-0.5">
-      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
       <CodeLine n={2}>{plain("")}</CodeLine>
       <CodeLine n={3}>{fn_("mountTilePlanner")}{plain("(")}</CodeLine>
       <CodeLine n={4}>{plain("  ")}{ty("document")}{plain(".")}{fn_("getElementById")}{plain("(")}{str('"planner"')}{plain("),")}</CodeLine>
@@ -125,7 +125,7 @@ function PersistSnippet({ planType }: { planType: string }) {
 function ThemeSnippet({ planType }: { planType: string }) {
   return (
     <div className="space-y-0.5">
-      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
       <CodeLine n={2}>{plain("")}</CodeLine>
       <CodeLine n={3}>{fn_("mountTilePlanner")}{plain("(el, {")}</CodeLine>
       <CodeLine n={4}>{plain("  ")}{fn_("planType")}{plain(": ")}{str(`"${planType}"`)}{plain(",")}</CodeLine>
@@ -142,7 +142,7 @@ function ThemeSnippet({ planType }: { planType: string }) {
 function SaveSnippet({ planType }: { planType: string }) {
   return (
     <div className="space-y-0.5">
-      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
       <CodeLine n={2}>{plain("")}</CodeLine>
       <CodeLine n={3}>{fn_("mountTilePlanner")}{plain("(el, {")}</CodeLine>
       <CodeLine n={4}>{plain("  ")}{fn_("planType")}{plain(": ")}{str(`"${planType}"`)}{plain(",")}</CodeLine>
@@ -160,7 +160,7 @@ function SimpleSnippet({ planType }: { planType: string }) {
   const cfg = planType === "indoor" ? "indoorConfig" : "outdoorConfig";
   return (
     <div className="space-y-0.5">
-      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(", ")}{fn_(cfg)}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(", ")}{fn_(cfg)}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
       <CodeLine n={2}>{plain("")}</CodeLine>
       <CodeLine n={3}>{cm("// engineering: false — simple homeowner mode")}</CodeLine>
       <CodeLine n={4}>{cm("// hides cut colours, advanced patterns, grout,")}</CodeLine>
@@ -179,7 +179,7 @@ function SimpleSnippet({ planType }: { planType: string }) {
 function CompactSnippet({ planType }: { planType: string }) {
   return (
     <div className="space-y-0.5">
-      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/bloomy-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
       <CodeLine n={2}>{plain("")}</CodeLine>
       <CodeLine n={3}>{cm("// compact=true hides the sidebar — shows a slim")}</CodeLine>
       <CodeLine n={4}>{cm("// status bar + slide-up settings panel instead")}</CodeLine>
