@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
-import type { PlannerConfig } from "@bloomy/tile-planner";
+import type { PlannerConfig, TilePlannerResult } from "@bloomy/tile-planner";
 import { outdoorConfig, indoorConfig } from "@bloomy/tile-planner";
 import { PlannerWidget } from "@/components/plan/PlannerWidget";
 
@@ -192,12 +192,149 @@ function CompactSnippet({ planType }: { planType: string }) {
   );
 }
 
+function OnResultSnippet({ planType }: { planType: string }) {
+  return (
+    <div className="space-y-0.5">
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={2}>{plain("")}</CodeLine>
+      <CodeLine n={3}>{cm("// fires ~300 ms after every change")}</CodeLine>
+      <CodeLine n={4}>{cm("// r is null when canvas is empty")}</CodeLine>
+      <CodeLine n={5}>{fn_("mountTilePlanner")}{plain("(el, {")}</CodeLine>
+      <CodeLine n={6}>{plain("  ")}{fn_("planType")}{plain(": ")}{str(`"${planType}"`)}{plain(",")}</CodeLine>
+      <CodeLine n={7}>{plain("  ")}{fn_("onResult")}{plain(": (r) => {")}</CodeLine>
+      <CodeLine n={8}>{plain("    ")}{kw("if")} {plain("(!r) ")}{kw("return")}{plain(";")}</CodeLine>
+      <CodeLine n={9}>{plain("    ")}{cm("// add to cart, update price, etc.")}</CodeLine>
+      <CodeLine n={10}>{plain("    ")}{fn_("addToCart")}{plain("(r.tiles, r.boxes, r.sku);")}</CodeLine>
+      <CodeLine n={11}>{plain("  },")}</CodeLine>
+      <CodeLine n={12}>{plain("});")}</CodeLine>
+    </div>
+  );
+}
+
+// ── Live terminal ────────────────────────────────────────────────────────────
+
+function num(n: number | undefined) {
+  if (n === undefined) return <span style={{ color: "#bd93f9" }}>undefined</span>;
+  return <span style={{ color: "#bd93f9" }}>{n}</span>;
+}
+function str2(s: string) { return <span style={{ color: "#f1fa8c" }}>&quot;{s}&quot;</span>; }
+function key(s: string)  { return <span style={{ color: "#8be9fd" }}>{s}</span>; }
+function dim(s: string)  { return <span style={{ color: "rgba(255,255,255,0.25)" }}>{s}</span>; }
+function grn(s: string)  { return <span style={{ color: "#a8e6a3" }}>{s}</span>; }
+
+function TileSizeValue({ ts }: { ts: TilePlannerResult["tileSize"] }) {
+  if (ts.kind === "custom") {
+    return (
+      <>
+        {dim("{ ")}{key("kind")}{dim(": ")}{str2("custom")}{dim(", ")}
+        {key("width")}{dim(": ")}{num(ts.width)}{dim(", ")}
+        {key("height")}{dim(": ")}{num(ts.height)}{dim(" }")}
+      </>
+    );
+  }
+  return <>{dim("{ ")}{key("kind")}{dim(": ")}{str2(ts.kind)}{dim(" }")}</>;
+}
+
+function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined }) {
+  const [flash, setFlash] = useState(false);
+  const prev = useRef(result);
+
+  useEffect(() => {
+    if (result !== prev.current) {
+      prev.current = result;
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [result]);
+
+  const isEmpty = result === undefined;
+  const isNull  = result === null;
+
+  return (
+    <div
+      className="overflow-hidden rounded-xl transition-shadow duration-300"
+      style={{
+        background: CB,
+        border: `1px solid ${flash ? "rgba(168,230,163,0.4)" : BR}`,
+        boxShadow: flash ? "0 0 0 2px rgba(168,230,163,0.12)" : undefined,
+        transition: "border-color 0.2s, box-shadow 0.2s",
+      }}
+    >
+      {/* Title bar */}
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${BR}`, background: CBB }}>
+        <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+        <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+        <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+        <span className="ml-3 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>console</span>
+        <div className="ml-auto flex items-center gap-2">
+          {!isEmpty && (
+            <span
+              className="font-mono text-[10px] uppercase tracking-widest"
+              style={{ color: flash ? "#a8e6a3" : "rgba(255,255,255,0.25)", transition: "color 0.2s" }}
+            >
+              {flash ? "● live" : "○ idle"}
+            </span>
+          )}
+          {isEmpty && (
+            <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.2)" }}>
+              waiting…
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Output */}
+      <div className="p-5 font-mono text-xs leading-6" style={{ color: "#e8f5e9" }}>
+        {isEmpty && (
+          <span style={{ color: "rgba(255,255,255,0.25)" }}>
+            {grn("// ")}interact with the planner above — onResult fires here
+          </span>
+        )}
+
+        {isNull && (
+          <div>
+            {grn("onResult")}{dim("(")}<span style={{ color: "#ff79c6" }}>null</span>{dim(");")}{" "}
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>{dim("// canvas empty")}</span>
+          </div>
+        )}
+
+        {result && !isNull && (
+          <div className="space-y-0">
+            <div>{grn("onResult")}{dim("({")}</div>
+            <div className="pl-6">
+              <div>{key("tiles")}{dim(":       ")}{num(result.tiles)}{dim(",")}</div>
+              {result.boxes !== undefined && (
+                <div>{key("boxes")}{dim(":       ")}{num(result.boxes)}{dim(",")}</div>
+              )}
+              <div>{key("areaSqM")}{dim(":     ")}{num(Math.round(result.areaSqM * 100) / 100)}{dim(",")}</div>
+              <div>
+                {key("wasteFactor")}{dim(":  ")}{num(result.wasteFactor)}{dim(",")}{" "}
+                <span style={{ color: "rgba(255,255,255,0.3)" }}>{dim(`// +${Math.round(result.wasteFactor * 100)}%`)}</span>
+              </div>
+              <div>
+                {key("tileSize")}{dim(":    ")}<TileSizeValue ts={result.tileSize} />{dim(",")}
+              </div>
+              <div>{key("material")}{dim(":    ")}{str2(result.material)}{dim(",")}</div>
+              {result.sku !== undefined && (
+                <div>{key("sku")}{dim(":         ")}{str2(result.sku)}{dim(",")}</div>
+              )}
+            </div>
+            <div>{dim("});")}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function InteractiveDemo() {
   const [cfgIdx, setCfgIdx]           = useState(0);
-  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple">("minimal");
+  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult">("minimal");
   const [themeIdx, setThemeIdx]       = useState(0);
   const [isCompact, setIsCompact]     = useState(false);
   const [engineering, setEngineering] = useState(true);
+  const [liveResult, setLiveResult]   = useState<TilePlannerResult | null | undefined>(undefined);
 
   const cfg   = CONFIGS[cfgIdx];
   const theme = THEMES[themeIdx];
@@ -212,12 +349,13 @@ export function InteractiveDemo() {
   );
 
   const snippetMap = {
-    minimal: <MinimalSnippet planType={cfg.planType} />,
-    persist: <PersistSnippet planType={cfg.planType} />,
-    theme:   <ThemeSnippet   planType={cfg.planType} />,
-    compact: <CompactSnippet planType={cfg.planType} />,
-    onSave:  <SaveSnippet    planType={cfg.planType} />,
-    simple:  <SimpleSnippet  planType={cfg.planType} />,
+    minimal:  <MinimalSnippet  planType={cfg.planType} />,
+    persist:  <PersistSnippet  planType={cfg.planType} />,
+    theme:    <ThemeSnippet    planType={cfg.planType} />,
+    compact:  <CompactSnippet  planType={cfg.planType} />,
+    onSave:   <SaveSnippet     planType={cfg.planType} />,
+    simple:   <SimpleSnippet   planType={cfg.planType} />,
+    onResult: <OnResultSnippet planType={cfg.planType} />,
   };
 
   function switchSize(compact: boolean) {
@@ -320,6 +458,7 @@ export function InteractiveDemo() {
                 config={resolvedConfig}
                 compact={isCompact}
                 persistKey={`landing-demo-${cfg.planType}`}
+                onResult={setLiveResult}
               />
             </div>
             {isCompact && (
@@ -344,8 +483,8 @@ export function InteractiveDemo() {
                 <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
               </div>
               <span className="ml-1 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>app.js</span>
-              <div className="ml-auto flex flex-wrap gap-1">
-                {(["minimal", "persist", "theme", "compact", "onSave", "simple"] as const).map((k) => (
+              <div className="ml-2 flex min-w-0 gap-1 overflow-x-auto">
+                {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult"] as const).map((k) => (
                   <button
                     key={k}
                     onClick={() => setSnippetKey(k)}
@@ -366,6 +505,16 @@ export function InteractiveDemo() {
             </div>
           </div>
 
+        </div>
+
+        {/* ── Live onResult terminal ── */}
+        <div className="mt-5">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="font-mono text-xs text-muted">onResult callback</span>
+            <span className="h-px flex-1 bg-line" />
+            <span className="font-mono text-[10px] text-muted/60">updates ~300 ms after every change</span>
+          </div>
+          <LiveTerminal result={liveResult} />
         </div>
 
       </div>
