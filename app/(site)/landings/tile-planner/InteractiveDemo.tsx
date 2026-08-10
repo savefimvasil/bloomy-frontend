@@ -441,16 +441,20 @@ export function InteractiveDemo() {
           </div>
         </div>
 
-        {/* ── Planner + Code side-by-side (stacked on mobile) ── */}
-        <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start">
+        {/* ── Planner (left) + Code + Terminal (right) side-by-side ── */}
+        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-start">
 
-          {/* Planner — single tree position so compact/engineering toggles update in-place */}
-          <div className={isCompact ? "flex flex-col gap-2" : "min-w-0 flex-1"}>
+          {/* Left: Planner */}
+          <div className={isCompact
+            ? "flex shrink-0 flex-col gap-2 md:w-[440px]"
+            : "min-w-0 flex-1"
+          }>
             <div
-              className={isCompact
-                ? "overflow-hidden rounded-xl border border-line shadow-md lg:w-[440px]"
-                : "overflow-hidden rounded-xl border border-line h-[440px] lg:h-[680px]"}
-              style={{ ...(isCompact ? { height: 400 } : {}), ...theme.vars } as React.CSSProperties}
+              className="overflow-hidden rounded-xl border border-line"
+              style={{
+                height: isCompact ? 400 : 620,
+                ...theme.vars,
+              } as React.CSSProperties}
             >
               <PlannerWidget
                 key={cfg.planType}
@@ -469,52 +473,59 @@ export function InteractiveDemo() {
             )}
           </div>
 
-          {/* Code block */}
-          <div
-            className={isCompact
-              ? "flex flex-col overflow-hidden rounded-xl h-[300px] lg:flex-1 lg:min-w-0 lg:h-[400px]"
-              : "flex flex-col overflow-hidden rounded-xl h-[300px] lg:w-[420px] lg:flex-shrink-0 lg:h-[680px]"}
-            style={{ background: CB } as React.CSSProperties}
-          >
-            <div className="flex shrink-0 items-center gap-3 border-b px-4 py-3" style={{ borderColor: BR, background: CBB }}>
-              <div className="flex gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-                <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-                <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+          {/* Right: Code block + Terminal */}
+          <div className={`flex min-w-0 flex-col gap-4 ${isCompact ? "flex-1" : "md:w-[440px] md:shrink-0"}`}>
+
+            {/* Code panel */}
+            <div
+              className="flex flex-col overflow-hidden rounded-xl"
+              style={{
+                background: CB,
+                border: `1px solid ${BR}`,
+                height: isCompact ? 300 : 380,
+              } as React.CSSProperties}
+            >
+              <div className="flex shrink-0 items-center gap-3 border-b px-4 py-3" style={{ borderColor: BR, background: CBB }}>
+                <div className="flex gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+                  <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+                  <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+                </div>
+                <span className="ml-1 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>app.js</span>
+                <div className="ml-2 flex min-w-0 gap-1 overflow-x-auto">
+                  {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult"] as const).map((k) => (
+                    <button
+                      key={k}
+                      onClick={() => setSnippetKey(k)}
+                      className="rounded px-2 py-0.5 font-mono text-[10px] transition-colors"
+                      style={{
+                        background: snippetKey === k ? "rgba(168,230,163,0.15)" : "transparent",
+                        color: snippetKey === k ? "#a8e6a3" : "rgba(255,255,255,0.35)",
+                        outline: snippetKey === k ? "1px solid rgba(168,230,163,0.25)" : "none",
+                      }}
+                    >
+                      {k}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <span className="ml-1 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>app.js</span>
-              <div className="ml-2 flex min-w-0 gap-1 overflow-x-auto">
-                {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult"] as const).map((k) => (
-                  <button
-                    key={k}
-                    onClick={() => setSnippetKey(k)}
-                    className="rounded px-2 py-0.5 font-mono text-[10px] transition-colors"
-                    style={{
-                      background: snippetKey === k ? "rgba(168,230,163,0.15)" : "transparent",
-                      color: snippetKey === k ? "#a8e6a3" : "rgba(255,255,255,0.35)",
-                      outline: snippetKey === k ? "1px solid rgba(168,230,163,0.25)" : "none",
-                    }}
-                  >
-                    {k}
-                  </button>
-                ))}
+              <div className="flex-1 overflow-auto p-5 font-mono">
+                {snippetMap[snippetKey]}
               </div>
             </div>
-            <div className="flex-1 overflow-auto p-5 font-mono">
-              {snippetMap[snippetKey]}
+
+            {/* Live terminal — always in the right column beside the code */}
+            <div>
+              <div className="mb-3 flex items-center gap-3">
+                <span className="font-mono text-xs text-muted">onResult callback</span>
+                <span className="h-px flex-1 bg-line" />
+                <span className="font-mono text-[10px] text-muted/60">updates ~300 ms after every change</span>
+              </div>
+              <LiveTerminal result={liveResult} />
             </div>
+
           </div>
 
-        </div>
-
-        {/* ── Live onResult terminal ── */}
-        <div className="mt-5">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="font-mono text-xs text-muted">onResult callback</span>
-            <span className="h-px flex-1 bg-line" />
-            <span className="font-mono text-[10px] text-muted/60">updates ~300 ms after every change</span>
-          </div>
-          <LiveTerminal result={liveResult} />
         </div>
 
       </div>
