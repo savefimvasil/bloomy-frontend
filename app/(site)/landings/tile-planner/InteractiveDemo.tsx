@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
-import type { PlannerConfig, TilePlannerResult } from "@bloomy/tile-planner";
+import type { PlannerConfig, TilePlannerResult, TileSize } from "@bloomy/tile-planner";
 import { outdoorConfig, indoorConfig } from "@bloomy/tile-planner";
 import { PlannerWidget } from "@/components/plan/PlannerWidget";
 
@@ -60,6 +60,15 @@ const THEMES: ThemeDef[] = [
       "--color-line":   "rgba(15,23,42,0.12)",
     },
   },
+];
+
+type TileSizeDef = { label: string; value: TileSize };
+
+const TILE_SIZES: TileSizeDef[] = [
+  { label: "600×600", value: { kind: "600x600" } },
+  { label: "600×300", value: { kind: "600x300" } },
+  { label: "900×600", value: { kind: "900x600" } },
+  { label: "1200×600", value: { kind: "1200x600" } },
 ];
 
 type ConfigOption = {
@@ -211,6 +220,23 @@ function OnResultSnippet({ planType }: { planType: string }) {
   );
 }
 
+function LockedSizeSnippet({ planType, sizeKind }: { planType: string; sizeKind: string }) {
+  return (
+    <div className="space-y-0.5">
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={2}>{plain("")}</CodeLine>
+      <CodeLine n={3}>{cm("// Lock tile size — hides the size picker in sidebar.")}</CodeLine>
+      <CodeLine n={4}>{cm("// Client sells one tile format: the user just draws")}</CodeLine>
+      <CodeLine n={5}>{cm("// their room and gets an exact tile count.")}</CodeLine>
+      <CodeLine n={6}>{fn_("mountTilePlanner")}{plain("(el, {")}</CodeLine>
+      <CodeLine n={7}>{plain("  ")}{fn_("planType")}{plain(": ")}{str(`"${planType}"`)}{plain(",")}</CodeLine>
+      <CodeLine n={8}>{plain("  ")}{fn_("size")}{plain(":    { kind: ")}{str(`"${sizeKind}"`)}{plain(" },")}</CodeLine>
+      <CodeLine n={9}>{plain("  ")}{fn_("persistKey")}{plain(": ")}{str('"my-plan"')}{plain(",")}</CodeLine>
+      <CodeLine n={10}>{plain("});")}</CodeLine>
+    </div>
+  );
+}
+
 // ── Live terminal ────────────────────────────────────────────────────────────
 
 function num(n: number | undefined) {
@@ -261,7 +287,6 @@ function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined
         transition: "border-color 0.2s, box-shadow 0.2s",
       }}
     >
-      {/* Title bar */}
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${BR}`, background: CBB }}>
         <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
         <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
@@ -284,7 +309,6 @@ function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined
         </div>
       </div>
 
-      {/* Output */}
       <div className="p-5 font-mono text-xs leading-6" style={{ color: "#e8f5e9" }}>
         {isEmpty && (
           <span style={{ color: "rgba(255,255,255,0.25)" }}>
@@ -330,23 +354,37 @@ function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined
 
 export function InteractiveDemo() {
   const [cfgIdx, setCfgIdx]           = useState(0);
-  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult">("minimal");
+  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult" | "size">("minimal");
   const [themeIdx, setThemeIdx]       = useState(0);
+  const [tileSizeIdx, setTileSizeIdx] = useState(0); // 600×600 default
   const [isCompact, setIsCompact]     = useState(false);
   const [engineering, setEngineering] = useState(true);
   const [liveResult, setLiveResult]   = useState<TilePlannerResult | null | undefined>(undefined);
 
-  const cfg   = CONFIGS[cfgIdx];
-  const theme = THEMES[themeIdx];
+  const cfg       = CONFIGS[cfgIdx];
+  const theme     = THEMES[themeIdx];
+  const tileSize  = TILE_SIZES[tileSizeIdx];
 
   const baseConfig: PlannerConfig = cfg.planType === "indoor" ? indoorConfig : outdoorConfig;
 
-  // resolvedConfig carries the engineering flag; PlannerWidget applies it in-place (no remount).
+  // Engineering mode restores all sidebar features so developers can see the full API surface.
+  // Client/simple mode uses the stripped-down defaults (no reset, share, exports, estimator).
   const resolvedConfig = useMemo<PlannerConfig>(
-    () => ({ ...baseConfig, engineering }),
+    () => ({
+      ...baseConfig,
+      engineering,
+      ...(engineering ? {
+        showReset: true,
+        showShare: true,
+        showExports: true,
+        showMaterialEstimator: true,
+      } : {}),
+    }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cfg.planType, engineering]
   );
+
+  const selectedSizeKind = tileSize.value.kind;
 
   const snippetMap = {
     minimal:  <MinimalSnippet  planType={cfg.planType} />,
@@ -356,11 +394,12 @@ export function InteractiveDemo() {
     onSave:   <SaveSnippet     planType={cfg.planType} />,
     simple:   <SimpleSnippet   planType={cfg.planType} />,
     onResult: <OnResultSnippet planType={cfg.planType} />,
+    size:     <LockedSizeSnippet planType={cfg.planType} sizeKind={selectedSizeKind} />,
   };
 
-  function switchSize(compact: boolean) {
+  function switchLayout(compact: boolean) {
     setIsCompact(compact);
-    if (compact && snippetKey !== "simple") setSnippetKey("compact");
+    if (compact && snippetKey !== "simple" && snippetKey !== "size") setSnippetKey("compact");
     else if (!compact && snippetKey === "compact") setSnippetKey("minimal");
   }
 
@@ -370,16 +409,21 @@ export function InteractiveDemo() {
     else if (snippetKey === "simple") setSnippetKey("minimal");
   }
 
+  function switchTileSize(idx: number) {
+    setTileSizeIdx(idx);
+    setSnippetKey("size");
+  }
+
   return (
     <section className="bg-canvas py-20">
       <div className="mx-auto w-full px-6 md:px-10" style={{ maxWidth: 1400 }}>
         <p className="text-eyebrow text-muted">Live demo</p>
         <h2 className="mt-2 text-display-sm text-ink">See it in action</h2>
         <p className="mt-3 max-w-xl text-lead text-muted">
-          Switch plan type, colour theme, or usage pattern — the planner and code update together.
+          Switch plan type, colour theme, or tile size — the planner and code update together.
         </p>
 
-        {/* ── Unified controls toolbar ── */}
+        {/* ── Controls toolbar ── */}
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-paper px-5 py-3">
 
           {/* Plan type */}
@@ -420,12 +464,26 @@ export function InteractiveDemo() {
 
           <span className="h-4 w-px shrink-0 bg-line" />
 
-          {/* Size */}
+          {/* Tile size — passed to widget, hidden inside sidebar */}
           <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted">Size</span>
+            <span className="text-xs text-muted">Tile size</span>
             <div className="flex gap-1">
-              <ToggleButton active={!isCompact} onClick={() => switchSize(false)}>Standard</ToggleButton>
-              <ToggleButton active={isCompact}  onClick={() => switchSize(true)}>Compact</ToggleButton>
+              {TILE_SIZES.map((s, i) => (
+                <ToggleButton key={s.label} active={tileSizeIdx === i} onClick={() => switchTileSize(i)}>
+                  {s.label}
+                </ToggleButton>
+              ))}
+            </div>
+          </div>
+
+          <span className="h-4 w-px shrink-0 bg-line" />
+
+          {/* Layout */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs text-muted">Layout</span>
+            <div className="flex gap-1">
+              <ToggleButton active={!isCompact} onClick={() => switchLayout(false)}>Standard</ToggleButton>
+              <ToggleButton active={isCompact}  onClick={() => switchLayout(true)}>Compact</ToggleButton>
             </div>
           </div>
 
@@ -436,7 +494,7 @@ export function InteractiveDemo() {
             <span className="text-xs text-muted">Mode</span>
             <div className="flex gap-1">
               <ToggleButton active={engineering}  onClick={() => switchEngineering(true)}>Engineering</ToggleButton>
-              <ToggleButton active={!engineering} onClick={() => switchEngineering(false)}>Simple</ToggleButton>
+              <ToggleButton active={!engineering} onClick={() => switchEngineering(false)}>Client</ToggleButton>
             </div>
           </div>
         </div>
@@ -463,6 +521,7 @@ export function InteractiveDemo() {
                 compact={isCompact}
                 persistKey={`landing-demo-${cfg.planType}`}
                 onResult={setLiveResult}
+                size={tileSize.value}
               />
             </div>
             {isCompact && (
@@ -493,7 +552,7 @@ export function InteractiveDemo() {
                 </div>
                 <span className="ml-1 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>app.js</span>
                 <div className="ml-2 flex min-w-0 gap-1 overflow-x-auto">
-                  {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult"] as const).map((k) => (
+                  {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult", "size"] as const).map((k) => (
                     <button
                       key={k}
                       onClick={() => setSnippetKey(k)}
@@ -514,7 +573,7 @@ export function InteractiveDemo() {
               </div>
             </div>
 
-            {/* Live terminal — always in the right column beside the code */}
+            {/* Live terminal */}
             <div>
               <div className="mb-3 flex items-center gap-3">
                 <span className="font-mono text-xs text-muted">onResult callback</span>
