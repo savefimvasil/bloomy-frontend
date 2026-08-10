@@ -11,7 +11,7 @@ export default function SiteLayout({
     <>
       <SiteHeader />
       <ScrollToTop />
-      <main className="flex-1 overflow-y-auto pt-[68px]">
+      <main className="flex-1 overflow-y-auto">
         {children}
         <SiteFooter />
       </main>

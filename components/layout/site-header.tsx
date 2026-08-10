@@ -195,17 +195,17 @@ export function SiteHeader({ fixed = true }: { fixed?: boolean }) {
 
   return (
     <header
-      className={`${fixed ? "fixed top-0 w-full" : "sticky top-0"} z-40 border-b border-line/60 bg-paper/95 backdrop-blur-md`}
+      className={`relative ${fixed ? "fixed top-0 w-full" : "sticky top-0"} z-40 border-b border-line/60 bg-paper/95 backdrop-blur-md`}
     >
       <div className="container flex h-[68px] items-center justify-between gap-6">
 
         {/* Logo */}
         <Link href="/" className="inline-flex shrink-0 items-center text-forest">
-          <BloomyLogo className="h-auto w-[148px] sm:w-[160px]" />
+          <BloomyLogo className="h-auto w-[148px] md:w-[160px]" />
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 sm:flex">
+        <nav className="hidden items-center gap-6 md:flex">
           <Dropdown label="Tools" items={TOOLS} />
 
           {/* "Find contractors" — shown to non-contractors */}
@@ -244,7 +244,7 @@ export function SiteHeader({ fixed = true }: { fixed?: boolean }) {
         <IconButton
           variant="ghost"
           size="lg"
-          className="sm:hidden text-base text-ink"
+          className="md:hidden text-base text-ink"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
@@ -254,7 +254,7 @@ export function SiteHeader({ fixed = true }: { fixed?: boolean }) {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="absolute left-0 right-0 top-[68px] flex flex-col gap-1 border-t border-line bg-paper/98 px-6 py-4 shadow-soft backdrop-blur-md sm:hidden">
+        <div className="absolute left-0 right-0 top-[68px] flex flex-col gap-1 border-t border-line bg-paper/98 px-6 py-4 shadow-soft backdrop-blur-md md:hidden">
           <p className="mb-1 text-eyebrow text-muted/50">Tools</p>
           {TOOLS.map((item) => (
             <Link

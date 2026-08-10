@@ -354,11 +354,11 @@ function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined
 
 export function InteractiveDemo() {
   const [cfgIdx, setCfgIdx]           = useState(0);
-  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult" | "size">("minimal");
+  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult" | "size">("size");
   const [themeIdx, setThemeIdx]       = useState(0);
   const [tileSizeIdx, setTileSizeIdx] = useState(0); // 600×600 default
   const [isCompact, setIsCompact]     = useState(false);
-  const [engineering, setEngineering] = useState(true);
+  const [engineering, setEngineering] = useState(false);
   const [liveResult, setLiveResult]   = useState<TilePlannerResult | null | undefined>(undefined);
 
   const cfg       = CONFIGS[cfgIdx];
@@ -367,21 +367,17 @@ export function InteractiveDemo() {
 
   const baseConfig: PlannerConfig = cfg.planType === "indoor" ? indoorConfig : outdoorConfig;
 
-  // Engineering mode restores all sidebar features so developers can see the full API surface.
-  // Client/simple mode uses the stripped-down defaults (no reset, share, exports, estimator).
+  // lockedSize is passed via config so the CDN version also picks it up.
+  // showReset / showShare / showExports / showMaterialEstimator stay off — landing shows
+  // the client-facing widget, not the full internal tool.
   const resolvedConfig = useMemo<PlannerConfig>(
     () => ({
       ...baseConfig,
       engineering,
-      ...(engineering ? {
-        showReset: true,
-        showShare: true,
-        showExports: true,
-        showMaterialEstimator: true,
-      } : {}),
+      lockedSize: tileSize.value,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cfg.planType, engineering]
+    [cfg.planType, engineering, tileSizeIdx]
   );
 
   const selectedSizeKind = tileSize.value.kind;
@@ -521,7 +517,6 @@ export function InteractiveDemo() {
                 compact={isCompact}
                 persistKey={`landing-demo-${cfg.planType}`}
                 onResult={setLiveResult}
-                size={tileSize.value}
               />
             </div>
             {isCompact && (
