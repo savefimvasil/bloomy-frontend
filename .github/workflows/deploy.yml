@@ -33,6 +33,7 @@ jobs:
           file: bloomy-frontend/Dockerfile
           build-args: |
             NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
+            NEXT_PUBLIC_BLOOMY_CDN_TOKEN=${{ secrets.NEXT_PUBLIC_BLOOMY_CDN_TOKEN }}
           push: true
           tags: ghcr.io/savefimvasil/bloomy-frontend:latest
 

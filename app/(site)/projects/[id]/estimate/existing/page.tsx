@@ -15,7 +15,6 @@ export default function ExistingStructuresPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { plan, constructionData, steps, currentStepIndex, updateExistingStructure, save, saving } = useEstimate();
-
   const [baseline, setBaseline] = useState<CalculationResult | null>(null);
 
   useEffect(() => {
