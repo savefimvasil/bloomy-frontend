@@ -146,6 +146,16 @@ a {
   color: var(--color-forest);
 }
 
+/* Responsive display utilities re-declared outside @layer so they win over
+   dynamically-loaded widget stylesheets (e.g. tile planner CDN) that re-declare
+   @layer utilities after the site CSS, causing layer-order conflicts. */
+@media (min-width: 48rem) {
+  .md\:flex        { display: flex; }
+  .md\:hidden      { display: none; }
+  .md\:inline-flex { display: inline-flex; }
+  .md\:block       { display: block; }
+}
+
 @keyframes marquee-ltr {
   from { transform: translateX(-50%); }
   to   { transform: translateX(0%); }
