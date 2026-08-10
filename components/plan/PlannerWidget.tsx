@@ -39,10 +39,10 @@ export function PlannerWidget(props: TilePlannerCoreProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scriptReady]);
 
-  // In-place update for config / compact without remounting
+  // In-place update for config / compact / size without remounting
   useEffect(() => {
-    handleRef.current?.update({ config: props.config, compact: props.compact });
-  }, [props.config, props.compact]);
+    handleRef.current?.update({ config: props.config, compact: props.compact, size: props.size });
+  }, [props.config, props.compact, props.size]);
 
   return (
     <>
