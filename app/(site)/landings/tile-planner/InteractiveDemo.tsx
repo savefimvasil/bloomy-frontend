@@ -5,6 +5,7 @@ import { ToggleButton } from "@/components/ui/toggle-button";
 import type { PlannerConfig, TilePlannerResult, TileSize } from "@bloomy/tile-planner";
 import { outdoorConfig, indoorConfig } from "@bloomy/tile-planner";
 import { PlannerWidget } from "@/components/plan/PlannerWidget";
+import { CB, BR, CBB, kw, str, fn_, ty, cm, pl, CodeLine } from "./code-ui";
 
 type ThemeDef = {
   name: string;
@@ -82,25 +83,7 @@ const CONFIGS: ConfigOption[] = [
   { label: "indoor",  planType: "indoor", description: "Room shape — tile + laminate materials" },
 ];
 
-const CB  = "#0d2414";
-const BR  = "rgba(255,255,255,0.10)";
-const CBB = "rgba(255,255,255,0.07)";
-
-function kw(s: string)    { return <span style={{ color: "#ff79c6" }}>{s}</span>; }
-function str(s: string)   { return <span style={{ color: "#f1fa8c" }}>{s}</span>; }
-function fn_(s: string)   { return <span style={{ color: "#a8e6a3" }}>{s}</span>; }
-function ty(s: string)    { return <span style={{ color: "#8be9fd" }}>{s}</span>; }
-function cm(s: string)    { return <span style={{ color: "#6a9e6a" }}>{s}</span>; }
-function plain(s: string) { return <span style={{ color: "#e8f5e9" }}>{s}</span>; }
-
-function CodeLine({ children, n }: { children: React.ReactNode; n: number }) {
-  return (
-    <div className="flex gap-4">
-      <span className="w-6 shrink-0 select-none text-right text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{n}</span>
-      <span className="whitespace-pre-wrap break-words text-xs leading-6 lg:whitespace-pre lg:break-normal">{children}</span>
-    </div>
-  );
-}
+const plain = pl; // alias — snippets use 'plain', terminal uses 'pl'
 
 function MinimalSnippet({ planType }: { planType: string }) {
   return (
@@ -393,6 +376,11 @@ export function InteractiveDemo() {
     size:     <LockedSizeSnippet planType={cfg.planType} sizeKind={selectedSizeKind} />,
   };
 
+  function switchCfg(idx: number) {
+    setCfgIdx(idx);
+    setLiveResult(undefined); // reset terminal when widget remounts
+  }
+
   function switchLayout(compact: boolean) {
     setIsCompact(compact);
     if (compact && snippetKey !== "simple" && snippetKey !== "size") setSnippetKey("compact");
@@ -427,7 +415,7 @@ export function InteractiveDemo() {
             <span className="text-xs text-muted">Type</span>
             <div className="flex gap-1">
               {CONFIGS.map((c, i) => (
-                <ToggleButton key={c.label} active={cfgIdx === i} onClick={() => setCfgIdx(i)}>
+                <ToggleButton key={c.label} active={cfgIdx === i} onClick={() => switchCfg(i)}>
                   {c.label}
                 </ToggleButton>
               ))}

@@ -2,53 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { InteractiveDemo } from "./InteractiveDemo";
 import { FrameworkTabs } from "./FrameworkTabs";
+import { kw, str, fn_, ty, cm, pl, CodeLine, Terminal } from "./code-ui";
 
 export const metadata: Metadata = {
   title: "Tile Planner — Embed anywhere",
   description: "Drop a fully-featured interactive tile planner into any web project. Vanilla JS, React, Vue, jQuery — no backend required.",
 };
 
-const CB  = "#0d2414";   // code block background
-const CBB = "rgba(255,255,255,0.07)"; // code block header
-const BR  = "rgba(255,255,255,0.10)"; // border on dark
-
-function Terminal({ title = "terminal", minHeight, children }: { title?: string; minHeight?: number; children: React.ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-xl" style={{ background: CB, border: `1px solid ${BR}` }}>
-      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${BR}`, background: CBB }}>
-        <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-        <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-        <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-        <span className="ml-3 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>{title}</span>
-      </div>
-      <div className="overflow-x-auto p-5 font-mono text-sm" style={{ color: "#e8f5e9", minHeight }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function Prompt({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
       <span style={{ color: "#a8e6a3" }}>$</span>
       <span style={{ color: "#e8f5e9" }}>{children}</span>
-    </div>
-  );
-}
-
-function kw(s: string)  { return <span style={{ color: "#ff79c6" }}>{s}</span>; }
-function str(s: string) { return <span style={{ color: "#f1fa8c" }}>{s}</span>; }
-function fn_(s: string) { return <span style={{ color: "#a8e6a3" }}>{s}</span>; }
-function ty(s: string)  { return <span style={{ color: "#8be9fd" }}>{s}</span>; }
-function cm(s: string)  { return <span style={{ color: "#6a9e6a" }}>{s}</span>; }
-function pl(s: string)  { return <span style={{ color: "#e8f5e9" }}>{s}</span>; }
-
-function CodeLine({ n, children }: { n: number; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-4 leading-6">
-      <span className="w-5 shrink-0 select-none text-right text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{n}</span>
-      <span className="whitespace-pre-wrap break-words text-xs lg:whitespace-pre lg:break-normal">{children}</span>
     </div>
   );
 }
