@@ -118,7 +118,7 @@ export default function RequestQuotePage() {
   const ineligibleProjects = projects.filter((p) => !p.hasEstimate);
 
   return (
-    <div className="max-w-lg">
+    <div>
       {loading && <div className="flex justify-center py-20"><Spinner label="Loading…" /></div>}
 
           {!loading && contractor && (

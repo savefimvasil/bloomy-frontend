@@ -6,17 +6,8 @@ import { kw, str, fn_, ty, cm, pl, CodeLine, Terminal } from "./code-ui";
 
 export const metadata: Metadata = {
   title: "Tile Planner — Embed anywhere",
-  description: "Drop a fully-featured interactive tile planner into any web project. Vanilla JS, React, Vue, jQuery — no backend required.",
+  description: "Drop a fully-featured interactive tile planner into any web project. CDN script tag or npm package — one function call, no backend required.",
 };
-
-function Prompt({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span style={{ color: "#a8e6a3" }}>$</span>
-      <span style={{ color: "#e8f5e9" }}>{children}</span>
-    </div>
-  );
-}
 
 function Hero() {
   return (
@@ -30,9 +21,15 @@ function Hero() {
         }}
       />
       <div className="container relative">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-          <span className="h-1.5 w-1.5 rounded-full bg-lime" />
-          <span className="font-mono text-[11px] text-paper/70">@bloomy/tile-planner</span>
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <span className="h-1.5 w-1.5 rounded-full bg-lime" />
+            <span className="font-mono text-[11px] text-paper/70">cdn.bloomy.garden</span>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <span className="h-1.5 w-1.5 rounded-full bg-lime/50" />
+            <span className="font-mono text-[11px] text-paper/50">@bloomy/tile-planner</span>
+          </div>
         </div>
 
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
@@ -43,10 +40,10 @@ function Hero() {
             </h1>
             <p className="mt-6 text-lead text-paper/60">
               A complete interactive tile planner you can embed in any web project.
-              Vanilla JS, React, Vue, jQuery — one function call, no backend required.
+              Drop in via CDN script tag with a token, or install the npm package — no backend required.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              {["Vanilla JS", "React", "Vue", "jQuery", "TypeScript", "Zero backend"].map((t) => (
+              {["CDN script tag", "Vanilla JS", "React", "Vue", "TypeScript", "Zero backend"].map((t) => (
                 <span key={t} className="rounded-full border px-3 py-1 font-mono text-xs text-lime/80" style={{ borderColor: "rgba(183,227,111,0.25)", background: "rgba(183,227,111,0.06)" }}>
                   {t}
                 </span>
@@ -63,22 +60,26 @@ function Hero() {
           </div>
 
           <div className="space-y-3">
-            <Terminal title="bash">
-              <Prompt>npm install @bloomy/tile-planner</Prompt>
-              <div className="mt-4 space-y-0.5">
-                <CodeLine n={1}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{pl(";")}</CodeLine>
-                <CodeLine n={2}>{pl("")}</CodeLine>
-                <CodeLine n={3}>{fn_("mountTilePlanner")}{pl("(")}</CodeLine>
-                <CodeLine n={4}>{pl("  ")}{ty("document")}{pl(".")}{fn_("getElementById")}{pl("(")}{str('"planner"')}{pl("),")}</CodeLine>
-                <CodeLine n={5}>{pl("  { ")}{fn_("planType")}{pl(": ")}{str('"garden"')}{pl(",")}{pl(" ")}{fn_("persistKey")}{pl(": ")}{str('"my-plan"')}{pl(" }")}</CodeLine>
-                <CodeLine n={6}>{pl(");")}</CodeLine>
+            <Terminal title="index.html">
+              <div className="space-y-0.5">
+                <CodeLine n={1}>{cm("<!-- 1. Load bundle — no build step required -->")}</CodeLine>
+                <CodeLine n={2}>{pl("<")}{ty("link")}{pl(" ")}{fn_("rel")}{pl("=")}{str('"stylesheet"')}{pl(" ")}{fn_("href")}{pl("=")}{str('"https://cdn.bloomy.garden/tile-planner.css"')}{pl(">")}</CodeLine>
+                <CodeLine n={3}>{pl("<")}{ty("script")}{pl(" ")}{fn_("src")}{pl("=")}{str('"https://cdn.bloomy.garden/tile-planner.js"')}{pl("></")}{ty("script")}{pl(">")}</CodeLine>
+                <CodeLine n={4}>{pl("")}</CodeLine>
+                <CodeLine n={5}>{cm("<!-- 2. Mount with your embed token -->")}</CodeLine>
+                <CodeLine n={6}>{pl("<")}{ty("script")}{pl(">")}</CodeLine>
+                <CodeLine n={7}>{pl("  ")}{ty("BloomyPlanner")}{pl(".")}{fn_("mount")}{pl("(")}{str('"#planner"')}{pl(", {")}</CodeLine>
+                <CodeLine n={8}>{pl("    ")}{fn_("token")}{pl(":    ")}{str('"emb_yourtoken"')}{pl(",")}</CodeLine>
+                <CodeLine n={9}>{pl("    ")}{fn_("planType")}{pl(": ")}{str('"garden"')}{pl(",")}</CodeLine>
+                <CodeLine n={10}>{pl("  });")}</CodeLine>
+                <CodeLine n={11}>{pl("</")} {ty("script")}{pl(">")}</CodeLine>
               </div>
             </Terminal>
 
             <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="mb-2 font-mono text-[11px] uppercase tracking-widest text-paper/40">or with React</p>
-              <p className="font-mono text-xs text-paper/70">
-                {`<PlannerCore planType="garden" persistKey="my-plan" />`}
+              <p className="mb-1.5 font-mono text-[10px] uppercase tracking-widest text-paper/40">or with npm</p>
+              <p className="font-mono text-xs text-paper/60">
+                npm install @bloomy/tile-planner
               </p>
             </div>
           </div>
@@ -89,11 +90,12 @@ function Hero() {
 }
 
 const PILLS = [
-  "mountTilePlanner()", "5 install patterns", "Herringbone",
-  "Running bond", "Diagonal", "Chess colour", "PDF export",
-  "PNG export", "JSON import / export", "Grout gap control",
-  "Cut-piece FFD", "Custom tile sizes", "localStorage persist",
-  "TypeScript types", "onSave callback", "Themeable",
+  "CDN script tag", "BloomyPlanner.mount()", "mountTilePlanner()",
+  "Token auth", "handle.update()", "onResult callback", "onSave callback",
+  "Herringbone", "Running bond", "Diagonal", "Chess colour",
+  "PDF export", "PNG export", "JSON import / export",
+  "Grout gap control", "Cut-piece FFD", "Custom tile sizes",
+  "localStorage persist", "TypeScript types", "Themeable",
 ];
 
 function FeatureStrip() {
@@ -123,12 +125,19 @@ function HowItWorks() {
           <div>
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forest font-mono text-xs font-bold text-lime">1</span>
-              <span className="font-mono text-xs text-muted">install</span>
+              <span className="font-mono text-xs text-muted">add CDN links</span>
             </div>
-            <Terminal title="bash" minHeight={168}>
-              <Prompt>npm install @bloomy/tile-planner</Prompt>
+            <Terminal title="index.html" minHeight={168}>
+              <div className="space-y-0.5">
+                <CodeLine n={1}>{cm("<!-- No install — works in any HTML page -->")}</CodeLine>
+                <CodeLine n={2}>{pl("<")}{ty("link")}{pl(" ")}{fn_("rel")}{pl("=")}{str('"stylesheet"')}</CodeLine>
+                <CodeLine n={3}>{pl("     ")}{fn_("href")}{pl("=")}{str('"https://cdn.bloomy.garden/tile-planner.css"')}{pl(">")}</CodeLine>
+                <CodeLine n={4}>{pl("<")}{ty("script")}</CodeLine>
+                <CodeLine n={5}>{pl("  ")}{fn_("src")}{pl("=")}{str('"https://cdn.bloomy.garden/tile-planner.js"')}</CodeLine>
+                <CodeLine n={6}>{pl("></")}{ty("script")}{pl(">")}</CodeLine>
+              </div>
             </Terminal>
-            <p className="mt-3 text-sm text-muted">Single package — no peer deps beyond React itself (used internally).</p>
+            <p className="mt-3 text-sm text-muted">No install required. Using npm?{" "}<code className="font-mono text-xs">npm install @bloomy/tile-planner</code></p>
           </div>
 
           {/* Step 2 */}
@@ -154,18 +163,17 @@ function HowItWorks() {
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forest font-mono text-xs font-bold text-lime">3</span>
               <span className="font-mono text-xs text-muted">mount</span>
             </div>
-            <Terminal title="app.js" minHeight={168}>
+            <Terminal title="index.html" minHeight={168}>
               <div className="space-y-0.5">
-                <CodeLine n={1}>{kw("import")} {pl("{ ")}{fn_("mountTilePlanner")}{pl(" }")} {kw("from")}</CodeLine>
-                <CodeLine n={2}>{pl("  ")}{str('"@bloomy/tile-planner"')}{pl(";")}</CodeLine>
-                <CodeLine n={3}>{pl("")}</CodeLine>
-                <CodeLine n={4}>{fn_("mountTilePlanner")}{pl("(")}</CodeLine>
-                <CodeLine n={5}>{pl("  ")}{ty("document")}{pl(".")}{fn_("getElementById")}{pl("(")}{str('"planner"')}{pl("),")}</CodeLine>
-                <CodeLine n={6}>{pl("  { ")}{fn_("planType")}{pl(": ")}{str('"garden"')}{pl(" }")}</CodeLine>
-                <CodeLine n={7}>{pl(");")}</CodeLine>
+                <CodeLine n={1}>{pl("<")}{ty("script")}{pl(">")}</CodeLine>
+                <CodeLine n={2}>{pl("  ")}{ty("BloomyPlanner")}{pl(".")}{fn_("mount")}{pl("(")}{str('"#planner"')}{pl(", {")}</CodeLine>
+                <CodeLine n={3}>{pl("    ")}{fn_("token")}{pl(":    ")}{str('"emb_yourtoken"')}{pl(",")}</CodeLine>
+                <CodeLine n={4}>{pl("    ")}{fn_("planType")}{pl(": ")}{str('"garden"')}{pl(",")}</CodeLine>
+                <CodeLine n={5}>{pl("  });")}</CodeLine>
+                <CodeLine n={6}>{pl("</")} {ty("script")}{pl(">")}</CodeLine>
               </div>
             </Terminal>
-            <p className="mt-3 text-sm text-muted">Returns an unmount function — call it to clean up.</p>
+            <p className="mt-3 text-sm text-muted">Returns a handle — <code className="font-mono text-xs">handle.unmount()</code> removes it, <code className="font-mono text-xs">handle.update(opts)</code> changes config live.</p>
           </div>
         </div>
 
@@ -179,42 +187,100 @@ function HowItWorks() {
   );
 }
 
+function IconGrid() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="2" y="2" width="5" height="5" rx="0.75" />
+      <rect x="9" y="2" width="5" height="5" rx="0.75" />
+      <rect x="2" y="9" width="5" height="5" rx="0.75" />
+      <rect x="9" y="9" width="5" height="5" rx="0.75" />
+    </svg>
+  );
+}
+
+function IconScissors() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+      <circle cx="4.5" cy="4.5" r="2" />
+      <circle cx="4.5" cy="11.5" r="2" />
+      <path d="M13 3L6.5 6.5M13 13L6.5 9.5" />
+    </svg>
+  );
+}
+
+function IconDownload() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 2v8M5 8l3 3 3-3" />
+      <path d="M2 13h12" />
+    </svg>
+  );
+}
+
+function IconCallback() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 2L2 8h4.5L4 14l8-9H7l2-3z" />
+    </svg>
+  );
+}
+
+function IconPattern() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+      <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="0.75" />
+      <rect x="9" y="1.5" width="5.5" height="5.5" rx="0.75" />
+      <rect x="5.25" y="9" width="5.5" height="5.5" rx="0.75" />
+    </svg>
+  );
+}
+
+function IconGlobe() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 2c-1.8 0-3 2.7-3 6s1.2 6 3 6 3-2.7 3-6-1.2-6-3-6z" />
+      <path d="M2 8h12" />
+    </svg>
+  );
+}
+
 const FEATURES = [
   {
-    icon: "⊞",
+    icon: <IconGrid />,
     tag: "Material calc",
     title: "Precise tile count — always",
     body: "Full tiles and cut pieces calculated on every canvas change. Order exactly what you need with configurable waste buffer (+10% or +15%).",
   },
   {
-    icon: "✂",
+    icon: <IconScissors />,
     tag: "FFD algorithm",
     title: "Cut-piece reuse",
     body: "Offcuts are binned and reused via First Fit Decreasing. Tiles cut for one edge are automatically reused elsewhere — fewer tiles purchased.",
   },
   {
-    icon: "↗",
+    icon: <IconDownload />,
     tag: "Export",
     title: "PDF · PNG · JSON",
     body: "Client-side PDF via jsPDF, PNG via canvas, and a structured JSON format you can import, re-open, or store in your own database.",
   },
   {
-    icon: "⟡",
-    tag: "Headless saves",
-    title: "Bring your own backend",
-    body: "Pass an onSave callback and persist however you like — your API, Supabase, localStorage. No lock-in, no opinions.",
+    icon: <IconCallback />,
+    tag: "Callbacks",
+    title: "onSave · onResult",
+    body: "onSave persists the plan wherever you like — your API, Supabase, localStorage. onResult fires ~300 ms after every change with tile count, boxes, and SKU.",
   },
   {
-    icon: "⊙",
+    icon: <IconPattern />,
     tag: "Patterns",
     title: "5 installation patterns",
     body: "Straight, running bond, diagonal, chess colour mode, and herringbone (rotatable at 0 / 45 / 90 / 135°). Tile-size guards enforce valid combinations.",
   },
   {
-    icon: "∅",
-    tag: "TypeScript",
-    title: "Fully typed surface",
-    body: "PlannerConfig, PlanExport, MountOptions — all exported. Parse saved plans with the included Zod schema.",
+    icon: <IconGlobe />,
+    tag: "CDN embed",
+    title: "No build step required",
+    body: "Drop in via script tag with a CDN token — no npm, no bundler. Or install the npm package for full TypeScript types, tree-shaking, and the React component API.",
   },
 ];
 
@@ -229,7 +295,7 @@ function Advantages() {
           {FEATURES.map((f) => (
             <div key={f.title} className="bg-paper p-6">
               <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-forest/8 font-mono text-base text-forest">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-forest/8 text-forest">
                   {f.icon}
                 </span>
                 <span className="rounded bg-mist px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -247,6 +313,7 @@ function Advantages() {
 }
 
 const MOUNT_OPTS = [
+  { name: "token",                type: "string",                                default: "—",        desc: "Embed token issued from your Bloomy account. Required for CDN (BloomyPlanner.mount) embeds; not needed when using the npm package directly." },
   { name: "planType",             type: '"garden" | "indoor"',                  default: '"garden"', desc: "Starting shape and default tile preset." },
   { name: "size",                 type: "TileSize",                              default: "—",        desc: 'Lock a tile size and hide the size picker. E.g. { kind: "600x600" }. Pass your product\'s format — users just draw the room.' },
   { name: "persistKey",          type: "string",                               default: "—",        desc: "localStorage key for automatic plan persistence." },
@@ -306,8 +373,21 @@ function ApiReference() {
           </div>
         </div>
 
+        {/* Return value — handle */}
+        <div className="mt-8">
+          <p className="mb-3 font-mono text-xs text-paper/40">Both mount functions return a handle</p>
+          <Terminal title="types.d.ts">
+            <div className="space-y-0.5">
+              <CodeLine n={1}>{kw("interface")} {ty("TilePlannerHandle")} {pl("{")}</CodeLine>
+              <CodeLine n={2}>{pl("  ")}{fn_("unmount")}{pl(": () => ")}{ty("void")}{pl(";")}{cm("                              // remove from DOM")}</CodeLine>
+              <CodeLine n={3}>{pl("  ")}{fn_("update")}{pl("(partial: ")}{ty("Partial<MountOptions>")}{pl("): ")}{ty("void")}{pl(";")}{cm("  // live-update config, no remount")}</CodeLine>
+              <CodeLine n={4}>{pl("}")}</CodeLine>
+            </div>
+          </Terminal>
+        </div>
+
         {/* PlanExport type + theming */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <div>
             <p className="mb-3 font-mono text-xs text-paper/40">PlanExport — the object passed to onSave</p>
             <Terminal title="types.d.ts">
@@ -366,9 +446,15 @@ function Cta() {
             Back to demo
           </Link>
         </div>
-        <div className="mt-10 inline-flex items-center gap-3 rounded-lg border border-line bg-paper px-5 py-3 font-mono text-sm text-muted">
-          <span className="text-leaf">$</span>
-          npm install @bloomy/tile-planner
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <div className="inline-flex items-center gap-3 rounded-lg border border-line bg-paper px-5 py-3 font-mono text-sm text-muted">
+            <span className="text-leaf text-xs">CDN</span>
+            cdn.bloomy.garden
+          </div>
+          <div className="inline-flex items-center gap-3 rounded-lg border border-line bg-paper px-5 py-3 font-mono text-sm text-muted">
+            <span className="text-leaf">$</span>
+            npm install @bloomy/tile-planner
+          </div>
         </div>
       </div>
     </section>

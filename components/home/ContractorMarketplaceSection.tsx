@@ -43,11 +43,11 @@ export function ContractorMarketplaceSection() {
         <h2 className="mt-4 text-display-lg">
           Plan it. Post it.<br />Get it built.
         </h2>
-        <p className="mt-5 max-w-lg text-body text-paper/70">
+        <p className="mt-5 text-body text-paper/70">
           Once your garden plan is ready, Bloomy connects you with local contractors who can turn it into reality — or if you offer the service, find jobs near you.
         </p>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-2">
+        <div className="mt-14 grid gap-6 md:grid-cols-2 2xl:gap-8">
           {/* Homeowner card */}
           <div className="rounded-2xl border border-white/15 bg-white/8 p-8">
             <p className="text-eyebrow text-paper/60">For homeowners</p>

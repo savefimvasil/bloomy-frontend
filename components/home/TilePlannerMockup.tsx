@@ -6,7 +6,7 @@ const STATS = [
 
 export function TilePlannerMockup() {
   return (
-    <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-line bg-paper shadow-soft">
+    <div className="relative w-full overflow-hidden rounded-2xl border border-line bg-paper shadow-soft">
       <div className="bg-forest/8 px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-muted">
         Garden plan · 4.2 × 3.1 m
       </div>

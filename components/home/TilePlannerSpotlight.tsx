@@ -22,7 +22,7 @@ export function TilePlannerSpotlight() {
             <h2 className="mt-4 text-display-lg text-forest">
               The Tile<br />Planner
             </h2>
-            <p className="mt-5 text-body text-muted">
+            <p className="mt-5 max-w-md text-body text-muted">
               Draw any shape — rectangular, L-shaped, curved cutouts — then drop your tile
               size and pattern. Bloomy instantly calculates how many whole tiles you need,
               how many cuts, and the exact offcut sizes.

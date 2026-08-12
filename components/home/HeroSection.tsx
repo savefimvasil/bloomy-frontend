@@ -86,30 +86,53 @@ export function HeroSection(props: HeroSectionProps) {
 
         <div className="flex-1" />
 
-        {/* Main content — bottom left */}
-        <div className="max-w-3xl">
-          <h1 className="text-display-xl">{headline}</h1>
+        {/* Main content — bottom left, right column decorative at 2xl */}
+        <div className="grid grid-cols-1 gap-12 2xl:grid-cols-[1fr_auto]">
+          <div className="max-w-3xl xl:max-w-4xl">
+            <h1 className="text-display-xl">{headline}</h1>
 
-          <p className={`mt-7 max-w-lg text-body ${isDark ? "text-paper/70" : "text-muted"}`}>
-            {description}
-          </p>
+            <p className={`mt-7 text-body ${isDark ? "text-paper/70" : "text-muted"}`}>
+              {description}
+            </p>
 
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Button
-              href={primaryCta.href}
-              variant={isDark ? "light" : "default"}
-              className="px-8 py-4 text-base"
-            >
-              {primaryCta.label}
-            </Button>
-            <Button
-              href={secondaryCta.href}
-              variant={isDark ? "outline" : "secondary"}
-              className="px-8 py-4 text-base"
-            >
-              {secondaryCta.label}
-            </Button>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <Button
+                href={primaryCta.href}
+                variant={isDark ? "light" : "default"}
+                className="px-8 py-4 text-base"
+              >
+                {primaryCta.label}
+              </Button>
+              <Button
+                href={secondaryCta.href}
+                variant={isDark ? "outline" : "secondary"}
+                className="px-8 py-4 text-base"
+              >
+                {secondaryCta.label}
+              </Button>
+            </div>
           </div>
+
+          {/* Decorative tile grid — visible only on very wide screens */}
+          {isDark && (
+            <div className="hidden self-end pb-2 2xl:flex" aria-hidden>
+              <svg width="220" height="180" viewBox="0 0 220 180" className="opacity-[0.12]">
+                {Array.from({ length: 5 }, (_, row) =>
+                  Array.from({ length: 6 }, (_, col) => (
+                    <rect
+                      key={`${row}-${col}`}
+                      x={col * 38 + (row % 2 === 0 ? 0 : 19) + 1}
+                      y={row * 36 + 1}
+                      width={36}
+                      height={34}
+                      rx={2}
+                      fill="white"
+                    />
+                  ))
+                )}
+              </svg>
+            </div>
+          )}
         </div>
 
         {scrollHint && (

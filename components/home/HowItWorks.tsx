@@ -23,7 +23,7 @@ export function HowItWorks() {
     <section className="bg-paper">
       <div className="container py-20 md:py-28">
         <SectionLabel>How it works</SectionLabel>
-        <h2 className="mt-4 max-w-md text-display-lg text-forest normal-case tracking-normal leading-tight">
+        <h2 className="mt-4 text-display-lg text-forest normal-case tracking-normal leading-tight">
           From blank canvas<br />to booked contractor
         </h2>
 

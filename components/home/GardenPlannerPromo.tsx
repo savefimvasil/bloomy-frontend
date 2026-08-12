@@ -15,7 +15,7 @@ export function GardenPlannerPromo() {
   return (
     <section className="bg-forest text-paper">
       <div className="container py-20 md:py-28">
-        <div className="grid gap-12 md:grid-cols-2 md:items-center">
+        <div className="grid gap-12 md:grid-cols-2 md:items-center 2xl:gap-20">
 
           <div>
             <SectionLabel light>Live now</SectionLabel>

@@ -54,7 +54,7 @@ export default function ImportPlanPage() {
 
   return (
     <div className="flex min-h-full flex-col items-center justify-center bg-canvas px-4 py-16">
-      <div className="w-full max-w-lg">
+      <div className="w-full">
         <Link
           href="/tile-plan"
           className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-forest"

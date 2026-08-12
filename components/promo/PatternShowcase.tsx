@@ -58,7 +58,7 @@ export function PatternShowcase() {
         <h2 className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-ink md:text-4xl">
           Three ways to lay your floor
         </h2>
-        <p className="mt-3 max-w-lg text-sm leading-6 text-muted">
+        <p className="mt-3 text-sm leading-6 text-muted">
           Every pattern is visualised live on the canvas and calculated automatically — switch between them in one click.
         </p>
         <div className="mt-12 grid gap-4 sm:grid-cols-3">

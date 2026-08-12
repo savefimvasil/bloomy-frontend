@@ -22,7 +22,7 @@ export function IntroStrip() {
   return (
     <section className="text-paper">
       <div className="container py-16 md:py-20 text-forest">
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 md:grid-cols-3 2xl:gap-16">
           {FEATURES.map((item) => (
             <div key={item.num} className="flex flex-col gap-4">
               <SectionLabel>{item.num}</SectionLabel>
