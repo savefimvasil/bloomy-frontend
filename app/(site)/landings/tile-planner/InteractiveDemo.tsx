@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
 import type { PlannerConfig, TilePlannerResult, TileSize } from "@bloomy/tile-planner";
-import { outdoorConfig, indoorConfig } from "@bloomy/tile-planner";
-import { PlannerWidget } from "@/components/plan/PlannerWidget";
-import { CB, BR, CBB, kw, str, fn_, ty, cm, pl, CodeLine } from "./code-ui";
+import { outdoorConfig, indoorConfig, TilePlannerCore } from "@bloomy/tile-planner";
+import { CB, BR, CBB, kw, str, fn_, ty, cm, pl, CodeLine, C_STR, C_FN, C_TY, C_NUM, C_DIM } from "./code-ui";
+import { readImageAsDataUrl } from "@/lib/imageUpload";
+
+const PLANNER_CSS = "https://cdn.bloomy.garden/tile-planner.css";
 
 type ThemeDef = {
   name: string;
@@ -203,6 +205,25 @@ function OnResultSnippet({ planType }: { planType: string }) {
   );
 }
 
+function PatternSnippet({ planType }: { planType: string }) {
+  return (
+    <div className="space-y-0.5">
+      <CodeLine n={1}>{kw("import")} {plain("{ ")}{fn_("mountTilePlanner")}{plain(" }")} {kw("from")} {str('"@bloomy/tile-planner"')}{plain(";")}</CodeLine>
+      <CodeLine n={2}>{plain("")}</CodeLine>
+      <CodeLine n={3}>{cm("// read the file as a data URL, then mount")}</CodeLine>
+      <CodeLine n={4}>{kw("const")} {fn_("reader")} {plain("= new ")} {ty("FileReader")}{plain("();")}</CodeLine>
+      <CodeLine n={5}>{fn_("reader")}{plain(".")}{fn_("onload")} {plain("= e => {")}</CodeLine>
+      <CodeLine n={6}>{plain("  ")}{fn_("mountTilePlanner")}{plain("(el, {")}</CodeLine>
+      <CodeLine n={7}>{plain("    ")}{fn_("planType")}{plain(": ")}{str(`"${planType}"`)}{plain(",")}</CodeLine>
+      <CodeLine n={8}>{plain("    ")}{fn_("tilePattern")}{plain(": e.")}{fn_("target")}{plain(".")}{fn_("result")}{plain(",")}{cm(" // data URL")}</CodeLine>
+      <CodeLine n={9}>{plain("  });")}</CodeLine>
+      <CodeLine n={10}>{plain("};")}</CodeLine>
+      <CodeLine n={11}>{fn_("reader")}{plain(".")}{fn_("readAsDataURL")}{plain("(file);")}</CodeLine>
+      <CodeLine n={12}>{plain("")}</CodeLine>
+    </div>
+  );
+}
+
 function LockedSizeSnippet({ planType, sizeKind }: { planType: string; sizeKind: string }) {
   return (
     <div className="space-y-0.5">
@@ -223,13 +244,13 @@ function LockedSizeSnippet({ planType, sizeKind }: { planType: string; sizeKind:
 // ── Live terminal ────────────────────────────────────────────────────────────
 
 function num(n: number | undefined) {
-  if (n === undefined) return <span style={{ color: "#bd93f9" }}>undefined</span>;
-  return <span style={{ color: "#bd93f9" }}>{n}</span>;
+  if (n === undefined) return <span style={{ color: C_NUM }}>undefined</span>;
+  return <span style={{ color: C_NUM }}>{n}</span>;
 }
-function str2(s: string) { return <span style={{ color: "#f1fa8c" }}>&quot;{s}&quot;</span>; }
-function key(s: string)  { return <span style={{ color: "#8be9fd" }}>{s}</span>; }
-function dim(s: string)  { return <span style={{ color: "rgba(255,255,255,0.25)" }}>{s}</span>; }
-function grn(s: string)  { return <span style={{ color: "#a8e6a3" }}>{s}</span>; }
+function str2(s: string) { return <span style={{ color: C_STR }}>&quot;{s}&quot;</span>; }
+function key(s: string)  { return <span style={{ color: C_TY }}>{s}</span>; }
+function dim(s: string)  { return <span style={{ color: C_DIM }}>{s}</span>; }
+function grn(s: string)  { return <span style={{ color: C_FN }}>{s}</span>; }
 
 function TileSizeValue({ ts }: { ts: TilePlannerResult["tileSize"] }) {
   if (ts.kind === "custom") {
@@ -262,7 +283,7 @@ function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined
 
   return (
     <div
-      className="overflow-hidden rounded-xl transition-shadow duration-300"
+      className="overflow-hidden rounded-xl"
       style={{
         background: CB,
         border: `1px solid ${flash ? "rgba(168,230,163,0.4)" : BR}`,
@@ -335,14 +356,50 @@ function LiveTerminal({ result }: { result: TilePlannerResult | null | undefined
   );
 }
 
+// ── Toolbar primitives ────────────────────────────────────────────────────────
+
+function ToolbarDivider() {
+  return <span className="h-4 w-px shrink-0 bg-line" />;
+}
+
+function ToolbarGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-xs text-muted">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 export function InteractiveDemo() {
   const [cfgIdx, setCfgIdx]           = useState(0);
-  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult" | "size">("size");
+  const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult" | "size" | "pattern">("size");
   const [themeIdx, setThemeIdx]       = useState(0);
   const [tileSizeIdx, setTileSizeIdx] = useState(0); // 600×600 default
   const [isCompact, setIsCompact]     = useState(false);
   const [engineering, setEngineering] = useState(false);
   const [liveResult, setLiveResult]   = useState<TilePlannerResult | null | undefined>(undefined);
+  const [tilePattern, setTilePattern] = useState<string | undefined>(undefined);
+  const fileInputRef                  = useRef<HTMLInputElement>(null);
+
+  // Load planner CSS once (normally PlannerWidget does this via CDN script; here we load it directly)
+  useEffect(() => {
+    if (document.querySelector(`link[href="${PLANNER_CSS}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = PLANNER_CSS;
+    document.head.appendChild(link);
+  }, []);
+
+  const handlePatternUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    readImageAsDataUrl(file, (dataUrl) => {
+      setTilePattern(dataUrl);
+      setSnippetKey("pattern");
+    });
+    e.target.value = "";
+  }, []);
 
   const cfg       = CONFIGS[cfgIdx];
   const theme     = THEMES[themeIdx];
@@ -374,11 +431,13 @@ export function InteractiveDemo() {
     simple:   <SimpleSnippet   planType={cfg.planType} />,
     onResult: <OnResultSnippet planType={cfg.planType} />,
     size:     <LockedSizeSnippet planType={cfg.planType} sizeKind={selectedSizeKind} />,
+    pattern:  <PatternSnippet   planType={cfg.planType} />,
   };
 
   function switchCfg(idx: number) {
     setCfgIdx(idx);
-    setLiveResult(undefined); // reset terminal when widget remounts
+    setLiveResult(undefined);
+    setTilePattern(undefined);
   }
 
   function switchLayout(compact: boolean) {
@@ -410,9 +469,7 @@ export function InteractiveDemo() {
         {/* ── Controls toolbar ── */}
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-paper px-5 py-3">
 
-          {/* Plan type */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted">Type</span>
+          <ToolbarGroup label="Type">
             <div className="flex gap-1">
               {CONFIGS.map((c, i) => (
                 <ToggleButton key={c.label} active={cfgIdx === i} onClick={() => switchCfg(i)}>
@@ -420,18 +477,18 @@ export function InteractiveDemo() {
                 </ToggleButton>
               ))}
             </div>
-          </div>
+          </ToolbarGroup>
 
-          <span className="h-4 w-px shrink-0 bg-line" />
+          <ToolbarDivider />
 
-          {/* Colour theme */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted">Theme</span>
+          <ToolbarGroup label="Theme">
             <div className="flex items-center gap-0.5">
               {THEMES.map((t, i) => (
                 <button
                   key={t.name}
                   onClick={() => setThemeIdx(i)}
+                  aria-label={t.name}
+                  aria-pressed={themeIdx === i}
                   className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
                   style={{
                     background: themeIdx === i ? "var(--color-mist)" : "transparent",
@@ -444,13 +501,11 @@ export function InteractiveDemo() {
                 </button>
               ))}
             </div>
-          </div>
+          </ToolbarGroup>
 
-          <span className="h-4 w-px shrink-0 bg-line" />
+          <ToolbarDivider />
 
-          {/* Tile size — passed to widget, hidden inside sidebar */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted">Tile size</span>
+          <ToolbarGroup label="Tile size">
             <div className="flex gap-1">
               {TILE_SIZES.map((s, i) => (
                 <ToggleButton key={s.label} active={tileSizeIdx === i} onClick={() => switchTileSize(i)}>
@@ -458,29 +513,59 @@ export function InteractiveDemo() {
                 </ToggleButton>
               ))}
             </div>
-          </div>
+          </ToolbarGroup>
 
-          <span className="h-4 w-px shrink-0 bg-line" />
+          <ToolbarDivider />
 
-          {/* Layout */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted">Layout</span>
+          <ToolbarGroup label="Layout">
             <div className="flex gap-1">
               <ToggleButton active={!isCompact} onClick={() => switchLayout(false)}>Standard</ToggleButton>
               <ToggleButton active={isCompact}  onClick={() => switchLayout(true)}>Compact</ToggleButton>
             </div>
-          </div>
+          </ToolbarGroup>
 
-          <span className="h-4 w-px shrink-0 bg-line" />
+          <ToolbarDivider />
 
-          {/* Mode */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted">Mode</span>
+          <ToolbarGroup label="Mode">
             <div className="flex gap-1">
               <ToggleButton active={engineering}  onClick={() => switchEngineering(true)}>Engineering</ToggleButton>
               <ToggleButton active={!engineering} onClick={() => switchEngineering(false)}>Client</ToggleButton>
             </div>
-          </div>
+          </ToolbarGroup>
+
+          <ToolbarDivider />
+
+          <ToolbarGroup label="Tile image">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              aria-label="Upload tile image"
+              className="sr-only"
+              onChange={handlePatternUpload}
+            />
+            {tilePattern ? (
+              <div className="flex items-center gap-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={tilePattern}
+                  alt="tile pattern preview"
+                  className="h-6 w-6 rounded object-cover ring-1 ring-line"
+                />
+                <button
+                  onClick={() => setTilePattern(undefined)}
+                  aria-label="Remove tile image"
+                  className="rounded px-0.5 h-6 w-6 py-0.5 font-mono text-[10px] text-muted hover:bg-mist hover:text-ink"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <ToggleButton active={false} onClick={() => fileInputRef.current?.click()}>
+                Upload
+              </ToggleButton>
+            )}
+          </ToolbarGroup>
         </div>
 
         {/* ── Planner (left) + Code + Terminal (right) side-by-side ── */}
@@ -498,13 +583,14 @@ export function InteractiveDemo() {
                 ...theme.vars,
               } as React.CSSProperties}
             >
-              <PlannerWidget
+              <TilePlannerCore
                 key={cfg.planType}
                 planType={cfg.planType}
                 config={resolvedConfig}
                 compact={isCompact}
                 persistKey={`landing-demo-${cfg.planType}`}
                 onResult={setLiveResult}
+                tilePattern={tilePattern}
               />
             </div>
             {isCompact && (
@@ -528,14 +614,14 @@ export function InteractiveDemo() {
               } as React.CSSProperties}
             >
               <div className="flex shrink-0 items-center gap-3 border-b px-4 py-3" style={{ borderColor: BR, background: CBB }}>
-                <div className="flex gap-1.5">
+                <div className="flex gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
                   <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
                   <span className="h-2 w-2 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
                 </div>
                 <span className="ml-1 font-mono text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>app.js</span>
                 <div className="ml-2 flex min-w-0 gap-1 overflow-x-auto">
-                  {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult", "size"] as const).map((k) => (
+                  {(["minimal", "persist", "theme", "compact", "onSave", "simple", "onResult", "size", "pattern"] as const).map((k) => (
                     <button
                       key={k}
                       onClick={() => setSnippetKey(k)}

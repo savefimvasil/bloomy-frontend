@@ -4,13 +4,23 @@ export const CB  = "#0d2414";                    // panel background
 export const BR  = "rgba(255,255,255,0.10)";     // border on dark
 export const CBB = "rgba(255,255,255,0.07)";     // panel header background
 
+// ── Syntax-highlight colour values ───────────────────────────────────────────
+export const C_KW  = "#ff79c6";                  // keyword — pink
+export const C_STR = "#f1fa8c";                  // string — yellow
+export const C_FN  = "#a8e6a3";                  // function / value — light green
+export const C_TY  = "#8be9fd";                  // type / key — cyan
+export const C_CM  = "#6a9e6a";                  // comment — muted green
+export const C_PL  = "#e8f5e9";                  // plain — near-white green
+export const C_NUM = "#bd93f9";                  // number — purple
+export const C_DIM = "rgba(255,255,255,0.25)";   // dim — low-opacity white
+
 // ── Syntax-highlight helpers ──────────────────────────────────────────────────
-export const kw  = (s: string) => <span style={{ color: "#ff79c6" }}>{s}</span>;
-export const str = (s: string) => <span style={{ color: "#f1fa8c" }}>{s}</span>;
-export const fn_ = (s: string) => <span style={{ color: "#a8e6a3" }}>{s}</span>;
-export const ty  = (s: string) => <span style={{ color: "#8be9fd" }}>{s}</span>;
-export const cm  = (s: string) => <span style={{ color: "#6a9e6a" }}>{s}</span>;
-export const pl  = (s: string) => <span style={{ color: "#e8f5e9" }}>{s}</span>;
+export const kw  = (s: string) => <span style={{ color: C_KW  }}>{s}</span>;
+export const str = (s: string) => <span style={{ color: C_STR }}>{s}</span>;
+export const fn_ = (s: string) => <span style={{ color: C_FN  }}>{s}</span>;
+export const ty  = (s: string) => <span style={{ color: C_TY  }}>{s}</span>;
+export const cm  = (s: string) => <span style={{ color: C_CM  }}>{s}</span>;
+export const pl  = (s: string) => <span style={{ color: C_PL  }}>{s}</span>;
 
 // ── CodeLine ──────────────────────────────────────────────────────────────────
 export function CodeLine({ n, children }: { n: number; children: React.ReactNode }) {

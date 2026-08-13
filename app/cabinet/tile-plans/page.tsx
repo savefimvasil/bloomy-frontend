@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CabinetRow } from "@/components/ui/cabinet-row";
+import { TileThumbnail } from "@/components/ui/cabinet-thumbnails";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -12,38 +13,6 @@ import { apiFetch } from "@/lib/api";
 import { relativeTime } from "@/lib/dateUtils";
 import { useTilePlans } from "@/store/cabinet";
 import type { TilePlan } from "@/types/models";
-
-// ─── Tile thumbnail SVG ──────────────────────────────────────────────────────
-
-function TileThumbnail() {
-  const tileW = 28, tileH = 18, gap = 3;
-  const cols = 3, rows = 4;
-  const cells = [];
-  for (let r = 0; r < rows; r++) {
-    const xOffset = r % 2 === 0 ? 0 : (tileW + gap) / 2;
-    for (let c = 0; c < cols; c++) {
-      cells.push(
-        <rect
-          key={`${r}-${c}`}
-          x={4 + c * (tileW + gap) + xOffset}
-          y={4 + r * (tileH + gap)}
-          width={tileW}
-          height={tileH}
-          rx={2}
-          fill="#e8e3db"
-          stroke="#d0c9bf"
-          strokeWidth={1}
-        />
-      );
-    }
-  }
-  return (
-    <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden>
-      <rect width="96" height="96" fill="#f0ede8" rx="8" />
-      {cells}
-    </svg>
-  );
-}
 
 // ─── Empty state ─────────────────────────────────────────────────────────────
 
@@ -72,7 +41,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
             <polygon
               points="150,55 230,115 210,215 90,215 70,115"
               fill="none"
-              stroke="#1f4d2c"
+              stroke="var(--color-forest)"
               strokeWidth="2.5"
               strokeDasharray="9 5"
               strokeLinejoin="round"
@@ -84,14 +53,14 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
               [230, 115],
               [210, 215],
             ] as [number, number][]).map(([cx, cy]) => (
-              <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={7} fill="white" stroke="#1f4d2c" strokeWidth="2" />
+              <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={7} fill="white" stroke="var(--color-forest)" strokeWidth="2" />
             ))}
 
             {/* Lime-filled vertex */}
-            <circle cx={90} cy={215} r={8} fill="#b7e36f" stroke="#4da162" strokeWidth="2" />
+            <circle cx={90} cy={215} r={8} fill="var(--color-lime)" stroke="var(--color-leaf)" strokeWidth="2" />
 
             {/* Another open vertex */}
-            <circle cx={70} cy={115} r={7} fill="white" stroke="#1f4d2c" strokeWidth="2" />
+            <circle cx={70} cy={115} r={7} fill="white" stroke="var(--color-forest)" strokeWidth="2" />
           </svg>
         </div>
       </div>

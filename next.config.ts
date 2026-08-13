@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
           const gardenSrc  = path.resolve(__dirname, "../bloomy-packages/garden-planner/src");
           const sharedSrc  = path.resolve(__dirname, "../bloomy-packages/shared");
           config.resolve.alias = {
+            // redirect the package entry point to source so Next.js compiles it
+            // with React (not the Preact-aliased dist bundle)
+            "@bloomy/tile-planner": tileSrc + "/index.ts",
             // tile-planner internal @/ paths
             "@/lib":    tileSrc + "/lib",
             "@/tile":   tileSrc + "/tile",

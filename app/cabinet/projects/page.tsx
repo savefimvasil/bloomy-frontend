@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CabinetRow } from "@/components/ui/cabinet-row";
+import { ProjectThumbnail } from "@/components/ui/cabinet-thumbnails";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -11,37 +12,6 @@ import { apiFetch } from "@/lib/api";
 import { relativeTime } from "@/lib/dateUtils";
 import { useProjects } from "@/store/cabinet";
 import type { GardenProject } from "@/types/models";
-
-// ─── Project thumbnail ────────────────────────────────────────────────────────
-
-function ProjectThumbnail() {
-  return (
-    <svg viewBox="0 0 72 72" className="h-full w-full" aria-hidden>
-      <rect width="72" height="72" fill="#f0ede8" rx="6" />
-      {/* Grid lines */}
-      <line x1="0" y1="24" x2="72" y2="24" stroke="#d8d3cc" strokeWidth="0.5" />
-      <line x1="0" y1="48" x2="72" y2="48" stroke="#d8d3cc" strokeWidth="0.5" />
-      <line x1="24" y1="0" x2="24" y2="72" stroke="#d8d3cc" strokeWidth="0.5" />
-      <line x1="48" y1="0" x2="48" y2="72" stroke="#d8d3cc" strokeWidth="0.5" />
-      {/* Patio zone (tile) */}
-      <polygon
-        points="14,20 42,20 42,50 14,50"
-        fill="rgba(232,227,219,0.8)"
-        stroke="#9c9587"
-        strokeWidth="1.5"
-      />
-      {/* Lawn zone */}
-      <polygon
-        points="44,22 60,22 60,52 44,52"
-        fill="rgba(193,224,157,0.8)"
-        stroke="#4aaa2d"
-        strokeWidth="1.5"
-      />
-      {/* Small tree object */}
-      <circle cx="52" cy="35" r="4" fill="#c5e8a3" stroke="#4aaa2d" strokeWidth="1" />
-    </svg>
-  );
-}
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -52,12 +22,12 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         <div className="overflow-hidden rounded-2xl border border-line bg-canvas shadow-soft">
           <svg viewBox="0 0 300 280" className="w-full" aria-hidden>
             <defs>
-              <pattern id="es-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <pattern id="prj-es-grid" width="20" height="20" patternUnits="userSpaceOnUse">
                 <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#d8d3cc" strokeWidth="0.6" />
               </pattern>
             </defs>
             <rect width="300" height="280" fill="#f0ede8" />
-            <rect width="300" height="280" fill="url(#es-grid)" />
+            <rect width="300" height="280" fill="url(#prj-es-grid)" />
 
             {/* Lawn zone */}
             <polygon

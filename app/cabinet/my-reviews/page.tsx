@@ -66,6 +66,7 @@ function ReplyBox({ review, onSaved }: { review: MyReview; onSaved: (reply: stri
         rows={3}
         maxLength={1000}
         autoFocus
+        aria-label="Your reply"
         placeholder="Write a reply visible to homeowners on your public profile…"
         className="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-body text-ink placeholder:text-muted/60 outline-none transition focus:border-forest/40 focus:bg-paper resize-none"
       />

@@ -18,6 +18,7 @@ export function ToggleButton({
     <button
       {...props}
       disabled={disabled}
+      aria-pressed={active}
       className={`${BASE} ${state} ${className}`}
     />
   );

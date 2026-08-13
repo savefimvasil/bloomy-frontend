@@ -112,6 +112,7 @@ function ReviewModal({
             value={comment}
             onChange={e => setComment(e.target.value)}
             placeholder="Quality of work, punctuality, communication…"
+            aria-label="Comment (optional)"
             className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-body text-ink focus:border-forest/40 focus:outline-none"
             data-testid="review-comment"
           />

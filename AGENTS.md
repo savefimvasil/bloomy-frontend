@@ -285,3 +285,15 @@ Tests live in `lib/plan/__tests__/`. Cover the `optimal-patterns` calculator log
 - **Role-based UI** — read `role` from `useAuthStore`. Contractor-only routes are in
   `/cabinet/nearby-requests`, `/cabinet/my-proposals`, `/cabinet/contractor-profile`, etc.
   Homeowner-only routes are in `/cabinet/quote-requests`, `/cabinet/saved-contractors`.
+- **File naming convention** — component files use PascalCase (`Button.tsx`, `CabinetRow.tsx`).
+  Some older files are kebab-case (`button.tsx`, `input.tsx`) — treat those as legacy; all new
+  files must use PascalCase. Never mix casing within a feature directory.
+- **`"use client"` rules** — add only when the file uses hooks, browser APIs, or Zustand stores.
+  Server components (no `"use client"`) run on the server and cannot use state or effects.
+  Store files (`store/*.ts`) and custom hooks (`lib/use*.ts`) are always client-only.
+- **Shared copy strings** — add user-facing labels, messages, and button text to `lib/copy.ts`
+  before using them inline. Import from there rather than duplicating strings across files.
+- **Image upload** — use `readImageAsDataUrl` from `lib/imageUpload.ts` for client-side
+  image-to-data-URL conversions rather than inlining `FileReader` logic.
+- **Cabinet thumbnails** — use `TileThumbnail` / `ProjectThumbnail` from
+  `components/ui/cabinet-thumbnails.tsx` in list row slots. Do not inline SVGs in page files.

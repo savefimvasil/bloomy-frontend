@@ -8,7 +8,7 @@ export default function PlanPromoPage() {
   return (
     <main className="overflow-x-hidden">
       <HeroSection
-        backgroundGradient="linear-gradient(160deg, #1f4d2c 0%, #2f6b3d 55%, #4da162 100%)"
+        backgroundGradient="linear-gradient(160deg, var(--color-forest) 0%, var(--color-moss) 55%, var(--color-leaf) 100%)"
         badge="Free to use · No account needed"
         headline={<>Plan your<br /><span className="text-lime">perfect floor</span></>}
         description="Calculate tiles for any room — straight, running bond, or diagonal. Get exact material counts, see cut pieces, export your plan in seconds."

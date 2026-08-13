@@ -413,13 +413,17 @@ function ApiReference() {
             <Terminal title="app.js">
               <div className="space-y-0.5">
                 <CodeLine n={1}>{fn_("mountTilePlanner")}{pl("(el, {")}</CodeLine>
-                <CodeLine n={2}>{pl("  ")}{fn_("planType")}{pl(": ")}{str('"garden"')}{pl(",")}</CodeLine>
-                <CodeLine n={3}>{pl("  ")}{fn_("theme")}{pl(": {")}</CodeLine>
-                <CodeLine n={4}>{pl("    ")}{fn_("primary")}{pl(":  ")}{str('"#6366f1"')}{pl(",")}{cm("  // indigo")}</CodeLine>
-                <CodeLine n={5}>{pl("    ")}{fn_("highlight")}{pl(": ")}{str('"#f59e0b"')}{pl(",")}{cm("  // amber")}</CodeLine>
-                <CodeLine n={6}>{pl("    ")}{fn_("fontFamily")}{pl(": ")}{str('"Inter, sans-serif"')}{pl(",")}</CodeLine>
-                <CodeLine n={7}>{pl("  },")}</CodeLine>
-                <CodeLine n={8}>{pl("});")}</CodeLine>
+                <CodeLine n={2}>{pl("  ")}{fn_("planType")}{pl(":    ")}{str('"garden"')}{pl(",")}</CodeLine>
+                <CodeLine n={3}>{pl("  ")}{fn_("tilePattern")}{pl(": ")}{fn_("imgDataUrl")}{pl(",")}{cm("  // ← any img URL")}</CodeLine>
+                <CodeLine n={4}>{pl("  ")}{fn_("theme")}{pl(": {")}</CodeLine>
+                <CodeLine n={5}>{pl("    ")}{fn_("primary")}{pl(":     ")}{str('"#6366f1"')}{pl(",")}{cm(" // indigo")}</CodeLine>
+                <CodeLine n={6}>{pl("    ")}{fn_("highlight")}{pl(":   ")}{str('"#f59e0b"')}{pl(",")}{cm(" // amber")}</CodeLine>
+                <CodeLine n={7}>{pl("    ")}{fn_("fontFamily")}{pl(": ")}{str('"Inter, sans-serif"')}{pl(",")}</CodeLine>
+                <CodeLine n={8}>{pl("  },")}</CodeLine>
+                <CodeLine n={9}>{pl("});")}</CodeLine>
+                <CodeLine n={10}>{pl("")}</CodeLine>
+                <CodeLine n={11}>{cm("// update live — no remount needed:")}</CodeLine>
+                <CodeLine n={12}>{fn_("handle")}{pl(".")}{fn_("update")}{pl("({ ")}{fn_("tilePattern")}{pl(": ")}{fn_("newUrl")}{pl(" });")}</CodeLine>
               </div>
             </Terminal>
           </div>

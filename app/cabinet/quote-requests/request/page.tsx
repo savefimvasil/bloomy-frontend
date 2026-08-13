@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { isValid, toNormalised } from "postcode";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { useAuthStore } from "@/store/auth";
 
@@ -207,17 +208,14 @@ export default function RequestQuotePage() {
                 </div>
 
                 {/* Note */}
-                <div>
-                  <label className="block text-eyebrow text-forest/70 mb-2">Note for contractor <span className="text-muted font-normal">(optional)</span></label>
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    placeholder="Any specific details, timelines, or questions…"
-                    className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-body text-ink placeholder:text-muted/60 outline-none transition focus:border-forest/40 focus:bg-white focus:outline-2 focus:outline-leaf/25 resize-none"
-                  />
-                </div>
+                <Textarea
+                  label="Note for contractor (optional)"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Any specific details, timelines, or questions…"
+                />
 
                 {submitError && <p className="text-hint text-danger">{submitError}</p>}
 
