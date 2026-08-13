@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import { InteractiveDemo } from "./InteractiveDemo";
 import { FrameworkTabs } from "./FrameworkTabs";
-
-// TilePlannerCore (inside InteractiveDemo) uses Preact hooks — skip SSR to avoid
-// "Cannot read __H" crash during static generation.
-const InteractiveDemo = dynamic(
-  () => import("./InteractiveDemo").then((m) => ({ default: m.InteractiveDemo })),
-  { ssr: false },
-);
 import { kw, str, fn_, ty, cm, pl, CodeLine, Terminal } from "./code-ui";
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback, useSyncExternalStore, type ReactNode } from "react";
 import { ToggleButton } from "@/components/ui/toggle-button";
 import type { PlannerConfig, TilePlannerResult, TileSize } from "@bloomy/tile-planner";
 import { outdoorConfig, indoorConfig, TilePlannerCore } from "@bloomy/tile-planner";
@@ -372,6 +372,9 @@ function ToolbarGroup({ label, children }: { label: string; children: ReactNode 
 }
 
 export function InteractiveDemo() {
+  // useSyncExternalStore gives false on the server and true on the client without
+  // needing setState in an effect (which the React Compiler lint rule forbids).
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [cfgIdx, setCfgIdx]           = useState(0);
   const [snippetKey, setSnippetKey]   = useState<"minimal" | "persist" | "theme" | "compact" | "onSave" | "simple" | "onResult" | "size" | "pattern">("size");
   const [themeIdx, setThemeIdx]       = useState(0);
@@ -382,7 +385,6 @@ export function InteractiveDemo() {
   const [tilePattern, setTilePattern] = useState<string | undefined>(undefined);
   const fileInputRef                  = useRef<HTMLInputElement>(null);
 
-  // Load planner CSS once (normally PlannerWidget does this via CDN script; here we load it directly)
   useEffect(() => {
     if (document.querySelector(`link[href="${PLANNER_CSS}"]`)) return;
     const link = document.createElement("link");
@@ -456,6 +458,8 @@ export function InteractiveDemo() {
     setTileSizeIdx(idx);
     setSnippetKey("size");
   }
+
+  if (!mounted) return null;
 
   return (
     <section className="bg-canvas py-20">
