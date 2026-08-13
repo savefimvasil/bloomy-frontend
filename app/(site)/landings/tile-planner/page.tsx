@@ -320,6 +320,7 @@ const MOUNT_OPTS = [
   { name: "onSave",              type: "(plan: PlanExport) => Promise<void>",  default: "—",        desc: "Called on Save. Return a promise to show a loading state." },
   { name: "onResult",            type: "(r: TilePlannerResult | null) => void", default: "—",       desc: "Fires ~300 ms after every change with tile count, boxes, area. Use to update cart or price." },
   { name: "initialPlan",         type: "PlanExport",                            default: "—",        desc: "Pre-load a saved plan on mount." },
+  { name: "tilePattern",         type: "string",                                default: "—",        desc: "Image URL or data URL painted as a repeating fill inside each tile. Swap at runtime via handle.update({ tilePattern })." },
   { name: "theme",               type: "PlannerTheme",                          default: "—",        desc: "CSS custom-property overrides for colours and font." },
   { name: "config.showReset",    type: "boolean",                               default: "false",    desc: 'Show "New plan" reset button. Off by default — enable in internal tools.' },
   { name: "config.showShare",    type: "boolean",                               default: "false",    desc: 'Show "Copy share link" button. Off by default.' },
@@ -342,19 +343,20 @@ function ApiReference() {
         </p>
 
         <div className="mt-10 overflow-x-auto rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-          <div className="min-w-[700px]">
+          <div className="min-w-[780px]">
             <div
-              className="grid grid-cols-[220px_200px_1fr] gap-4 px-5 py-3 font-mono text-[10px] uppercase tracking-widest"
+              className="grid grid-cols-[220px_200px_80px_1fr] gap-4 px-5 py-3 font-mono text-[10px] uppercase tracking-widest"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}
             >
               <span>option</span>
               <span>type</span>
+              <span>default</span>
               <span>description</span>
             </div>
             {MOUNT_OPTS.map((p, i) => (
               <div
                 key={p.name}
-                className="grid grid-cols-[220px_200px_1fr] gap-4 px-5 py-4 text-xs"
+                className="grid grid-cols-[220px_200px_80px_1fr] gap-4 px-5 py-4 text-xs"
                 style={{
                   borderTop: i > 0 ? "1px solid rgba(255,255,255,0.07)" : undefined,
                   background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)",
@@ -362,12 +364,8 @@ function ApiReference() {
               >
                 <span className="font-mono font-bold text-lime">{p.name}</span>
                 <span className="font-mono text-paper/70">{p.type}</span>
-                <div>
-                  <span className="mr-2 rounded px-1.5 py-0.5 font-mono text-[10px] text-paper/40" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    default: {p.default}
-                  </span>
-                  <span className="text-paper/60">{p.desc}</span>
-                </div>
+                <span className="font-mono text-paper/40">{p.default}</span>
+                <span className="text-paper/60">{p.desc}</span>
               </div>
             ))}
           </div>
