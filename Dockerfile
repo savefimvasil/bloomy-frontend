@@ -38,9 +38,11 @@ COPY --from=deps /app/bloomy-frontend/node_modules bloomy-frontend/node_modules
 
 WORKDIR /app/bloomy-packages/tile-planner
 RUN npm run build
+RUN cp -r dist /app/bloomy-frontend/node_modules/@bloomy/tile-planner/
 
 WORKDIR /app/bloomy-packages/garden-planner
 RUN npm run build
+RUN cp -r dist /app/bloomy-frontend/node_modules/@bloomy/garden-planner/
 
 WORKDIR /app/bloomy-frontend
 RUN cp tsconfig.build.json tsconfig.json
