@@ -472,7 +472,6 @@ export function InteractiveDemo() {
 
         {/* ── Controls toolbar ── */}
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-paper px-5 py-3">
-
           <ToolbarGroup label="Type">
             <div className="flex gap-1">
               {CONFIGS.map((c, i) => (
