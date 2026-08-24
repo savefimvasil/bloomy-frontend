@@ -16,9 +16,9 @@ const nextConfig: NextConfig = {
     : {
         transpilePackages: ["@bloomy/tile-planner", "@bloomy/garden-planner"],
         webpack(config) {
-          const tileSrc    = path.resolve(__dirname, "../bloomy-packages/tile-planner/src");
-          const gardenSrc  = path.resolve(__dirname, "../bloomy-packages/garden-planner/src");
-          const sharedSrc  = path.resolve(__dirname, "../bloomy-packages/shared");
+          const tileSrc    = path.resolve(__dirname, "../tily-packages/tile-planner/src");
+          const gardenSrc  = path.resolve(__dirname, "../tily-packages/garden-planner/src");
+          const sharedSrc  = path.resolve(__dirname, "../tily-packages/shared");
           config.resolve.alias = {
             // redirect the package entry point to source so Next.js compiles it
             // with React (not the Preact-aliased dist bundle)

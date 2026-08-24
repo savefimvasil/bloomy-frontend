@@ -19,21 +19,21 @@
       }
     ],
     "paths": {
-      "@/canvas/*": ["../bloomy-packages/planner/src/canvas/*"],
-      "@/garden/*": ["../bloomy-packages/planner/src/garden/*"],
-      "@/sidebar/*": ["../bloomy-packages/planner/src/sidebar/*"],
-      "@/tile/*": ["../bloomy-packages/planner/src/tile/*"],
-      "@/ui/*": ["../bloomy-packages/planner/src/ui/*"],
-      "@/lib/constants": ["../bloomy-packages/planner/src/lib/constants"],
-      "@/lib/types": ["../bloomy-packages/planner/src/lib/types"],
-      "@/lib/geometry": ["../bloomy-packages/planner/src/lib/geometry"],
-      "@/lib/labels": ["../bloomy-packages/planner/src/lib/labels"],
-      "@/lib/hooks": ["../bloomy-packages/planner/src/lib/hooks"],
-      "@/lib/optimal-patterns": ["../bloomy-packages/planner/src/lib/optimal-patterns"],
-      "@/lib/config": ["../bloomy-packages/planner/src/lib/config"],
-      "@/lib/config/*": ["../bloomy-packages/planner/src/lib/config/*"],
+      "@/canvas/*": ["../tily-packages/planner/src/canvas/*"],
+      "@/garden/*": ["../tily-packages/planner/src/garden/*"],
+      "@/sidebar/*": ["../tily-packages/planner/src/sidebar/*"],
+      "@/tile/*": ["../tily-packages/planner/src/tile/*"],
+      "@/ui/*": ["../tily-packages/planner/src/ui/*"],
+      "@/lib/constants": ["../tily-packages/planner/src/lib/constants"],
+      "@/lib/types": ["../tily-packages/planner/src/lib/types"],
+      "@/lib/geometry": ["../tily-packages/planner/src/lib/geometry"],
+      "@/lib/labels": ["../tily-packages/planner/src/lib/labels"],
+      "@/lib/hooks": ["../tily-packages/planner/src/lib/hooks"],
+      "@/lib/optimal-patterns": ["../tily-packages/planner/src/lib/optimal-patterns"],
+      "@/lib/config": ["../tily-packages/planner/src/lib/config"],
+      "@/lib/config/*": ["../tily-packages/planner/src/lib/config/*"],
       "@/*": ["./*"],
-      "@bloomy/bloomy-planner": ["../bloomy-packages/planner/src/index.ts"]
+      "@bloomy/bloomy-planner": ["../tily-packages/planner/src/index.ts"]
     }
   },
   "include": [

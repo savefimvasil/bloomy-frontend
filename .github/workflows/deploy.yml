@@ -18,9 +18,9 @@ jobs:
         with:
           path: bloomy-frontend
 
-      # Dockerfile needs bloomy-packages at build time
-      - name: Checkout bloomy-packages
-        run: git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/savefimvasil/bloomy-packages.git bloomy-packages
+      # Dockerfile needs tily-packages at build time
+      - name: Checkout tily-packages
+        run: git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/savefimvasil/tily-packages.git tily-packages
 
       - uses: docker/login-action@v3
         with:
