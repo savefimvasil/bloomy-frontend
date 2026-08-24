@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { TilePlannerAction } from "@bloomy/tile-planner";
+import type { TilePlannerAction } from "@tily/tile-planner";
 import {
   extractShapeFromFloorplan,
   FLOORPLAN_ACCEPT,

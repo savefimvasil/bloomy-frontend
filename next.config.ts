@@ -14,22 +14,21 @@ const nextConfig: NextConfig = {
   ...(isDockerBuild
     ? {}
     : {
-        transpilePackages: ["@bloomy/tile-planner", "@bloomy/garden-planner"],
-        webpack(config) {
+        transpilePackages: ["@tily/tile-planner", "@bloomy/garden-planner"],
+        webpack(config: Parameters<NonNullable<NextConfig["webpack"]>>[0]) {
           const tileSrc    = path.resolve(__dirname, "../tily-packages/tile-planner/src");
           const gardenSrc  = path.resolve(__dirname, "../tily-packages/garden-planner/src");
           const sharedSrc  = path.resolve(__dirname, "../tily-packages/shared");
+          config.resolve = config.resolve ?? {};
           config.resolve.alias = {
-            // redirect the package entry point to source so Next.js compiles it
-            // with React (not the Preact-aliased dist bundle)
-            "@bloomy/tile-planner": tileSrc + "/index.ts",
-            // tile-planner internal @/ paths
-            "@/lib":    tileSrc + "/lib",
-            "@/tile":   tileSrc + "/tile",
-            // garden-planner internal @/ paths
+            "@tily/tile-planner": tileSrc + "/index.ts",
+            // tile-planner internal paths
+            "@/lib":        tileSrc + "/lib",
+            "@/tile":       tileSrc + "/tile",
+            // garden-planner internal paths
             "@/garden":      gardenSrc + "/garden",
             "@/calculator":  gardenSrc + "/calculator",
-            // shared ~/  paths
+            // shared paths
             "~/lib":         sharedSrc + "/lib",
             "~/ui":          sharedSrc + "/ui",
             "~/canvas":      sharedSrc + "/canvas",

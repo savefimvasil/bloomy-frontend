@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@bloomy/tile-planner": ["../tily-packages/tile-planner/dist/index"],
+      "@tily/tile-planner": ["../tily-packages/tile-planner/dist/index"],
       "@bloomy/garden-planner": ["../tily-packages/garden-planner/dist/index"]
     }
   },
@@ -32,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "playwright-results", "playwright-report"]
 }

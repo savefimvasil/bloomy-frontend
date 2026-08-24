@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { PlanExportSchema } from "@bloomy/tile-planner";
+import { PlanExportSchema } from "@tily/tile-planner";
 
 export default function ImportPlanPage() {
   const router = useRouter();

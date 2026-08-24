@@ -19,21 +19,15 @@
       }
     ],
     "paths": {
-      "@/canvas/*": ["../tily-packages/planner/src/canvas/*"],
-      "@/garden/*": ["../tily-packages/planner/src/garden/*"],
-      "@/sidebar/*": ["../tily-packages/planner/src/sidebar/*"],
-      "@/tile/*": ["../tily-packages/planner/src/tile/*"],
-      "@/ui/*": ["../tily-packages/planner/src/ui/*"],
-      "@/lib/constants": ["../tily-packages/planner/src/lib/constants"],
-      "@/lib/types": ["../tily-packages/planner/src/lib/types"],
-      "@/lib/geometry": ["../tily-packages/planner/src/lib/geometry"],
-      "@/lib/labels": ["../tily-packages/planner/src/lib/labels"],
-      "@/lib/hooks": ["../tily-packages/planner/src/lib/hooks"],
-      "@/lib/optimal-patterns": ["../tily-packages/planner/src/lib/optimal-patterns"],
-      "@/lib/config": ["../tily-packages/planner/src/lib/config"],
-      "@/lib/config/*": ["../tily-packages/planner/src/lib/config/*"],
-      "@/*": ["./*"],
-      "@bloomy/bloomy-planner": ["../tily-packages/planner/src/index.ts"]
+      "@/garden/*":             ["../tily-packages/garden-planner/src/garden/*"],
+      "@/calculator/*":         ["../tily-packages/garden-planner/src/calculator/*"],
+      "~/lib/*":                ["../tily-packages/shared/lib/*"],
+      "~/ui/*":                 ["../tily-packages/shared/ui/*"],
+      "~/canvas/*":             ["../tily-packages/shared/canvas/*"],
+      "~/mount-utils/*":        ["../tily-packages/shared/mount-utils/*"],
+      "@/*":                    ["./*"],
+      "@tily/tile-planner":     ["../tily-packages/tile-planner/dist/index"],
+      "@bloomy/garden-planner": ["../tily-packages/garden-planner/dist/index"]
     }
   },
   "include": [

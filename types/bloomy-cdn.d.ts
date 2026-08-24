@@ -1,6 +1,6 @@
-import type { TilePlannerCoreProps } from "@bloomy/tile-planner";
+import type { TilePlannerCoreProps } from "@tily/tile-planner";
 import type { GardenPlannerCoreProps } from "@bloomy/garden-planner";
-import type { PlannerTheme } from "@bloomy/tile-planner";
+import type { PlannerTheme } from "@tily/tile-planner";
 
 interface BloomyTileHandle {
   unmount: () => void;

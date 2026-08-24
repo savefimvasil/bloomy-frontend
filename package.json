@@ -20,7 +20,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@bloomy/tile-planner": "file:../tily-packages/tile-planner",
+    "@tily/tile-planner": "file:../tily-packages/tile-planner",
     "@bloomy/garden-planner": "file:../tily-packages/garden-planner",
     "@hookform/resolvers": "^5.5.7",
     "jspdf": "^4.2.1",

@@ -16,7 +16,7 @@ import type {
   PergolaBaseParams,
 } from "@bloomy/garden-planner";
 import { ZONE_CONFIGS, BASEMENT_FOR_SURFACE } from "@bloomy/garden-planner";
-import { polygonArea } from "@bloomy/tile-planner";
+import { polygonArea } from "@tily/tile-planner";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Input } from "@/components/ui/input";
 import { ToggleButton } from "@/components/ui/toggle-button";

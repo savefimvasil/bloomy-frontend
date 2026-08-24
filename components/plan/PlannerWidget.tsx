@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import Script from "next/script";
-import type { TilePlannerCoreProps } from "@bloomy/tile-planner";
+import type { TilePlannerCoreProps } from "@tily/tile-planner";
 
 const CDN_TOKEN = process.env.NEXT_PUBLIC_BLOOMY_CDN_TOKEN ?? "";
 const CSS_HREF = "https://cdn.bloomy.garden/tile-planner.css";

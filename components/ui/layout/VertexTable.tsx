@@ -1,6 +1,6 @@
 "use client";
 
-import type { Vertex, TilePlannerAction } from "@bloomy/tile-planner";
+import type { Vertex, TilePlannerAction } from "@tily/tile-planner";
 
 interface Props {
   vertices: Vertex[];

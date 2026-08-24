@@ -1,7 +1,7 @@
 "use client";
 
-import type { ViewTransform } from "@bloomy/tile-planner";
-import { COLORS } from "@bloomy/tile-planner";
+import type { ViewTransform } from "@tily/tile-planner";
+import { COLORS } from "@tily/tile-planner";
 
 interface Props {
   viewTransform: ViewTransform;
