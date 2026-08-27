@@ -13,10 +13,14 @@ jobs:
       packages: write
 
     steps:
-      # Check out frontend into bloomy-frontend/ so the Dockerfile path matches
+      # Check out bloomy-frontend into bloomy-frontend/ so Dockerfile SERVICE paths match
       - uses: actions/checkout@v4
         with:
           path: bloomy-frontend
+
+      # Shared Dockerfile lives in bloomy-deploy
+      - name: Checkout bloomy-deploy
+        run: git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/savefimvasil/bloomy-deploy.git bloomy-deploy
 
       # Dockerfile needs tily-packages at build time
       - name: Checkout tily-packages
@@ -31,10 +35,12 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: bloomy-frontend/Dockerfile
+          file: bloomy-deploy/Dockerfile.frontend
           build-args: |
+            SERVICE=bloomy-frontend
+            PORT=3001
+            BUILD_GARDEN=true
             NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-            NEXT_PUBLIC_BLOOMY_CDN_TOKEN=${{ secrets.NEXT_PUBLIC_BLOOMY_CDN_TOKEN }}
           push: true
           tags: ghcr.io/savefimvasil/bloomy-frontend:latest
 
