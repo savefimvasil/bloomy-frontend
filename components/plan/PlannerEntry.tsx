@@ -3,8 +3,9 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import React from "react";
-import type { PlanType } from "@tily/tile-planner";
 import type { PlanExport, ExportKind } from "@tily/tile-planner";
+
+type PlanType = "garden" | "indoor" | "wall";
 import { PlanExportSchema } from "@tily/tile-planner";
 import { apiFetch } from "@/lib/api";
 import { getAuthToken } from "@/store/auth";
@@ -109,7 +110,6 @@ function PlannerEntryInner() {
     <PlannerErrorBoundary>
       <PlannerWidget
         key={`${planType}-${projectId ?? "local"}`}
-        planType={planType}
         initialPlan={initialPlan}
         onSave={projectId ? handleSave : undefined}
         onRequestExport={handleRequestExport}
