@@ -1,57 +1,27 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import Script from "next/script";
-import type { TilePlannerCoreProps } from "@tily/tile-planner";
-
-const CDN_TOKEN = process.env.NEXT_PUBLIC_BLOOMY_CDN_TOKEN ?? "";
-const CSS_HREF = "https://cdn.bloomy.garden/tile-planner.css";
-
-type TileHandle = { unmount: () => void; update: (p: Partial<TilePlannerCoreProps>) => void };
+import { useRef, useEffect } from "react";
+import { mountTilePlanner } from "@tily/tile-planner";
+import type { TilePlannerCoreProps, TilePlannerHandle } from "@tily/tile-planner";
 
 export function PlannerWidget(props: TilePlannerCoreProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const handleRef = useRef<TileHandle | null>(null);
-  const [scriptReady, setScriptReady] = useState(
-    typeof window !== "undefined" && !!window.BloomyPlanner,
-  );
+  const handleRef = useRef<TilePlannerHandle | null>(null);
 
   useEffect(() => {
-    if (document.querySelector(`link[href="${CSS_HREF}"]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = CSS_HREF;
-    document.head.appendChild(link);
-  }, []);
-
-  // Mount once when script is ready
-  useEffect(() => {
-    if (!scriptReady || !ref.current) return;
-    const handle = window.BloomyPlanner!.mount(ref.current, {
-      ...props,
-      token: CDN_TOKEN,
-    });
+    if (!ref.current) return;
+    const handle = mountTilePlanner(ref.current, props);
     handleRef.current = handle;
     return () => {
       handle.unmount();
       handleRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scriptReady]);
+  }, []);
 
-  // In-place update for config / compact / size without remounting
   useEffect(() => {
     handleRef.current?.update({ config: props.config, compact: props.compact, size: props.size });
   }, [props.config, props.compact, props.size]);
 
-  return (
-    <>
-      <Script
-        src="https://cdn.bloomy.garden/tile-planner.js"
-        strategy="afterInteractive"
-        onLoad={() => setScriptReady(true)}
-      />
-      <div ref={ref} className="h-full w-full" />
-    </>
-  );
+  return <div ref={ref} className="h-full w-full" />;
 }
