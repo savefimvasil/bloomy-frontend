@@ -20,6 +20,27 @@
   --color-danger:  #a14537;
   /* Gradients */
   --gradient-hero: linear-gradient(160deg, #152e1a 0%, #234a2e 45%, #2e6040 100%);
+
+  /* Tile-planner tokens — the embedded @tily/tile-planner reads these. Without
+     them every `fill: var(--color-…)` is undefined and SVG falls back to BLACK
+     (tiles + drag handles). Tile faces stay neutral; chrome follows the garden
+     brand so the planner looks native, not terra. */
+  --color-page:        var(--color-canvas);
+  --color-panel:       var(--color-paper);
+  --color-card:        var(--color-paper);
+  --color-hover:       var(--color-mist);
+  --color-fg:          var(--color-ink);
+  --color-border:      #ddd9d1;
+  --color-cta:         var(--color-leaf);
+  --color-btn:         var(--color-forest);
+  --color-btn-hover:   var(--color-moss);
+  --color-accent:      var(--color-leaf);
+  --color-selection:   var(--color-lime);
+  --color-icon:        var(--color-sage);
+  --color-error:       var(--color-danger);
+  --color-warning:     #b87c3a;
+  --color-tile-fill:   #ded8cd;
+  --color-tile-stroke: #a3987f;
 }
 
 @theme inline {
@@ -35,6 +56,23 @@
   --color-muted:   var(--color-muted);
   --color-line:    var(--color-line);
   --color-danger:  var(--color-danger);
+  /* Tile-planner utilities (bg-page, bg-cta, text-fg, bg-tile-fill, …) */
+  --color-page:        var(--color-page);
+  --color-panel:       var(--color-panel);
+  --color-card:        var(--color-card);
+  --color-hover:       var(--color-hover);
+  --color-fg:          var(--color-fg);
+  --color-border:      var(--color-border);
+  --color-cta:         var(--color-cta);
+  --color-btn:         var(--color-btn);
+  --color-btn-hover:   var(--color-btn-hover);
+  --color-accent:      var(--color-accent);
+  --color-selection:   var(--color-selection);
+  --color-icon:        var(--color-icon);
+  --color-error:       var(--color-error);
+  --color-warning:     var(--color-warning);
+  --color-tile-fill:   var(--color-tile-fill);
+  --color-tile-stroke: var(--color-tile-stroke);
   --font-sans:     "Instrument Sans", system-ui, sans-serif;
   --font-mono:     "SFMono-Regular", "Consolas", monospace;
 }
